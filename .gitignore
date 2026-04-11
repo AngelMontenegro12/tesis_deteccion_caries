@@ -1,0 +1,37 @@
+# Dependencias de Node / Frontend
+node_modules/
+dist/
+build/
+.npm/
+
+# Entornos y dependencias de Python / Backend
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Archivos de configuración locales y variables de entorno
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos generados por el sistema operativo o IDE
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Archivos subidos por usuarios (imágenes de prueba, rayos X, etc.)
+backend/uploads/
+
+# Modelos pesados (Descomenta esto si tu modelo pesa más de 100MB, el límite de GitHub)
+# backend/ia_models/*.pt
