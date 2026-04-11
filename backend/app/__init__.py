@@ -21,8 +21,10 @@ def create_app():
     # Registrar Blueprints
     from app.routes.auth import auth_bp
     from app.routes.pacientes import pacientes_bp
+    from app.routes.evaluaciones import evaluaciones_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(pacientes_bp)
+    app.register_blueprint(evaluaciones_bp)
     
     # Ruta de prueba para verificar conexión
     @app.route('/api/test', methods=['GET'])

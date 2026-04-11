@@ -25,6 +25,7 @@ const EvaluacionClinica = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [evaluacionId, setEvaluacionId] = useState(null);
 
   // Estado para el formulario de nuevo paciente
   const [formData, setFormData] = useState({
@@ -40,11 +41,103 @@ const EvaluacionClinica = () => {
     observaciones_generales: '',
     apoderado: '',
     telefono_apoderado: ''
+  });  
+  // Estado para errores de validacion
+  const [formErrors, setFormErrors] = useState({});
+
+  // Estado para el Contexto Clínico (Paso 2)
+  const [contextoClinico, setContextoClinico] = useState({
+    tipo_visita: 'Primera vez',
+    motivo_consulta: '',
+    observaciones: ''
   });
+
+  const handleContextoChange = (e) => {
+    const { name, value } = e.target;
+    setContextoClinico(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const validateField = (name, value) => {
+    let error = '';
+    const lettersOnlyRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const numbersOnlyRegex = /^[0-9]+$/;
+
+    switch (name) {
+      case 'nombres':
+      case 'apellidos':
+        if (value.trim() && !lettersOnlyRegex.test(value)) {
+          error = 'Solo se permiten letras';
+        }
+        break;
+      case 'apoderado':
+        if (value.trim() && !lettersOnlyRegex.test(value)) {
+          error = 'Solo se permiten letras';
+        }
+        break;
+      case 'dni':
+        if (value && (!numbersOnlyRegex.test(value) || value.length !== 8)) {
+          error = value.length < 8 && numbersOnlyRegex.test(value) ? 'Debe tener 8 dígitos' : 'Solo 8 números permitidos';
+        }
+        break;
+      case 'telefono':
+      case 'telefono_apoderado':
+        if (value && (!numbersOnlyRegex.test(value) || value.length !== 9)) {
+          error = value.length < 9 && numbersOnlyRegex.test(value) ? 'Debe tener 9 dígitos' : 'Solo 9 números permitidos';
+        }
+        break;
+      case 'fecha_nacimiento':
+        if (value) {
+          const selectedDate = new Date(value);
+          const today = new Date();
+          // Reset time to compare only dates
+          today.setHours(0,0,0,0);
+          selectedDate.setHours(0,0,0,0);
+          // Allow today, but not future
+          if (selectedDate > today) {
+            error = 'La fecha no puede ser en el futuro';
+          }
+        }
+        break;
+      case 'correo':
+        if (value.trim()) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            error = 'Ingrese un correo electrónico válido';
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    return error;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Auto validación en tiempo real (evitar escribir ciertas cosas)
+    let newValue = value;
+    const numbersOnlyRegex = /^[0-9]+$/;
+    if (name === 'dni' || name === 'telefono' || name === 'telefono_apoderado') {
+      if (value && !numbersOnlyRegex.test(value)) {
+        return; // No actualizar el estado si no son numeros
+      }
+    }
+    
+    setFormData({
+      ...formData,
+      [name]: newValue
+    });
+
+    // Validar el error y mostrarlo
+    const error = validateField(name, newValue);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
   const [searchResults, setSearchResults] = useState([]);
@@ -54,7 +147,7 @@ const EvaluacionClinica = () => {
   // Efecto para buscar pacientes con un debounce
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
-      if (searchQuery.trim().length > 2) {
+      if (searchQuery.trim().length > 0) {
         setIsSearching(true);
         try {
           const response = await fetch(`http://localhost:5000/api/pacientes/buscar?q=${searchQuery.trim()}`);
@@ -134,6 +227,55 @@ const EvaluacionClinica = () => {
         console.error('Error in request:', error);
         alert('Hubo un error de red al intentar registrar el paciente.');
       }
+    } else if (currentStep === 2) {
+      setIsSubmitting(true);
+      try {
+        const isEditing = !!evaluacionId;
+        const method = isEditing ? 'PUT' : 'POST';
+        const url = isEditing
+          ? `http://localhost:5000/api/evaluaciones/${evaluacionId}`
+          : 'http://localhost:5000/api/evaluaciones';
+
+        const payload = {
+          id_paciente: selectedPatient.id_paciente,
+          tipo_visita: contextoClinico.tipo_visita,
+          motivo_consulta: contextoClinico.motivo_consulta,
+          observaciones: contextoClinico.observaciones
+        };
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const evalData = await response.json();
+          if (!isEditing) {
+            setEvaluacionId(evalData.id_evaluacion);
+          }
+          
+          setSuccessMessage(isEditing ? 'Contexto Clínico Actualizado' : 'Contexto Clínico Guardado');
+          setIsSuccess(true);
+          
+          setTimeout(() => {
+            setIsSubmitting(false);
+            setCurrentStep(currentStep + 1);
+          }, 1500);
+
+          setTimeout(() => setIsSuccess(false), 4000);
+        } else {
+          setIsSubmitting(false);
+          console.error('Error al registrar evaluación');
+          alert('Hubo un error al registrar el contexto clínico.');
+        }
+      } catch (error) {
+        setIsSubmitting(false);
+        console.error('Error in request:', error);
+        alert('Hubo un error de red al intentar guardar la evaluación.');
+      }
     } else {
       if (currentStep < 4) setCurrentStep(currentStep + 1);
     }
@@ -147,14 +289,30 @@ const EvaluacionClinica = () => {
     if (currentStep === 1) {
       if (patientMode === 'search') return !selectedPatient;
       if (patientMode === 'create') {
-        const basicData = formData.nombres && formData.apellidos && formData.dni.length >= 8;
+        const basicData = formData.nombres && formData.apellidos && formData.dni.length === 8 && formData.fecha_nacimiento && formData.genero;
+        if (!basicData) return true;
+
+        // Comprobar errores
+        for (let key in formData) {
+          if (validateField(key, formData[key])) {
+            return true;
+          }
+        }
         const isMinor = calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18;
         if (isMinor) {
-           return !(basicData && formData.apoderado);
+           return !(formData.apoderado && formData.telefono_apoderado && formData.telefono_apoderado.length === 9);
         }
-        return !basicData;
+        return false;
       }
     }
+    
+    if (currentStep === 2) {
+      if (!contextoClinico.tipo_visita || !contextoClinico.motivo_consulta.trim()) {
+        return true;
+      }
+      return false;
+    }
+    
     return false;
   };
 
@@ -168,6 +326,40 @@ const EvaluacionClinica = () => {
         age--;
     }
     return age;
+  };
+
+  const handleSelectPatient = async (paciente) => {
+    setSelectedPatient(paciente);
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/evaluaciones/pendientes/paciente/${paciente.id_paciente}`);
+      if (response.ok) {
+        const evalPendiente = await response.json();
+        
+        setEvaluacionId(evalPendiente.id_evaluacion);
+        setContextoClinico({
+          tipo_visita: evalPendiente.tipo_visita || 'Primera vez',
+          motivo_consulta: evalPendiente.motivo_consulta || '',
+          observaciones: evalPendiente.observaciones || ''
+        });
+        
+        setSuccessMessage('Evaluación pendiente recuperada');
+        setIsSuccess(true);
+        setCurrentStep(3); // Saltar al paso 3 (Carga de Radiografías)
+        
+        setTimeout(() => setIsSuccess(false), 4000);
+      } else {
+        // No hay pendiente (404), limpiar evaluación por si había alguna en estado
+        setEvaluacionId(null);
+        setContextoClinico({
+          tipo_visita: 'Primera vez',
+          motivo_consulta: '',
+          observaciones: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error verificando evaluación pendiente:', error);
+    }
   };
 
   return (
@@ -342,7 +534,7 @@ const EvaluacionClinica = () => {
                             </div>
 
                         {/* Resultados de Búsqueda */}
-                        {searchQuery.length > 2 && (
+                        {searchQuery.length > 0 && (
                           <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                             <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider flex justify-between">
                               <span>Resultados Encontrados</span>
@@ -350,7 +542,7 @@ const EvaluacionClinica = () => {
                             </div>
                             <ul className="divide-y divide-gray-100">
                               {searchResults.length > 0 ? (
-                                searchResults.map((paciente) => (
+                                searchResults.slice(0, 4).map((paciente) => (
                                   <li key={paciente.id_paciente} className="flex items-center justify-between p-4 hover:bg-blue-50/50 cursor-pointer transition-colors group bg-white">
                                     <div className="flex items-center space-x-4">
                                       <div className="w-10 h-10 rounded-full bg-dentBlue-900/10 text-dentBlue-900 flex items-center justify-center font-bold">
@@ -364,7 +556,7 @@ const EvaluacionClinica = () => {
                                       </div>
                                     </div>
                                     <button 
-                                      onClick={() => setSelectedPatient(paciente)}
+                                      onClick={() => handleSelectPatient(paciente)}
                                       className="text-dentGreen-500 bg-dentGreen-50 hover:bg-dentGreen-100 p-2 rounded-lg flex items-center text-xs font-bold transition-colors border border-dentGreen-200 shadow-sm"
                                     >
                                       <UserCheck className="w-4 h-4 mr-1" /> Seleccionar
@@ -398,7 +590,12 @@ const EvaluacionClinica = () => {
                                 <CheckCircle className="w-4 h-4 mr-2" /> Paciente Seleccionado
                               </h3>
                               <button 
-                                onClick={() => setSelectedPatient(null)}
+                                onClick={() => {
+                                  setSelectedPatient(null);
+                                  setEvaluacionId(null);
+                                  setContextoClinico({tipo_visita: 'Primera vez', motivo_consulta: '', observaciones: ''});
+                                  setCurrentStep(1);
+                                }}
                                 className="text-xs font-bold text-gray-500 hover:text-dentBlue-900 transition-colors"
                               >
                                 Seleccionar otro
@@ -528,7 +725,7 @@ const EvaluacionClinica = () => {
 
                     {/* Mode: Create Patient */}
                     {patientMode === 'create' && (
-                      <div className="animate-fade-in">
+                      <div className="animate-fade-in px-4 md:px-12 lg:px-16">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
                           
                           {/* Nombres */}
@@ -537,8 +734,9 @@ const EvaluacionClinica = () => {
                             <input 
                               type="text" name="nombres" value={formData.nombres} onChange={handleInputChange}
                               placeholder="Ej: Ángel Eduardo"
-                              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                              className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.nombres ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                             />
+                            {formErrors.nombres && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.nombres}</p>}
                           </div>
 
                           {/* Apellidos */}
@@ -547,8 +745,9 @@ const EvaluacionClinica = () => {
                             <input 
                               type="text" name="apellidos" value={formData.apellidos} onChange={handleInputChange}
                               placeholder="Ej: Montenegro Lucumí"
-                              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                              className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.apellidos ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                             />
+                            {formErrors.apellidos && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.apellidos}</p>}
                           </div>
 
                           {/* DNI & Fecha Nacimiento */}
@@ -558,15 +757,18 @@ const EvaluacionClinica = () => {
                               <input 
                                 type="text" name="dni" maxLength="8" value={formData.dni} onChange={handleInputChange}
                                 placeholder="8 dígitos"
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                                className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.dni ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                               />
+                              {formErrors.dni && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.dni}</p>}
                             </div>
                             <div>
                               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Calendar className="w-3.5 h-3.5 mr-1" /> Nacimiento <span className="text-red-500 ml-1">*</span></label>
                               <input 
                                 type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleInputChange}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-600"
+                                max={new Date().toISOString().split("T")[0]}
+                                className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.fecha_nacimiento ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-600`}
                               />
+                              {formErrors.fecha_nacimiento && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.fecha_nacimiento}</p>}
                             </div>
                           </div>
 
@@ -597,10 +799,11 @@ const EvaluacionClinica = () => {
                           <div>
                             <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Teléfono</label>
                             <input 
-                              type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange}
+                              type="tel" name="telefono" maxLength="9" value={formData.telefono} onChange={handleInputChange}
                               placeholder="Ej: 999888777"
-                              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                              className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.telefono ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                             />
+                            {formErrors.telefono && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.telefono}</p>}
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><MapPin className="w-3.5 h-3.5 mr-1" /> Dirección</label>
@@ -617,8 +820,9 @@ const EvaluacionClinica = () => {
                             <input 
                               type="email" name="correo" value={formData.correo} onChange={handleInputChange}
                               placeholder="correo@ejemplo.com"
-                              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                              className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.correo ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                             />
+                            {formErrors.correo && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.correo}</p>}
                           </div>
 
                           {/* Observaciones */}
@@ -647,16 +851,18 @@ const EvaluacionClinica = () => {
                                 <input 
                                   type="text" name="apoderado" value={formData.apoderado} onChange={handleInputChange}
                                   placeholder="Nombre completo"
-                                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                                  className={`w-full px-4 py-2.5 bg-white border ${formErrors.apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                                 />
+                                {formErrors.apoderado && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.apoderado}</p>}
                               </div>
                               <div>
-                                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Tel. Apoderado</label>
+                                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Tel. Apoderado  <span className="text-red-500">*</span></label>
                                 <input 
-                                  type="tel" name="telefono_apoderado" value={formData.telefono_apoderado} onChange={handleInputChange}
+                                  type="tel" name="telefono_apoderado" maxLength="9" value={formData.telefono_apoderado} onChange={handleInputChange}
                                   placeholder="Ej: 999888777"
-                                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                                  className={`w-full px-4 py-2.5 bg-white border ${formErrors.telefono_apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                                 />
+                                {formErrors.telefono_apoderado && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.telefono_apoderado}</p>}
                               </div>
                             </div>
                           </div>
@@ -668,14 +874,68 @@ const EvaluacionClinica = () => {
                 </div>
               )}
 
-              {/* Paso 2: Placeholder */}
+              {/* Paso 2: Contexto Clínico */}
               {currentStep === 2 && (
-                <div className="p-12 text-center animate-fade-in-up h-full flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 bg-blue-50 text-dentBlue-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Stethoscope className="w-8 h-8" />
+                <div className="animate-fade-in-up">
+                  <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                    <h2 className="text-xl font-bold text-dentBlue-900 flex items-center">
+                      <Stethoscope className="w-5 h-5 mr-2 text-dentGreen-500" /> 
+                      Contexto Clínico
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">Registre el motivo de consulta, tipo de visita y las observaciones preliminares del paciente.</p>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800">Contexto Clínico</h3>
-                  <p className="text-gray-500 mt-2 max-w-sm mx-auto">Registre el motivo de consulta, nivel de higiene bucal, dolor y otros síntomas del paciente.</p>
+                  
+                  <div className="p-8 px-4 md:px-12 lg:px-16 space-y-8">
+                    
+                    {/* Tipo de Visita (Botones tipo Píldora) */}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-3">Tipo de Visita <span className="text-red-500">*</span></label>
+                      <div className="flex flex-wrap gap-3">
+                        {['Primera vez', 'Control rutina', 'Urgencia', 'Seguimiento'].map((tipo) => (
+                          <button
+                            key={tipo}
+                            onClick={() => setContextoClinico(prev => ({ ...prev, tipo_visita: tipo }))}
+                            className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 border ${
+                              contextoClinico.tipo_visita === tipo
+                                ? 'bg-dentBlue-900 border-dentBlue-900 text-white shadow-md shadow-dentBlue-900/20'
+                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                            }`}
+                          >
+                            {tipo}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Motivo de Consulta */}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Motivo de Consulta <span className="text-red-500">*</span></label>
+                      <textarea
+                        name="motivo_consulta"
+                        value={contextoClinico.motivo_consulta}
+                        onChange={handleContextoChange}
+                        placeholder="Describa el motivo principal por el que el paciente acude a la consulta..."
+                        rows="3"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700 resize-none shadow-sm"
+                      />
+                    </div>
+
+                    {/* Observaciones (Opcional) */}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center justify-between">
+                        <span>Observaciones Clínicas Previas</span>
+                        <span className="text-gray-400 font-medium text-[10px] bg-gray-100 px-2 py-0.5 rounded-md">OPCIONAL</span>
+                      </label>
+                      <textarea
+                        name="observaciones"
+                        value={contextoClinico.observaciones}
+                        onChange={handleContextoChange}
+                        placeholder="Anotaciones extra, signos vitales o cualquier detalle clínico de importancia..."
+                        rows="4"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700 resize-none shadow-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -729,11 +989,15 @@ const EvaluacionClinica = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {formData.id_paciente ? 'Guardando...' : 'Registrando...'}
+                    {(currentStep === 1 && formData.id_paciente) ? 'Guardando...' : (currentStep === 1 ? 'Registrando...' : 'Guardando...')}
                   </>
                 ) : (
                   <>
-                    {currentStep === 4 ? 'Finalizar Evaluación' : (patientMode === 'create' && currentStep === 1 ? (formData.id_paciente ? 'Guardar y Continuar' : 'Registrar y Continuar') : 'Continuar')} <ChevronRight className="w-4 h-4 ml-1" />
+                    {currentStep === 4 ? 'Finalizar Evaluación' : (
+                      (patientMode === 'create' && currentStep === 1) 
+                        ? (formData.id_paciente ? 'Guardar y Continuar' : 'Registrar y Continuar') 
+                        : (currentStep === 2 ? 'Guardar y Continuar' : 'Continuar')
+                    )} <ChevronRight className="w-4 h-4 ml-1" />
                   </>
                 )}
               </button>

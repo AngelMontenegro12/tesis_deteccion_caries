@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS `evaluaciones_diagnosticas` (
   `id_paciente` int unsigned NOT NULL,
   `id_odontologo` int unsigned NOT NULL,
   `fecha_evaluacion` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tipo_visita` enum('Primera vez','Control rutina','Urgencia','Seguimiento') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Primera vez',
   `motivo_consulta` text COLLATE utf8mb4_unicode_ci,
   `observaciones` text COLLATE utf8mb4_unicode_ci COMMENT 'Notas clínicas del odontólogo para esta evaluación',
   `estado` enum('pendiente','en_proceso','completada','anulada') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendiente',

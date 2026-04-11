@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS `evaluaciones_diagnosticas` (
   `id_paciente` int unsigned NOT NULL,
   `id_odontologo` int unsigned NOT NULL,
   `fecha_evaluacion` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `tipo_visita` enum('Primera vez','Control rutina','Urgencia','Seguimiento') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Primera vez',
   `motivo_consulta` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `observaciones` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Notas clínicas del odontólogo para esta evaluación',
   `estado` enum('pendiente','en_proceso','completada','anulada') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendiente',
@@ -95,14 +96,14 @@ CREATE TABLE IF NOT EXISTS `evaluaciones_diagnosticas` (
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Sesiones de diagnóstico asociadas a un paciente y odontólogo';
 
 -- Volcando datos para la tabla bd_detec_caries.evaluaciones_diagnosticas: ~7 rows (aproximadamente)
-INSERT INTO `evaluaciones_diagnosticas` (`id_evaluacion`, `id_paciente`, `id_odontologo`, `fecha_evaluacion`, `motivo_consulta`, `observaciones`, `estado`, `creado_en`, `actualizado_en`) VALUES
-	(1, 1, 1, '2025-06-10 09:00:00', 'Dolor en molar inferior derecho', 'Paciente refiere dolor al masticar desde hace 2 semanas', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
-	(2, 2, 1, '2025-06-11 10:30:00', 'Control rutinario semestral', 'Sin molestias aparentes, se solicita radiografía preventiva', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
-	(3, 3, 2, '2025-06-12 08:00:00', 'Revisión por caries detectada anteriormente', 'Seguimiento de lesión en premolar superior izquierdo', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
-	(4, 4, 2, '2025-06-13 11:00:00', 'Dolor leve en zona interproximal', 'Paciente refiere sensibilidad al frío', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
-	(5, 5, 3, '2025-06-14 09:30:00', 'Primera evaluación odontológica', 'Paciente nunca ha tenido tratamiento previo', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
-	(6, 6, 3, '2025-06-15 14:00:00', 'Seguimiento post-tratamiento', 'Control a los 3 meses tras obturación en diente 36', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
-	(7, 1, 1, '2025-07-20 09:00:00', 'Control mensual', 'Evaluación de evolución luego de primera consulta', 'pendiente', '2026-04-07 14:01:35', '2026-04-07 14:01:35');
+INSERT INTO `evaluaciones_diagnosticas` (`id_evaluacion`, `id_paciente`, `id_odontologo`, `fecha_evaluacion`, `tipo_visita`, `motivo_consulta`, `observaciones`, `estado`, `creado_en`, `actualizado_en`) VALUES
+	(1, 1, 1, '2025-06-10 09:00:00', 'Urgencia', 'Dolor en molar inferior derecho', 'Paciente refiere dolor al masticar desde hace 2 semanas', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
+	(2, 2, 1, '2025-06-11 10:30:00', 'Control rutina', 'Control rutinario semestral', 'Sin molestias aparentes, se solicita radiografía preventiva', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
+	(3, 3, 2, '2025-06-12 08:00:00', 'Seguimiento', 'Revisión por caries detectada anteriormente', 'Seguimiento de lesión en premolar superior izquierdo', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
+	(4, 4, 2, '2025-06-13 11:00:00', 'Urgencia', 'Dolor leve en zona interproximal', 'Paciente refiere sensibilidad al frío', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
+	(5, 5, 3, '2025-06-14 09:30:00', 'Primera vez', 'Primera evaluación odontológica', 'Paciente nunca ha tenido tratamiento previo', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
+	(6, 6, 3, '2025-06-15 14:00:00', 'Seguimiento', 'Seguimiento post-tratamiento', 'Control a los 3 meses tras obturación en diente 36', 'completada', '2026-04-07 14:01:35', '2026-04-07 14:01:35'),
+	(7, 1, 1, '2025-07-20 09:00:00', 'Control rutina', 'Control mensual', 'Evaluación de evolución luego de primera consulta', 'pendiente', '2026-04-07 14:01:35', '2026-04-07 14:01:35');
 
 -- Volcando estructura para tabla bd_detec_caries.historial_accesos
 CREATE TABLE IF NOT EXISTS `historial_accesos` (

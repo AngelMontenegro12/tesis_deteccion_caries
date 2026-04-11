@@ -9,7 +9,7 @@ pacientes_bp = Blueprint('pacientes', __name__, url_prefix='/api/pacientes')
 def buscar_paciente():
     query = request.args.get('q', '').strip()
     
-    if not query or len(query) < 3:
+    if not query:
         return jsonify([])
     
     # Buscar por DNI exacto o parcial, o por nombres/apellidos parciales (incluyendo nombre completo)

@@ -60,3 +60,27 @@ class Paciente(db.Model):
             'observaciones_generales': self.observaciones_generales,
             'activo': self.activo
         }
+
+class EvaluacionDiagnostica(db.Model):
+    __tablename__ = 'evaluaciones_diagnosticas'
+    
+    id_evaluacion = db.Column(db.Integer, primary_key=True)
+    id_paciente = db.Column(db.Integer, db.ForeignKey('pacientes.id_paciente'), nullable=False)
+    id_odontologo = db.Column(db.Integer, db.ForeignKey('odontologos.id_odontologo'), nullable=False)
+    fecha_evaluacion = db.Column(db.DateTime, default=db.func.current_timestamp())
+    tipo_visita = db.Column(db.String(50), default='Primera vez')
+    motivo_consulta = db.Column(db.Text)
+    observaciones = db.Column(db.Text)
+    estado = db.Column(db.String(20), default='pendiente')
+
+    def to_dict(self):
+        return {
+            'id_evaluacion': self.id_evaluacion,
+            'id_paciente': self.id_paciente,
+            'id_odontologo': self.id_odontologo,
+            'fecha_evaluacion': str(self.fecha_evaluacion),
+            'tipo_visita': self.tipo_visita,
+            'motivo_consulta': self.motivo_consulta,
+            'observaciones': self.observaciones,
+            'estado': self.estado
+        }
