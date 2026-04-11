@@ -16,6 +16,7 @@ import {
   Loader2,
   X
 } from 'lucide-react';
+import bgDashboard from '../assets/fondo_dashboard_2.png';
 
 const EvaluacionClinica = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -221,11 +222,14 @@ const EvaluacionClinica = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-8 bg-gray-50/50">
-        <div className="max-w-5xl mx-auto">
+      <div 
+        className="flex-1 overflow-auto p-8 bg-cover bg-center bg-no-repeat bg-fixed"
+        style={{ backgroundImage: `url(${bgDashboard})` }}
+      >
+        <div className="max-w-[90%] 2xl:max-w-7xl mx-auto">
           
           {/* Progress Bar */}
-          <div className="mb-14 px-4">
+          <div className="mb-14 px-4 max-w-5xl mx-auto">
             <div className="flex items-center justify-between relative">
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 z-0 rounded-full"></div>
               
