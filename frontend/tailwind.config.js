@@ -21,11 +21,18 @@ export default {
       },
       animation: {
         'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+        'scan-line': 'scanLine 2s linear infinite',
+        'spin-slow': 'spin 3s linear infinite',
       },
       keyframes: {
         fadeInUp: {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        scanLine: {
+          '0%': { top: '0%' },
+          '50%': { top: '100%' },
+          '100%': { top: '0%' },
         }
       }
     },

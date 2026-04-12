@@ -60,6 +60,16 @@ def crear_paciente():
         db.session.rollback()
         return jsonify({"error": str(e)}), 400
 
+@pacientes_bp.route('/<int:id_paciente>', methods=['GET'])
+def obtener_paciente(id_paciente):
+    try:
+        paciente = Paciente.query.get(id_paciente)
+        if not paciente:
+            return jsonify({"error": "Paciente no encontrado"}), 404
+        return jsonify(paciente.to_dict()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @pacientes_bp.route('/<int:id_paciente>', methods=['PUT'])
 def actualizar_paciente(id_paciente):
     data = request.json

@@ -11,16 +11,18 @@ import {
   AlertCircle,
   ClipboardCheck,
   Search,
-  History,
-  FileText,
-  Activity
+  Activity,
+  ArrowRight
 } from 'lucide-react';
+import api from '../services/api';
 
 // Importamos la imagen de fondo para el dashboard
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,9 +32,30 @@ const Dashboard = () => {
       // Si no hay usuario logueado, redirigir al login
       navigate('/login');
     } else {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+
+      const fetchStats = async () => {
+        try {
+           const id_odontologo = parsedUser?.id_odontologo || 1;
+           const response = await api.get(`/dashboard/stats?id_odontologo=${id_odontologo}`);
+           if (response.data.status === 'success') {
+              setStats(response.data.data);
+           }
+        } catch (error) {
+           console.error("Error obteniendo datos del dashboard", error);
+        } finally {
+           setLoading(false);
+        }
+      };
+      
+      fetchStats();
     }
   }, [navigate]);
+
+  if (loading) {
+     return <div className="p-8 text-center text-gray-500">Cargando Dashboard...</div>;
+  }
 
   return (
     <>
@@ -67,9 +90,9 @@ const Dashboard = () => {
                           </div>
                         </div>
                      </div>
-                     <p className="text-3xl font-extrabold text-dentBlue-900">6</p>
+                     <p className="text-3xl font-extrabold text-dentBlue-900">{stats?.total_pacientes || 0}</p>
                      <p className="text-sm text-green-600 font-medium mt-2 flex items-center">
-                       <TrendingUp className="w-4 h-4 mr-1" /> +2 esta semana
+                       <TrendingUp className="w-4 h-4 mr-1" /> Pacientes activos
                      </p>
                   </div>
 
@@ -84,8 +107,8 @@ const Dashboard = () => {
                           </div>
                         </div>
                      </div>
-                     <p className="text-3xl font-extrabold text-dentBlue-900">7</p>
-                     <p className="text-sm text-gray-500 font-medium mt-2">6 completadas, 1 pendiente</p>
+                     <p className="text-3xl font-extrabold text-dentBlue-900">{stats?.total_evaluaciones || 0}</p>
+                     <p className="text-sm text-gray-500 font-medium mt-2">{stats?.evaluaciones_completadas || 0} completadas, {stats?.evaluaciones_pendientes || 0} pendiente{stats?.evaluaciones_pendientes !== 1 && 's'}</p>
                   </div>
 
                   {/* KPI 3 */}
@@ -99,9 +122,9 @@ const Dashboard = () => {
                           </div>
                         </div>
                      </div>
-                     <p className="text-3xl font-extrabold text-dentBlue-900">8</p>
+                     <p className="text-3xl font-extrabold text-dentBlue-900">{stats?.lesiones_avanzadas || 0}</p>
                      <p className="text-sm text-red-500 font-medium mt-2 flex items-center">
-                       <TrendingUp className="w-4 h-4 mr-1" /> +2 casos que el mes anterior
+                       Total de caries avanzadas detectadas
                      </p>
                   </div>
 
@@ -116,9 +139,9 @@ const Dashboard = () => {
                           </div>
                         </div>
                      </div>
-                     <p className="text-3xl font-extrabold text-dentBlue-900">12</p>
+                     <p className="text-3xl font-extrabold text-dentBlue-900">{stats?.evaluaciones_hoy || 0}</p>
                      <p className="text-sm text-indigo-500 font-medium mt-2 flex items-center">
-                       <TrendingUp className="w-4 h-4 mr-1" /> +4 validaciones que ayer
+                       Pacientes atendidos hoy
                      </p>
                   </div>
                </div>
@@ -143,7 +166,7 @@ const Dashboard = () => {
 
                       <button className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
                         <Clock className="w-8 h-8 mb-2 text-white group-hover:scale-110 transition-transform" />
-                        <span className="text-sm font-semibold">Evaluaciones Recientes</span>
+                        <span className="text-sm font-semibold">Evaluaciones Pendientes</span>
                       </button>
 
                       <button className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
@@ -164,36 +187,38 @@ const Dashboard = () => {
                       </h3>
                       
                       <div className="space-y-4">
-                        {/* Eval 1 */}
-                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-white transition-colors">
-                           <div className="flex flex-col">
-                              <span className="font-bold text-dentBlue-900">Ángel Montenegro Lucumí</span>
-                              <span className="text-xs text-gray-500 font-medium">Control mensual • 20 Jul 2025</span>
-                           </div>
-                           <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-yellow-100 text-yellow-700">
-                              Pendiente
-                           </span>
-                        </div>
-                        {/* Eval 2 */}
-                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-white transition-colors">
-                           <div className="flex flex-col">
-                              <span className="font-bold text-dentBlue-900">Camila Herrera Bustamante</span>
-                              <span className="text-xs text-gray-500 font-medium">Seguimiento post-tratamiento • 15 Jun 2025</span>
-                           </div>
-                           <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
-                              Completada
-                           </span>
-                        </div>
-                        {/* Eval 3 */}
-                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-white transition-colors">
-                           <div className="flex flex-col">
-                              <span className="font-bold text-dentBlue-900">Rodrigo Vásquez Carrasco</span>
-                              <span className="text-xs text-gray-500 font-medium">Primera evaluación • 14 Jun 2025</span>
-                           </div>
-                           <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
-                              Completada
-                           </span>
-                        </div>
+                        {stats?.ultimas_evaluaciones?.length > 0 ? (
+                           stats.ultimas_evaluaciones.map((evaluacion, index) => (
+                              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-white transition-colors">
+                                 <div className="flex flex-col">
+                                    <span className="font-bold text-dentBlue-900">{evaluacion.paciente}</span>
+                                    <span className="text-xs text-gray-500 font-medium">
+                                       {evaluacion.tipo_visita} • {new Date(evaluacion.fecha_evaluacion).toLocaleDateString()}
+                                    </span>
+                                 </div>
+                                 <div className="flex items-center space-x-3">
+                                    {evaluacion.estado !== 'completada' && (
+                                       <button 
+                                          onClick={() => navigate('/nueva-evaluacion', { state: { resume: true, id_paciente: evaluacion.id_paciente, id_evaluacion: evaluacion.id_evaluacion } })}
+                                          className="p-2 bg-dentBlue-900 hover:bg-dentBlue-800 text-white rounded-lg transition-colors flex items-center justify-center shadow-sm"
+                                          title="Continuar evaluación"
+                                       >
+                                          <ArrowRight className="w-4 h-4" />
+                                       </button>
+                                    )}
+                                    <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${
+                                       evaluacion.estado === 'completada' 
+                                          ? 'bg-green-100 text-green-700' 
+                                          : 'bg-yellow-100 text-yellow-700'
+                                       }`}>
+                                       {evaluacion.estado}
+                                    </span>
+                                 </div>
+                              </div>
+                           ))
+                        ) : (
+                           <div className="text-center text-gray-500 py-4">No hay evaluaciones recientes</div>
+                        )}
                       </div>
                     </div>
 
@@ -206,20 +231,29 @@ const Dashboard = () => {
                       <div className="flex-1 flex items-end justify-center space-x-6 pt-4 relative">
                          {/* Bar 1 */}
                          <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">1</span>
-                            <div className="w-12 bg-red-400 rounded-t-lg h-16 group-hover:bg-red-500 transition-colors shadow-sm"></div>
+                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_severidad?.avanzada || 0}</span>
+                            <div 
+                               className="w-12 bg-red-400 rounded-t-lg group-hover:bg-red-500 transition-colors shadow-sm" 
+                               style={{ height: `${Math.max(16, (stats?.detecciones_severidad?.avanzada || 0) * 10)}px` }}
+                            ></div>
                             <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Avanzada</span>
                          </div>
                          {/* Bar 2 */}
                          <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">3</span>
-                            <div className="w-12 bg-orange-400 rounded-t-lg h-32 group-hover:bg-orange-500 transition-colors shadow-sm"></div>
+                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_severidad?.moderada || 0}</span>
+                            <div 
+                               className="w-12 bg-orange-400 rounded-t-lg group-hover:bg-orange-500 transition-colors shadow-sm" 
+                               style={{ height: `${Math.max(16, (stats?.detecciones_severidad?.moderada || 0) * 10)}px` }}
+                            ></div>
                             <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Moderada</span>
                          </div>
                          {/* Bar 3 */}
                          <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">3</span>
-                            <div className="w-12 bg-yellow-400 rounded-t-lg h-32 group-hover:bg-yellow-500 transition-colors shadow-sm"></div>
+                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_severidad?.incipiente || 0}</span>
+                            <div 
+                               className="w-12 bg-yellow-400 rounded-t-lg group-hover:bg-yellow-500 transition-colors shadow-sm" 
+                               style={{ height: `${Math.max(16, (stats?.detecciones_severidad?.incipiente || 0) * 10)}px` }}
+                            ></div>
                             <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Incipiente</span>
                          </div>
                       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Importamos las imágenes desde la carpeta assets
@@ -11,6 +11,14 @@ const Login = () => {
   const [errorLogin, setErrorLogin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Redirigir al dashboard si ya está logeado
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

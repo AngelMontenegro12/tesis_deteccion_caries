@@ -84,3 +84,31 @@ class EvaluacionDiagnostica(db.Model):
             'observaciones': self.observaciones,
             'estado': self.estado
         }
+
+class Radiografia(db.Model):
+    __tablename__ = 'radiografias'
+
+    id_radiografia = db.Column(db.Integer, primary_key=True)
+    id_evaluacion = db.Column(db.Integer, db.ForeignKey('evaluaciones_diagnosticas.id_evaluacion'), nullable=False)
+    id_tipo = db.Column(db.Integer, nullable=False)
+    nombre_archivo = db.Column(db.String(255), nullable=False)
+    ruta_archivo = db.Column(db.String(500), nullable=False)
+    formato = db.Column(db.String(20), nullable=False)
+    tamanio_kb = db.Column(db.Integer)
+    resolucion = db.Column(db.String(50))
+    estado_procesado = db.Column(db.String(20), default='pendiente')
+    creado_en = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    def to_dict(self):
+        return {
+            'id_radiografia': self.id_radiografia,
+            'id_evaluacion': self.id_evaluacion,
+            'id_tipo': self.id_tipo,
+            'nombre_archivo': self.nombre_archivo,
+            'ruta_archivo': self.ruta_archivo,
+            'formato': self.formato,
+            'tamanio_kb': self.tamanio_kb,
+            'resolucion': self.resolucion,
+            'estado_procesado': self.estado_procesado,
+            'creado_en': str(self.creado_en)
+        }
