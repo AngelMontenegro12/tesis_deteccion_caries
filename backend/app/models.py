@@ -41,7 +41,9 @@ class Paciente(db.Model):
     telefono_apoderado = db.Column(db.String(20))
     observaciones_generales = db.Column(db.Text)
     activo = db.Column(db.Boolean, default=True)
-    
+
+    evaluaciones = db.relationship('EvaluacionDiagnostica', backref='paciente', lazy=True)
+
     def to_dict(self):
         return {
             'id_paciente': self.id_paciente,
@@ -112,3 +114,30 @@ class Radiografia(db.Model):
             'estado_procesado': self.estado_procesado,
             'creado_en': str(self.creado_en)
         }
+
+class DiagnosticoOdontologo(db.Model):
+    __tablename__ = 'diagnosticos_odontologo'
+    
+    id_diagnostico = db.Column(db.Integer, primary_key=True)
+    id_evaluacion = db.Column(db.Integer, db.ForeignKey('evaluaciones_diagnosticas.id_evaluacion', ondelete='CASCADE'), nullable=False)
+    id_odontologo = db.Column(db.Integer, db.ForeignKey('odontologos.id_odontologo', ondelete='RESTRICT'), nullable=False)
+    diagnostico_texto = db.Column(db.Text, nullable=False, default='Sin diagnostico redactado')
+    plan_tratamiento = db.Column(db.Text)
+    confirma_ia = db.Column(db.Boolean, default=True)
+    observaciones = db.Column(db.Text)
+    fecha_diagnostico = db.Column(db.DateTime, default=db.func.current_timestamp())
+    actualizado_en = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    def to_dict(self):
+        return {
+            'id_diagnostico': self.id_diagnostico,
+            'id_evaluacion': self.id_evaluacion,
+            'id_odontologo': self.id_odontologo,
+            'diagnostico_texto': self.diagnostico_texto,
+            'plan_tratamiento': self.plan_tratamiento,
+            'confirma_ia': self.confirma_ia,
+            'observaciones': self.observaciones,
+            'fecha_diagnostico': self.fecha_diagnostico.isoformat() if self.fecha_diagnostico else None,
+            'actualizado_en': self.actualizado_en.isoformat() if self.actualizado_en else None
+        }
+

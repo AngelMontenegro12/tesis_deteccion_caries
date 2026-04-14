@@ -21,31 +21,59 @@ import {
   Trash2,
   Plus,
   AlertCircle,
+  Info,
   Play,
   Bot,
   Clock,
   Sparkles,
   ScanLine,
   CheckCircle2,
-  Cog
+  Cog,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  AlertTriangle,
+  MousePointer2,
+  Activity
 } from 'lucide-react';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 import dienteImg from '../assets/diente.png';
+import ModalConfirmacion from '../components/ModalConfirmacion';
+import ModalFinalizacion from '../components/ModalFinalizacion';
 
 const EvaluacionClinica = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isResuming, setIsResuming] = useState(!!location.state?.resume);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [patientMode, setPatientMode] = useState('search'); // 'search' o 'create'
+  // Extraer estado inicial de sessionStorage si existe
+  const getInitialState = (key, defaultVal) => {
+    // Si viene con forceNew = true desde el dashboard, no recuperamos sesión y reiniciamos
+    if (location.state?.forceNew) {
+      return defaultVal;
+    }
+    
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return defaultVal;
+      }
+    }
+    return defaultVal;
+  };
+
+  const [currentStep, setCurrentStep] = useState(() => getInitialState('eval_currentStep', 1));
+  const [patientMode, setPatientMode] = useState(() => getInitialState('eval_patientMode', 'search'));
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [evaluacionId, setEvaluacionId] = useState(null);
+  const [evaluacionId, setEvaluacionId] = useState(() => getInitialState('eval_evaluacionId', null));
+  const [selectedPatient, setSelectedPatient] = useState(() => getInitialState('eval_selectedPatient', null));
 
   // Estado para el formulario de nuevo paciente
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => getInitialState('eval_formData', {
     id_paciente: null,
     nombres: '',
     apellidos: '',
@@ -58,16 +86,71 @@ const EvaluacionClinica = () => {
     observaciones_generales: '',
     apoderado: '',
     telefono_apoderado: ''
-  });  
+  }));  
   // Estado para errores de validacion
   const [formErrors, setFormErrors] = useState({});
 
   // Estado para el Contexto Clínico (Paso 2)
-  const [contextoClinico, setContextoClinico] = useState({
+  const [contextoClinico, setContextoClinico] = useState(() => getInitialState('eval_contextoClinico', {
     tipo_visita: 'Primera vez',
     motivo_consulta: '',
     observaciones: ''
-  });
+  }));
+
+  // Efecto para guardar en sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('eval_currentStep', JSON.stringify(currentStep));
+    sessionStorage.setItem('eval_patientMode', JSON.stringify(patientMode));
+    sessionStorage.setItem('eval_evaluacionId', JSON.stringify(evaluacionId));
+    sessionStorage.setItem('eval_selectedPatient', JSON.stringify(selectedPatient));
+    sessionStorage.setItem('eval_formData', JSON.stringify(formData));
+    sessionStorage.setItem('eval_contextoClinico', JSON.stringify(contextoClinico));
+  }, [currentStep, patientMode, evaluacionId, selectedPatient, formData, contextoClinico]);
+
+  // Limpiar estado al desmontar en un caso específico o cuando termine
+  const clearSessionStorageState = () => {
+    sessionStorage.removeItem('eval_currentStep');
+    sessionStorage.removeItem('eval_patientMode');
+    sessionStorage.removeItem('eval_evaluacionId');
+    sessionStorage.removeItem('eval_selectedPatient');
+    sessionStorage.removeItem('eval_formData');
+    sessionStorage.removeItem('eval_contextoClinico');
+    sessionStorage.removeItem('eval_radiografias');
+  };
+
+  const handleRestart = () => {
+    setModalRestart(true);
+  };
+
+  const confirmRestart = () => {
+    clearSessionStorageState();
+    setCurrentStep(1);
+    setPatientMode('search');
+    setSelectedPatient(null);
+    setEvaluacionId(null);
+    setSearchQuery('');
+    setFormData({
+      id_paciente: null,
+      nombres: '',
+      apellidos: '',
+      dni: '',
+      fecha_nacimiento: '',
+      genero: '',
+      telefono: '',
+      correo: '',
+      direccion: '',
+      observaciones_generales: '',
+      apoderado: '',
+      telefono_apoderado: ''
+    });
+    setContextoClinico({
+      tipo_visita: 'Primera vez',
+      motivo_consulta: '',
+      observaciones: ''
+    });
+    setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
+    setModalRestart(false);
+  };
 
   const handleContextoChange = (e) => {
     const { name, value } = e.target;
@@ -78,12 +161,28 @@ const EvaluacionClinica = () => {
   };
 
   // --- Estado para el Paso 3: Carga de Radiografías ---
-  const [radiografias, setRadiografias] = useState([
-    { id: Date.now(), file: null, preview: null, tipo: '1' } // ID 1 por defecto (Panorámica)
-  ]);
+  const [radiografias, setRadiografias] = useState(() => {
+    const saved = getInitialState('eval_radiografias', null);
+    if (saved) {
+      // Necesito reconstruir los objects pero cuidando que el 'file' no es serializable.
+      // Así que los files se perderán al hacer F5, tienen que volverlos a subir,
+      // PERO pueden cargarse los de bd si existieran.
+      return saved.map(r => ({ ...r, file: null }));
+    }
+    return [{ id: Date.now(), file: null, preview: null, tipo: '1' }];
+  });
+
+  useEffect(() => {
+    // Al guardar las radiografias, no guardamos el file porque da error de circular structure o no es serializable.
+    const radsToSave = radiografias.map(r => ({ ...r, file: null }));
+    sessionStorage.setItem('eval_radiografias', JSON.stringify(radsToSave));
+  }, [radiografias]);
 
   // Estado para el modal de eliminación de radiografía
   const [modalEliminarImg, setModalEliminarImg] = useState({ isOpen: false, idToRemove: null });
+
+  // Estado para el modal de confirmación de nueva evaluación
+  const [modalRestart, setModalRestart] = useState(false);
 
   // Estado para el modal de previsualización (pantalla completa dentro del sistema)
   const [previewModal, setPreviewModal] = useState({ isOpen: false, url: null });
@@ -92,6 +191,30 @@ const EvaluacionClinica = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisItems, setAnalysisItems] = useState([]);
   const [analysisTime, setAnalysisTime] = useState(0);
+
+  // --- Estado para el Paso 5: Resultados ---
+  const [activeResultIndex, setActiveResultIndex] = useState(0);
+  const [hoveredBox, setHoveredBox] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [finalDiagnosis, setFinalDiagnosis] = useState('');
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [finishProgress, setFinishProgress] = useState(0);
+  
+  // Data simulada para las radiografías
+  const MOCK_DETECTIONS = {
+    0: [
+      { id: 1, tooth: '46', type: 'Corona', score: 95, probs: { corona: 95, interdental: 3, radicular: 2 }, box: { top: '35%', left: '40%', width: '8%', height: '15%' } },
+      { id: 2, tooth: '35', type: 'Interdental', score: 95, probs: { corona: 3, interdental: 95, radicular: 2 }, box: { top: '50%', left: '60%', width: '6%', height: '12%' } },
+    ],
+    1: [
+      { id: 3, tooth: '11', type: 'Radicular', score: 88, probs: { corona: 10, interdental: 2, radicular: 88 }, box: { top: '45%', left: '48%', width: '5%', height: '10%' } },
+    ],
+    // 2, 3, etc fallbacks
+  };
+  
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.5, 3));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.5, 1));
+  const handleZoomReset = () => setZoomLevel(1);
 
   const startAnalysis = () => {
     // Tiempo total deseado por imagen (5 segundos = 5000ms)
@@ -161,7 +284,11 @@ const EvaluacionClinica = () => {
           } else {
             clearInterval(progressInterval);
             clearInterval(timeInterval);
-            // Ya todas terminaron. Esperamos interaccion del usuario
+            // Ya todas terminaron. Pasar automáticamente al Paso 5 (Resultados)
+            setTimeout(() => {
+              setIsAnalyzing(false);
+              setCurrentStep(5);
+            }, 800);
           }
         }
         return newItems;
@@ -324,7 +451,7 @@ const EvaluacionClinica = () => {
 
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState(null);
+  // selectedPatient se subió arriba para usar getInitialState
 
   // Efecto para buscar pacientes con un debounce
   useEffect(() => {
@@ -463,9 +590,27 @@ const EvaluacionClinica = () => {
       setIsSubmitting(true);
       try {
         const formDataPayload = new FormData();
-        radiografias.forEach((rad, index) => {
-          if (rad.file) {
-            formDataPayload.append(`file_${index}`, rad.file);
+        
+        for (let index = 0; index < radiografias.length; index++) {
+          const rad = radiografias[index];
+          let fileToUpload = rad.file;
+
+          // Intentar recuperar el archivo desde el blob URL si se perdió por navegar entre vistas (sin F5)
+          if (!fileToUpload && !rad.id_bd && rad.preview && rad.preview.startsWith('blob:')) {
+            try {
+              const resBlob = await fetch(rad.preview);
+              const blobData = await resBlob.blob();
+              fileToUpload = new File([blobData], `imagen_recuperada_${index}.jpg`, { type: blobData.type || 'image/jpeg' });
+            } catch (err) {
+              console.warn("No se pudo recuperar la imagen local", err);
+              alert("Una de las imágenes no se pudo procesar. Por favor, vuelva a seleccionarla.");
+              setIsSubmitting(false);
+              return; // Cancelar ejecución
+            }
+          }
+
+          if (fileToUpload) {
+            formDataPayload.append(`file_${index}`, fileToUpload);
             formDataPayload.append(`tipo_${index}`, rad.tipo);
             formDataPayload.append(`local_id_${index}`, rad.id);
             if (rad.id_bd) {
@@ -475,7 +620,7 @@ const EvaluacionClinica = () => {
             // Indicar al backend que esta imagen existe y no ha sido modificada, para que no la borre
             formDataPayload.append('keep_idbd', rad.id_bd);
           }
-        });
+        }
 
         const url = `http://localhost:5000/api/evaluaciones/${evaluacionId}/radiografias`;
         const response = await fetch(url, {
@@ -520,7 +665,7 @@ const EvaluacionClinica = () => {
         alert('Hubo un error de red al intentar subir las radiografías.');
       }
     } else {
-      if (currentStep < 4) setCurrentStep(currentStep + 1);
+      if (currentStep < 5) setCurrentStep(currentStep + 1);
     }
   };
 
@@ -559,7 +704,7 @@ const EvaluacionClinica = () => {
     
     if (currentStep === 3) {
       if (radiografias.length === 0) return true;
-      const isAnyIncomplete = radiografias.some(rad => (!rad.file && !rad.id_bd) || !rad.tipo);
+      const isAnyIncomplete = radiografias.some(rad => (!rad.file && !rad.id_bd && !rad.preview) || !rad.tipo);
       if (isAnyIncomplete) return true;
       return false;
     }
@@ -599,6 +744,26 @@ const EvaluacionClinica = () => {
         }
       };
       loadPatientAndResume();
+    } else if (location.state?.forceNew) {
+      clearSessionStorageState();
+      
+      // Si nos pasan un paciente desde la vista de pacientes, lo preseleccionamos
+      if (location.state?.paciente_preseleccionado) {
+        const preselect = async () => {
+          setIsResuming(true); // Reusamos el estado de loading
+          try {
+            await handleSelectPatient(location.state.paciente_preseleccionado);
+          } catch (e) {
+            console.error("Error preseleccionando paciente", e);
+          } finally {
+            setIsResuming(false);
+          }
+        };
+        preselect();
+      }
+      
+      // Limpiamos el state para que si se recarga la página, funcione normal
+      navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate]);
 
@@ -617,7 +782,7 @@ const EvaluacionClinica = () => {
           observaciones: evalPendiente.observaciones || ''
         });
         
-        // Si la evaluación pendiente ya tiene radiografías, las cargamos y saltamos al paso 4
+        // Si la evaluación pendiente ya tiene radiografías, las cargamos y saltamos al paso 5
         if (evalPendiente.radiografias && evalPendiente.radiografias.length > 0) {
           const loadedRads = evalPendiente.radiografias.map(rad => ({
             id: rad.id_radiografia.toString(),
@@ -627,11 +792,11 @@ const EvaluacionClinica = () => {
             tipo: rad.id_tipo.toString()
           }));
           setRadiografias(loadedRads);
-          setSuccessMessage('Evaluación pendiente recuperada');
+          setSuccessMessage('Diagnóstico pendiente recuperado');
           setIsSuccess(true);
-          setCurrentStep(4);
+          setCurrentStep(5);
         } else {
-          setSuccessMessage('Evaluación pendiente recuperada');
+          setSuccessMessage('Diagnóstico pendiente recuperado');
           setIsSuccess(true);
           setCurrentStep(3); // Saltar al paso 3 (Carga de Radiografías)
         }
@@ -645,6 +810,7 @@ const EvaluacionClinica = () => {
           motivo_consulta: '',
           observaciones: ''
         });
+        setCurrentStep(2); // Avanzar directamente al Contexto Clínico
       }
     } catch (error) {
       console.error('Error verificando evaluación pendiente:', error);
@@ -658,10 +824,23 @@ const EvaluacionClinica = () => {
       {isResuming && (
         <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm animate-in fade-in duration-300 rounded-2xl">
           <Loader2 className="w-12 h-12 text-dentBlue-900 animate-spin mb-4" />
-          <h2 className="text-xl font-bold text-dentBlue-900">Retomando Evaluación...</h2>
+          <h2 className="text-xl font-bold text-dentBlue-900">Retomando Diagnóstico...</h2>
           <p className="text-sm text-gray-500 mt-2">Cargando datos del paciente y restaurando el progreso</p>
         </div>
       )}
+
+      {/* Modal Reanudar o Nuevo Diagnóstico reusable */}
+      <ModalConfirmacion
+        isOpen={modalRestart}
+        onClose={() => setModalRestart(false)}
+        onConfirm={confirmRestart}
+        title="Iniciar nuevo diagnóstico"
+        message="El diagnóstico actual quedará en pausa y podrás retomarlo más adelante. ¿Deseas iniciar un nuevo diagnóstico en blanco?"
+        confirmText="Sí, iniciar nueva"
+        cancelText="Cancelar"
+        icon={Info}
+        colorTheme="blue"
+      />
 
       {/* Estilos locales para las animaciones del toast */}
       <style>{`
@@ -704,11 +883,36 @@ const EvaluacionClinica = () => {
       )}
 
       {/* Topbar */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm shrink-0">
+      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm shrink-0">
         <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight flex items-center">
           <Stethoscope className="w-8 h-8 mr-3 text-dentGreen-500" />
-          Nueva Evaluación Clínica
+          Nuevo Diagnóstico Clínico
         </h1>
+        
+        <div className="flex items-center gap-4">
+          {/* Info del Paciente seleccionado */}
+          {selectedPatient && currentStep > 1 && (
+            <div className="hidden md:flex flex-col items-end border-r border-gray-200 pr-5 py-1">
+              <span className="text-sm font-extrabold text-dentBlue-900">
+                {selectedPatient.nombres} {selectedPatient.apellidos}
+              </span>
+              <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200 mt-1">
+                DNI: {selectedPatient.dni || 'Sin registrar'}
+              </span>
+            </div>
+          )}
+
+          {/* Botón para forzar una nueva evaluación y descartar el estado guardado */}
+          {(currentStep > 1 || selectedPatient) && (
+            <button 
+              onClick={handleRestart}
+              className="flex items-center px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:text-dentBlue-900 hover:border-dentBlue-900/30 transition-all font-bold shadow-sm text-sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Diagnóstico
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Main Content */}
@@ -765,7 +969,7 @@ const EvaluacionClinica = () => {
                 <div className="animate-fade-in-up">
                   <div className="p-6 border-b border-gray-100 bg-gray-50/50">
                     <h2 className="text-xl font-bold text-dentBlue-900">Identificación del Paciente</h2>
-                    <p className="text-sm text-gray-500 mt-1">Busque un paciente existente o registre uno nuevo para comenzar la evaluación.</p>
+                    <p className="text-sm text-gray-500 mt-1">Busque un paciente existente o registre uno nuevo para comenzar el diagnóstico.</p>
                   </div>
                   
                   <div className="p-8">
@@ -877,7 +1081,7 @@ const EvaluacionClinica = () => {
                             <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
                               <Search className="w-6 h-6 text-gray-400" />
                             </div>
-                            <p className="text-gray-500 font-medium text-sm max-w-sm mx-auto">Utilice el buscador superior para encontrar un paciente previamente registrado en su base de datos.</p>
+                            <p className="text-gray-500 font-medium text-sm max-w-sm mx-auto">Utilice el buscador superior para seleccionar un paciente previamente registrado.</p>
                           </div>
                         )}
                           </>
@@ -893,6 +1097,8 @@ const EvaluacionClinica = () => {
                                   setEvaluacionId(null);
                                   setContextoClinico({tipo_visita: 'Primera vez', motivo_consulta: '', observaciones: ''});
                                   setCurrentStep(1);
+                                  sessionStorage.removeItem('eval_radiografias');
+                                  setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
                                 }}
                                 className="text-xs font-bold text-gray-500 hover:text-dentBlue-900 transition-colors"
                               >
@@ -1481,109 +1687,352 @@ const EvaluacionClinica = () => {
               )}
 
               {/* Paso 5: Resultados de IA */}
-                {currentStep === 5 && (
-                  <div className="p-8 md:p-12 animate-fade-in-up h-full flex flex-col items-center justify-center text-center">
-                    <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
-                      <CheckCircle className="w-12 h-12 text-dentGreen-500" />
+              {currentStep === 5 && (
+                <div className="flex flex-col h-full animate-fade-in-up bg-gray-50">
+                  {/* Contenedor Principal Dividido */}
+                  <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-[600px]">
+                    
+                    {/* VISOR PRINCIPAL (Izquierda - 60%) */}
+                    <div className="lg:w-[60%] flex flex-col border-r border-gray-200 bg-black/5 relative">
+                      {/* Toolbar del Visor */}
+                      <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-10 shrink-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold bg-white text-dentBlue-900 border border-gray-200 px-3 py-1.5 rounded-lg flex items-center shadow-sm">
+                            <Activity className="w-4 h-4 mr-2 text-dentBlue-900" />
+                            Radiografía {activeResultIndex + 1}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-lg border border-gray-200">
+                          <button onClick={handleZoomOut} className="p-1.5 hover:bg-white rounded-md text-gray-600 hover:text-dentBlue-900 transition-colors shadow-sm" title="Alejar">
+                            <ZoomOut className="w-4 h-4" />
+                          </button>
+                          <span className="text-xs font-bold text-gray-600 w-12 text-center tabular-nums">{Math.round(zoomLevel * 100)}%</span>
+                          <button onClick={handleZoomIn} className="p-1.5 hover:bg-white rounded-md text-gray-600 hover:text-dentBlue-900 transition-colors shadow-sm" title="Acercar">
+                            <ZoomIn className="w-4 h-4" />
+                          </button>
+                          <div className="w-[1px] h-4 bg-gray-300 mx-1"></div>
+                          <button onClick={handleZoomReset} className="p-1.5 hover:bg-white rounded-md text-gray-600 hover:text-dentBlue-900 transition-colors shadow-sm" title="Ajustar">
+                            <Maximize2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Area Interactiva de la Imagen */}
+                      <div className="flex-1 relative overflow-auto grid place-items-center bg-gray-900/5 cursor-grab active:cursor-grabbing pb-24">
+                        <div 
+                          className="relative max-w-full max-h-full transition-transform duration-300 ease-out origin-center select-none"
+                          style={{ transform: `scale(${zoomLevel})` }}
+                        >
+                          <img 
+                            src={radiografias[activeResultIndex]?.preview || ''} 
+                            alt="Radiografía Procesada" 
+                            className="max-h-[60vh] md:max-h-[70vh] object-contain shadow-2xl border border-gray-300 rounded-lg pointer-events-none"
+                          />
+                          
+                          {/* Bounding Boxes (Simulados) */}
+                          {(MOCK_DETECTIONS[activeResultIndex] || []).map((det) => (
+                            <div
+                              key={det.id}
+                              className={`absolute border-2 transition-all duration-200 cursor-pointer ${
+                                hoveredBox === det.id 
+                                  ? 'border-red-500 bg-red-500/20 z-20 shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
+                                  : 'border-red-400 bg-red-500/10 z-10'
+                              }`}
+                              style={{
+                                top: det.box.top,
+                                left: det.box.left,
+                                width: det.box.width,
+                                height: det.box.height
+                              }}
+                              onMouseEnter={() => setHoveredBox(det.id)}
+                              onMouseLeave={() => setHoveredBox(null)}
+                            >
+                              {/* Tooltip on Hover */}
+                              <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg pointer-events-none transition-all duration-200 ${
+                                hoveredBox === det.id ? 'opacity-100 -translate-y-1' : 'opacity-0 translate-y-0'
+                              }`}>
+                                {det.type} - {det.score}%
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Thumbnail Carrusel (Inferior) */}
+                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-t border-gray-200 flex items-center px-4 gap-4 overflow-x-auto shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+                        {radiografias.map((rad, idx) => (
+                          <div 
+                            key={rad.id}
+                            onClick={() => {
+                              setActiveResultIndex(idx);
+                              setZoomLevel(1);
+                            }}
+                            className={`relative cursor-pointer flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                              activeResultIndex === idx 
+                                ? 'border-dentBlue-900 shadow-[0_0_0_2px_rgba(30,58,138,0.2)]' 
+                                : 'border-gray-200 hover:border-gray-400'
+                            }`}
+                          >
+                            <img src={rad.preview} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                            {activeResultIndex === idx && (
+                              <div className="absolute inset-0 bg-dentBlue-900/10 mix-blend-overlay"></div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <h2 className="text-3xl font-black text-gray-800 mb-4">Evaluación Finalizada</h2>
-                    <p className="text-gray-500 max-w-lg mx-auto mb-8 text-lg">
-                      El procesamiento de radiografías ha concluido. En el panel de resultados podrás ver el análisis completo asistido por Inteligencia Artificial y confirmar tus hallazgos.
-                    </p>
-                    <button
-                      onClick={() => navigate('/dashboard')}
-                      className="px-8 py-3 bg-dentBlue-900 text-white font-bold rounded-xl shadow-lg hover:bg-dentBlue-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
-                    >
-                      Ir al Panel Principal <ChevronRight className="w-5 h-5" />
-                    </button>
+
+                    {/* PANEL DE HALLAZGOS (Derecha - 40%) */}
+                    <div className="lg:w-[40%] bg-white flex flex-col h-full border-l border-white shrink-0">
+                      
+                      <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
+                        <div>
+                          <h3 className="text-xl font-extrabold text-gray-800 tracking-tight flex items-center">
+                            Resultados
+                          </h3>
+                          <p className="text-sm font-medium text-gray-500 mt-1">
+                            Análisis automático de posibles lesiones.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Lista de Tarjetas de Lesiones */}
+                      <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-5">
+                        
+                        {/* Resumen Header */}
+                        <div className="flex items-center bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-sm">
+                          <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 flex-shrink-0" />
+                          <p className="text-sm font-bold text-amber-800">
+                            Se detectaron {(MOCK_DETECTIONS[activeResultIndex] || []).length} posibles lesiones en esta radiografía.
+                          </p>
+                        </div>
+
+                        {(MOCK_DETECTIONS[activeResultIndex] || []).length === 0 ? (
+                          <div className="text-center py-10">
+                            <CheckCircle2 className="w-12 h-12 text-dentGreen-400 mx-auto mb-3 opacity-50" />
+                            <p className="text-sm font-bold text-gray-500">No se detectaron anomalías en esta imagen.</p>
+                          </div>
+                        ) : (
+                          (MOCK_DETECTIONS[activeResultIndex] || []).map((det) => {
+                            // Ordenar probabilidades de mayor a menor
+                            const probList = [
+                              { label: 'Caries de Corona', key: 'corona', val: det.probs.corona },
+                              { label: 'Caries Interdental', key: 'interdental', val: det.probs.interdental },
+                              { label: 'Caries Radicular', key: 'radicular', val: det.probs.radicular }
+                            ].sort((a, b) => b.val - a.val);
+
+                            return (
+                              <div 
+                                key={det.id}
+                                onMouseEnter={() => setHoveredBox(det.id)}
+                                onMouseLeave={() => setHoveredBox(null)}
+                                className={`bg-white rounded-2xl border transition-all duration-300 shadow-sm overflow-hidden ${
+                                  hoveredBox === det.id 
+                                    ? 'border-red-300 ring-2 ring-red-50 translate-x-1' 
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <div className="bg-gray-50/80 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                                  <h4 className="text-sm font-extrabold text-dentBlue-900 flex items-center">
+                                    <img src={dienteImg} alt="Diente" className="w-4 h-4 mr-2 opacity-70 grayscale" />
+                                    Diente {det.tooth}
+                                  </h4>
+                                  <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded-md uppercase tracking-wide">
+                                    {det.type}
+                                  </span>
+                                </div>
+                                
+                                <div className="p-4 space-y-3">
+                                  {probList.map((prob, idx) => {
+                                    const isHighest = idx === 0 && prob.val > 50;
+                                    return (
+                                      <div 
+                                        key={prob.key} 
+                                        className={isHighest ? "bg-red-50/50 p-2.5 -mx-2.5 rounded-lg border border-red-100/50" : ""}
+                                      >
+                                        <div className="flex justify-between text-xs font-bold mb-1">
+                                          <span className={isHighest ? "text-red-700" : "text-gray-600"}>
+                                            {prob.label}
+                                          </span>
+                                          <span className={prob.val > 50 ? 'text-red-600 font-black' : 'text-gray-500'}>
+                                            {prob.val}%
+                                          </span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                          <div className={`h-full rounded-full transition-all duration-1000 ease-out ${prob.val > 50 ? 'bg-red-500' : 'bg-gray-400'}`} style={{ width: `${prob.val}%` }}></div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+
+                        {/* Cierre del Flujo Médico */}
+                        <div className="mt-8 pt-6 border-t border-gray-200">
+                          <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-4 flex items-center">
+                            <CheckCircle2 className="w-4 h-4 mr-2 text-dentBlue-900" />
+                            Cierre del Diagnóstico
+                          </h4>
+
+                          <div className="space-y-2 mb-6">
+                            <label className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                              Diagnóstico Final
+                            </label>
+                            <textarea
+                              value={finalDiagnosis}
+                              onChange={(e) => setFinalDiagnosis(e.target.value)}
+                              placeholder="Ej. Paciente presenta caries en pieza 46. Se requiere restauración con resina compuesta..."
+                              className="w-full min-h-[120px] p-4 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-all resize-y shadow-sm"
+                            ></textarea>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Botones de Finalización en el Panel */}
+                      <div className="p-4 border-t border-gray-200 bg-white shrink-0 flex flex-col gap-3">
+                        <button
+                          onClick={async () => { 
+                            try {
+                              if (evaluacionId) {
+                                // Llamamos al endpoint para completar la evaluación
+                                await fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/completar`, {
+                                  method: 'PUT',
+                                  headers: {
+                                    'Content-Type': 'application/json'
+                                  },
+                                  body: JSON.stringify({ 
+                                    finalDiagnosis,
+                                    plan_tratamiento: 'Plan de tratamiento estandar derivado de la evaluación',
+                                    confirma_ia: true,
+                                    observaciones: contextoClinico.observaciones || ''
+                                  })
+                                });
+                              }
+                              
+                              console.log("Guardando en BD:", { finalDiagnosis, evaluacionId });
+                              clearSessionStorageState();
+                              
+                              // Mostrar Modal de Finalización con barra de progreso
+                              setIsFinishing(true);
+                              
+                              let progress = 0;
+                              const timer = setInterval(() => {
+                                progress += 1; // 1% cada 20ms = 2s exactos
+                                setFinishProgress(progress);
+                                if (progress >= 100) {
+                                  clearInterval(timer);
+                                  setTimeout(() => {
+                                    setIsFinishing(false);
+                                    navigate('/dashboard');
+                                  }, 300); // Cierra rápido después de completar (300ms)
+                                }
+                              }, 20); // 20ms * 100 iteraciones = 2 segundos exactos
+
+                          } catch (error) {
+                            console.error('Error al finalizar diagnóstico:', error);
+                            alert('Ocurrió un error al finalizar el diagnóstico.');
+                            setIsFinishing(false);
+                          }
+                        }}
+                        disabled={isFinishing}
+                        className={`w-full flex items-center justify-center px-6 py-3 rounded-xl font-bold text-white transition-all ${
+                          isFinishing ? 'bg-slate-400 cursor-not-allowed' : 'bg-dentBlue-900 hover:bg-dentBlue-800 shadow-md hover:shadow-lg'
+                        }`}
+                      >
+                        {isFinishing ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Finalizando diagnóstico...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Finalizar Diagnóstico
+                          </>
+                        )}
+                      </button>
+                      <button
+                          onClick={() => { alert('Prueba xd'); }}
+                          className="w-full flex items-center justify-center px-6 py-3 rounded-xl font-bold text-dentBlue-900 bg-white border-2 border-dentBlue-900 hover:bg-dentBlue-50 transition-all"
+                        >
+                          <FileImage className="w-5 h-5 mr-2" />
+                          Exportar PDF
+                        </button>
+                      </div>
+
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
 
             {/* Bottom Actions (Botones de Atrás y Siguiente pegados abajo) */}
-            <div className="px-8 py-5 bg-white border-t border-gray-100 flex items-center justify-between mt-auto">
-              <button
-                onClick={handlePrev}
-                disabled={currentStep === 1 || currentStep === 5 || isAnalyzing}
-                className={`flex items-center px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${
-                  (currentStep === 1 || currentStep === 5 || isAnalyzing)
-                    ? 'text-gray-400 cursor-not-allowed hidden'
-                    : 'text-gray-600 hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm'
-                }`}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
-              </button>
+            {currentStep < 5 && (
+              <div className="px-8 py-5 bg-white border-t border-gray-100 flex items-center justify-between mt-auto">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentStep === 1 || isAnalyzing}
+                  className={`flex items-center px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${
+                    (currentStep === 1 || isAnalyzing)
+                      ? 'text-gray-400 cursor-not-allowed opacity-50'
+                      : 'text-gray-600 hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm'
+                  }`}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+                </button>
 
-              <button
-                onClick={handleNext}
-                disabled={getIsNextDisabled() || isSubmitting || currentStep >= 4}
-                className={`flex items-center justify-center px-8 py-3 rounded-lg font-bold text-sm shadow-md transition-all duration-300 ml-auto ${
-                  (getIsNextDisabled() || isSubmitting || currentStep >= 4)
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none hidden'
-                    : 'bg-dentBlue-900 hover:bg-dentBlue-800 text-white hover:shadow-lg'
-                }`}
-              >
-                {/* Animaciones de boton en step 1 y create */}
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {(currentStep === 1 && formData.id_paciente) ? 'Guardando...' : (currentStep === 1 ? 'Registrando...' : 'Guardando...')}
-                  </>
-                ) : (
-                  <>
-                    {currentStep === 4 ? 'Finalizar Evaluación' : (
-                      (patientMode === 'create' && currentStep === 1)
-                        ? (formData.id_paciente ? 'Guardar y Continuar' : 'Registrar y Continuar')
-                        : (currentStep === 2 ? 'Guardar y Continuar' : 'Continuar')
-                    )} <ChevronRight className="w-4 h-4 ml-1" />
-                  </>
+                {currentStep < 4 && (
+                  <button
+                    onClick={handleNext}
+                    disabled={getIsNextDisabled() || isSubmitting}
+                    className={`flex items-center justify-center px-8 py-3 rounded-lg font-bold text-sm shadow-md transition-all duration-300 ml-auto ${
+                      (getIsNextDisabled() || isSubmitting)
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                        : 'bg-dentBlue-900 hover:bg-dentBlue-800 text-white hover:shadow-lg'
+                    }`}
+                  >
+                    {/* Animaciones de boton en step 1 y create */}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {(currentStep === 1 && formData.id_paciente) ? 'Guardando...' : (currentStep === 1 ? 'Registrando...' : 'Guardando...')}
+                      </>
+                    ) : (
+                      <>
+                        {(patientMode === 'create' && currentStep === 1)
+                            ? (formData.id_paciente ? 'Guardar y Continuar' : 'Registrar y Continuar')
+                            : (currentStep === 2 ? 'Guardar y Continuar' : 'Continuar')
+                        } <ChevronRight className="w-4 h-4 ml-1" />
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Modal de Confirmación de Eliminación de Radiografía */}
-      {modalEliminarImg.isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={() => setModalEliminarImg({ isOpen: false, idToRemove: null })}></div>
-          
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all scale-100 opacity-100 p-6 animate-fade-in-up">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <button 
-                onClick={() => setModalEliminarImg({ isOpen: false, idToRemove: null })}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Eliminar radiografía</h3>
-            <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-              La radiografía seleccionada ya contiene una imagen cargada. ¿Está seguro que desea eliminar este registro?
-            </p>
-            
-            <div className="flex gap-3 justify-end mt-4">
-              <button
-                onClick={() => setModalEliminarImg({ isOpen: false, idToRemove: null })}
-                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => executeRemoveRadiografia(modalEliminarImg.idToRemove)}
-                className="px-5 py-2.5 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-md shadow-red-600/20 transition-all flex items-center justify-center"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal de Confirmación de Eliminación de Radiografía reusable */}
+      <ModalConfirmacion
+        isOpen={modalEliminarImg.isOpen}
+        onClose={() => setModalEliminarImg({ isOpen: false, idToRemove: null })}
+        onConfirm={() => executeRemoveRadiografia(modalEliminarImg.idToRemove)}
+        title="Eliminar radiografía"
+        message="La radiografía seleccionada ya contiene una imagen cargada. ¿Está seguro que desea eliminar este registro?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        icon={Trash2}
+        colorTheme="red"
+      />
+
+      {/* Modal de Finalización Sweep/Linear (Componente Reutilizable) */}
+      <ModalFinalizacion isOpen={isFinishing} progress={finishProgress} />
 
       {/* Lightbox / Modal para Previsualizar Imagen Pantalla Completa */}
       {previewModal.isOpen && (

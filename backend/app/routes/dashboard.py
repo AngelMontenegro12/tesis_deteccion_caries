@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
-from app.models import db, Paciente, EvaluacionDiagnostica, Odontologo
+from app.models import db, Paciente, EvaluacionDiagnostica, Odontologo, Radiografia
 from sqlalchemy import func, text
-from datetime import datetime
+from datetime import datetime, timedelta
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
 
@@ -20,42 +20,51 @@ def get_dashboard_stats():
         eval_pendientes = EvaluacionDiagnostica.query.filter_by(id_odontologo=id_odontologo, estado='pendiente').count()
         total_evaluaciones = eval_completadas + eval_pendientes
 
-        # 3. Evaluaciones Hoy
+        # 3. Evaluaciones Hoy y Ayer
         hoy = datetime.now().date()
+        ayer = hoy - timedelta(days=1)
+        
         evaluaciones_hoy = EvaluacionDiagnostica.query.filter(
             EvaluacionDiagnostica.id_odontologo == id_odontologo,
             func.date(EvaluacionDiagnostica.fecha_evaluacion) == hoy
         ).count()
+        
+        evaluaciones_ayer = EvaluacionDiagnostica.query.filter(
+            EvaluacionDiagnostica.id_odontologo == id_odontologo,
+            func.date(EvaluacionDiagnostica.fecha_evaluacion) == ayer
+        ).count()
 
-        # 4. Lesiones Avanzadas & Detecciones por Severidad
-        # Consulta SQL para las KPI de lesiones y gráficas de severidad (incipiente, moderada, avanzada)
-        # Usamos db.session.execute para consultas complejas entre varias tablas.
-        query_severidad = text("""
-            SELECT dc.severidad, COUNT(dc.id_deteccion) as cantidad
+        # 3.5 Total de radiografias subidas
+        total_radiografias = Radiografia.query.join(EvaluacionDiagnostica).filter(EvaluacionDiagnostica.id_odontologo == id_odontologo).count()
+
+        # 4. Caries más encontradas (Por localización)
+        # Consulta SQL para gráficas de Caries más encontradas (Corona, Interdental, Fisura, etc)
+        query_localizacion = text("""
+            SELECT lc.nombre as localizacion, COUNT(dc.id_deteccion) as cantidad
             FROM detecciones_caries dc
+            JOIN localizacion_caries lc ON dc.id_localizacion = lc.id_localizacion
             JOIN resultados_deteccion rd ON dc.id_resultado = rd.id_resultado
             JOIN radiografias r ON rd.id_radiografia = r.id_radiografia
             JOIN evaluaciones_diagnosticas ed ON r.id_evaluacion = ed.id_evaluacion
             WHERE ed.id_odontologo = :id_odo
-            GROUP BY dc.severidad
+            GROUP BY lc.nombre
         """)
         
-        result_severidad = db.session.execute(query_severidad, {"id_odo": id_odontologo}).fetchall()
+        result_localizacion = db.session.execute(query_localizacion, {"id_odo": id_odontologo}).fetchall()
         
-        lesiones_avanzadas = 0
-        detecciones_severidad = {
-            "incipiente": 0,
-            "moderada": 0,
-            "avanzada": 0
+        detecciones_localizacion = {
+            "Corona": 0,
+            "Interdental": 0,
+            "Fisura": 0,
+            "Raíz": 0
         }
         
-        for row in result_severidad:
-            sev = row.severidad
+        for row in result_localizacion:
+            loc = row.localizacion
             cant = row.cantidad
-            if sev in detecciones_severidad:
-                detecciones_severidad[sev] = cant
-            if sev == 'avanzada':
-                lesiones_avanzadas = cant
+            if loc in detecciones_localizacion:
+                detecciones_localizacion[loc] = cant
+            # If the database returns exact matches for "Corona", "Interdental", "Fisura", etc.
 
         # 5. Últimas Evaluaciones (lista)
         # Traeremos el nombre del paciente, el tipo_visita, fecha y estado
@@ -88,8 +97,9 @@ def get_dashboard_stats():
                 "evaluaciones_pendientes": eval_pendientes,
                 "total_evaluaciones": total_evaluaciones,
                 "evaluaciones_hoy": evaluaciones_hoy,
-                "lesiones_avanzadas": lesiones_avanzadas,
-                "detecciones_severidad": detecciones_severidad,
+                "evaluaciones_ayer": evaluaciones_ayer,
+                "total_radiografias": total_radiografias,
+                "detecciones_localizacion": detecciones_localizacion,
                 "ultimas_evaluaciones": ultimas_evaluaciones
             }
         }), 200

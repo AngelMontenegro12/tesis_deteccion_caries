@@ -5,6 +5,36 @@ from datetime import datetime
 
 pacientes_bp = Blueprint('pacientes', __name__, url_prefix='/api/pacientes')
 
+@pacientes_bp.route('', methods=['GET'])
+def listar_pacientes():
+    try:
+        pacientes = Paciente.query.filter_by(activo=True).all()
+        
+        lista_completa = []
+        for p in pacientes:
+            p_dict = p.to_dict()
+            
+            # Obtener todas las evaluaciones del paciente, ordenadas por fecha descendente
+            evaluaciones = p.evaluaciones
+            evals_sorted = sorted(evaluaciones, key=lambda e: e.fecha_evaluacion, reverse=True)
+            
+            # Convertir a diccionarios
+            evals_dict = [e.to_dict() for e in evals_sorted]
+            
+            p_dict['evaluaciones'] = evals_dict
+            
+            # Determinar si tiene evaluación pendiente
+            p_dict['evaluacion_pendiente'] = any(e['estado'] == 'pendiente' for e in evals_dict)
+            
+            # Determinar la última atención (si tiene alguna evaluación)
+            p_dict['ultima_atencion'] = evals_dict[0]['fecha_evaluacion'][:10] if evals_dict else None
+            
+            lista_completa.append(p_dict)
+            
+        return jsonify(lista_completa), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @pacientes_bp.route('/buscar', methods=['GET'])
 def buscar_paciente():
     query = request.args.get('q', '').strip()

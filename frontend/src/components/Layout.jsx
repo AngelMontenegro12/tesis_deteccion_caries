@@ -8,7 +8,8 @@ import {
   HelpCircle, 
   LogOut,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  ClipboardList
 } from 'lucide-react';
 
 const Layout = () => {
@@ -36,20 +37,26 @@ const Layout = () => {
   // Menu de navegación principal
   const mainMenuItems = [
     { icon: Home, label: 'Inicio', path: '/dashboard' },
-    { icon: Activity, label: 'Historial de evaluaciones', path: '/historial' },
-    { icon: Users, label: 'Gestión de usuarios', path: '/usuarios' },
+    { icon: ClipboardList, label: 'Diagnóstico', path: '/nueva-evaluacion' },
+    { icon: Users, label: 'Pacientes', path: '/pacientes' },
+    { icon: Activity, label: 'Historial de diagnósticos', path: '/historial' },
   ];
 
   // Menu de navegación secundario
   const bottomMenuItems = [
+    { icon: Users, label: 'Gestión de usuarios', path: '/usuarios' },
     { icon: Settings, label: 'Configuración', path: '/configuracion' },
     { icon: HelpCircle, label: 'Soporte / Ayuda', path: '/ayuda' },
   ];
 
   // Función para simular ruta activa
   const isActive = (path) => {
+    // Caso especial: Si estamos en un detalle de evaluación (/evaluacion/:id), marcamos activo el 'Historial de diagnósticos'
+    if (path === '/historial' && location.pathname.startsWith('/evaluacion/')) {
+      return true;
+    }
     // Para rutas exactas o subrutas
-    return location.pathname.startsWith(path);
+    return location.pathname.startsWith(path) && path !== '/';
   };
 
   return (
@@ -71,7 +78,7 @@ const Layout = () => {
             {isOpen && (
               <div className="whitespace-nowrap transition-opacity duration-300">
                 <h1 className="text-xl font-bold text-white leading-tight">Clínica Sonríe</h1>
-                <p className="text-xs text-white">Diagnóstico IA</p>
+                <p className="text-xs text-white">Diagnóstico</p>
               </div>
             )}
           </div>

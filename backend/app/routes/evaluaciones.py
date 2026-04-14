@@ -2,13 +2,89 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import time
-from app.models import EvaluacionDiagnostica, Radiografia, db
+from app.models import EvaluacionDiagnostica, Radiografia, DiagnosticoOdontologo, db
 from datetime import datetime
 
 evaluaciones_bp = Blueprint('evaluaciones', __name__, url_prefix='/api/evaluaciones')
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads', 'radiografias')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@evaluaciones_bp.route('', methods=['GET'])
+def obtener_evaluaciones():
+    try:
+        # TODO: En un sistema real el id_odontologo se saca de la sesión actual JWT/Login
+        id_odontologo_harcoded = 1
+        
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        search = request.args.get('search', '', type=str)
+        estado = request.args.get('estado', '', type=str)
+        tipo_visita = request.args.get('tipo_visita', '', type=str)
+        fecha_inicio = request.args.get('fecha_inicio', '', type=str)
+        fecha_fin = request.args.get('fecha_fin', '', type=str)
+        
+        # Base query
+        from app.models import Paciente
+        query = db.session.query(EvaluacionDiagnostica, Paciente)\
+            .join(Paciente, EvaluacionDiagnostica.id_paciente == Paciente.id_paciente)\
+            .filter(EvaluacionDiagnostica.id_odontologo == id_odontologo_harcoded)
+        
+        # Filters
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                db.or_(
+                    Paciente.nombres.ilike(search_term),
+                    Paciente.apellidos.ilike(search_term),
+                    db.func.concat(Paciente.nombres, ' ', Paciente.apellidos).ilike(search_term),
+                    Paciente.dni.ilike(search_term)
+                )
+            )
+            
+        if estado:
+            query = query.filter(EvaluacionDiagnostica.estado == estado)
+            
+        if tipo_visita:
+            query = query.filter(EvaluacionDiagnostica.tipo_visita == tipo_visita)
+            
+        if fecha_inicio:
+            # fecha_inicio se espera en formato 'YYYY-MM-DD'
+            query = query.filter(EvaluacionDiagnostica.fecha_evaluacion >= f"{fecha_inicio} 00:00:00")
+            
+        if fecha_fin:
+            # fecha_fin se espera en formato 'YYYY-MM-DD'
+            query = query.filter(EvaluacionDiagnostica.fecha_evaluacion <= f"{fecha_fin} 23:59:59")
+            
+        # Order by newest first
+        query = query.order_by(EvaluacionDiagnostica.fecha_evaluacion.desc())
+        
+        # Paginate
+        paginated_data = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        resultados = []
+        for eval_obj, pac_obj in paginated_data.items:
+            data_dict = eval_obj.to_dict()
+            data_dict['paciente'] = pac_obj.to_dict()
+            
+            # Radiografías count
+            rad_count = Radiografia.query.filter_by(id_evaluacion=eval_obj.id_evaluacion).count()
+            data_dict['radiografias_count'] = rad_count
+            resultados.append(data_dict)
+            
+        return jsonify({
+            'status': 'success',
+            'data': resultados,
+            'meta': {
+                'page': paginated_data.page,
+                'per_page': paginated_data.per_page,
+                'total_pages': paginated_data.pages,
+                'total_items': paginated_data.total
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 500
 
 @evaluaciones_bp.route('', methods=['POST'])
 def crear_evaluacion():
@@ -57,9 +133,38 @@ def completar_evaluacion(id_evaluacion):
         if not evaluacion:
             return jsonify({"error": "Evaluación no encontrada"}), 404
         
+        data = request.json or {}
+        diagnostico_texto = data.get('finalDiagnosis', '').strip()
+        if not diagnostico_texto:
+            diagnostico_texto = 'Sin diagnostico redactado'
+            
+        plan_tratamiento = data.get('plan_tratamiento', 'Tratamiento estándar según hallazgos')
+        confirma_ia = data.get('confirma_ia', 1)
+        observaciones = data.get('observaciones', '')
+
+        # TODO: ID odontologo real basado en token
+        id_odontologo_harcoded = 1
+
+        # Crear registro en diagnosticos_odontologo
+        nuevo_diagnostico = DiagnosticoOdontologo(
+            id_evaluacion=id_evaluacion,
+            id_odontologo=id_odontologo_harcoded,
+            diagnostico_texto=diagnostico_texto,
+            plan_tratamiento=plan_tratamiento,
+            confirma_ia=confirma_ia,
+            observaciones=observaciones
+        )
+        
+        db.session.add(nuevo_diagnostico)
+
+        # Actualizar evaluación a completada
         evaluacion.estado = 'completada'
         db.session.commit()
-        return jsonify({"message": "Evaluación marcada como completada"}), 200
+        
+        return jsonify({
+            "message": "Evaluación finalizada y guardada exitosamente",
+            "diagnostico": nuevo_diagnostico.to_dict()
+        }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -215,3 +320,71 @@ def subir_radiografias(id_evaluacion):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@evaluaciones_bp.route('/<int:id_evaluacion>/detalle', methods=['GET'])
+def obtener_evaluacion_detalle(id_evaluacion):
+    from sqlalchemy import text
+    from app.models import EvaluacionDiagnostica, Paciente, Radiografia, DiagnosticoOdontologo
+    from app import db
+    try:
+        evaluacion = EvaluacionDiagnostica.query.get_or_404(id_evaluacion)
+        paciente = Paciente.query.get_or_404(evaluacion.id_paciente)
+        
+        # Radiografias directly mapped to Evaluacion
+        rads = Radiografia.query.filter_by(id_evaluacion=id_evaluacion).all()
+        radiografias_data = []
+        for rad in rads:
+            # Find result id if any using text
+            sql = text("SELECT id_resultado FROM resultados_deteccion WHERE id_radiografia = :id_rad")
+            res = db.session.execute(sql, {"id_rad": rad.id_radiografia}).fetchone()
+            id_res = res[0] if res else None
+            
+            ruta = rad.ruta_archivo.replace('\\', '/') if rad.ruta_archivo else ''
+            radiografias_data.append({
+                'id_radiografia': rad.id_radiografia,
+                'ruta_archivo': ruta,
+                'id_resultado': id_res
+            })
+
+        # Detecciones
+        detecciones_data = []
+        for rd in radiografias_data:
+            if rd['id_resultado']:
+                sql_det = text("SELECT d.id_deteccion, d.numero_diente, d.confianza, d.severidad, d.bbox_x, d.bbox_y, d.bbox_ancho, d.bbox_alto, l.nombre AS local_nombre FROM detecciones_caries d LEFT JOIN localizacion_caries l ON d.id_localizacion = l.id_localizacion WHERE d.id_resultado = :id_res")
+                dets = db.session.execute(sql_det, {"id_res": rd['id_resultado']}).fetchall()
+                for d in dets:
+                    detecciones_data.append({
+                        'id_resultado': rd['id_resultado'],
+                        'numero_diente': d[1],
+                        'confianza': d[2],
+                        'severidad': d[3],
+                        'bbox_x': d[4],
+                        'bbox_y': d[5],
+                        'bbox_ancho': d[6],
+                        'bbox_alto': d[7], 'localizacion': d[8] if len(d) > 8 else ''
+                    })
+
+        # Diagnostico final
+        diagnostico = DiagnosticoOdontologo.query.filter_by(id_evaluacion=id_evaluacion).order_by(DiagnosticoOdontologo.fecha_diagnostico.desc()).first()
+        diagnostico_data = None
+        if diagnostico:
+            diagnostico_data = {
+                'diagnostico_texto': diagnostico.diagnostico_texto,
+                'plan_tratamiento': diagnostico.plan_tratamiento,
+                'observaciones': diagnostico.observaciones
+            }
+
+        return jsonify({
+            'evaluacion': evaluacion.to_dict(),
+            'paciente': paciente.to_dict(),
+            'radiografias': radiografias_data,
+            'detecciones_caries': detecciones_data,
+            'diagnostico': diagnostico_data
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500

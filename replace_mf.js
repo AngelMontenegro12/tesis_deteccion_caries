@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('frontend/src/components/ModalFinalizacion.jsx', 'utf8'); c = c.replace(/Evaluaci.n Completada/g, 'Diagnóstico Completado'); fs.writeFileSync('frontend/src/components/ModalFinalizacion.jsx', c);

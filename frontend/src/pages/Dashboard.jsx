@@ -4,6 +4,7 @@ import {
   Users, 
   FileCheck,
   TrendingUp,
+  TrendingDown,
   PlusCircle,
   Clock,
   BarChart2,
@@ -12,7 +13,8 @@ import {
   ClipboardCheck,
   Search,
   Activity,
-  ArrowRight
+  ArrowRight,
+  Image as ImageIcon
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -20,10 +22,10 @@ import api from '../services/api';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Verificamos si existe usuario guardado en localStorage
@@ -99,11 +101,11 @@ const Dashboard = () => {
                   {/* KPI 2 */}
                   <div className="bg-white/90 border border-dentBlue-900/10 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Evaluaciones</h3>
+                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Diagnósticos</h3>
                         <div className="relative group cursor-help p-2 bg-green-50 rounded-lg">
                           <FileCheck className="w-5 h-5 text-dentGreen-600" />
                           <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 text-white font-normal normal-case tracking-normal text-xs p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl z-50 pointer-events-none">
-                            Total de evaluaciones clínicas realizadas a los pacientes en el sistema.
+                            Total de diagnósticos clínicos realizados a los pacientes en el sistema.
                           </div>
                         </div>
                      </div>
@@ -111,38 +113,57 @@ const Dashboard = () => {
                      <p className="text-sm text-gray-500 font-medium mt-2">{stats?.evaluaciones_completadas || 0} completadas, {stats?.evaluaciones_pendientes || 0} pendiente{stats?.evaluaciones_pendientes !== 1 && 's'}</p>
                   </div>
 
-                  {/* KPI 3 */}
+                  {/* KPI 3 - Radiografías Subidas (Reemplaza a Lesiones Avanzadas) */}
                   <div className="bg-white/90 border border-dentBlue-900/10 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Lesiones Avanzadas</h3>
-                        <div className="relative group cursor-help p-2 bg-red-50 rounded-lg">
-                          <AlertCircle className="w-5 h-5 text-red-600" />
+                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Radiografías </h3>
+                        <div className="relative group cursor-help p-2 bg-indigo-50 rounded-lg">
+                          <ImageIcon className="w-5 h-5 text-indigo-600" />
                           <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 text-white font-normal normal-case tracking-normal text-xs p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl z-50 pointer-events-none">
-                            Cantidad de casos que necesitan intervención rápida para evitar mayores daños en el paciente.
+                            Total de radiografías digitales subidas y almacenadas en el sistema.
                           </div>
                         </div>
                      </div>
-                     <p className="text-3xl font-extrabold text-dentBlue-900">{stats?.lesiones_avanzadas || 0}</p>
-                     <p className="text-sm text-red-500 font-medium mt-2 flex items-center">
-                       Total de caries avanzadas detectadas
+                     <p className="text-3xl font-extrabold text-dentBlue-900">{stats?.total_radiografias || 0}</p>
+                     <p className="text-sm text-indigo-500 font-medium mt-2 flex items-center">
+                       Radiografías procesadas
                      </p>
                   </div>
 
                   {/* KPI 4 */}
                   <div className="bg-white/90 border border-dentBlue-900/10 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Evaluaciones Hoy</h3>
+                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Diagnósticos Hoy</h3>
                         <div className="relative group cursor-help p-2 bg-indigo-50 rounded-lg">
                           <ClipboardCheck className="w-5 h-5 text-indigo-600" />
                           <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 text-white font-normal normal-case tracking-normal text-xs p-2.5 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl z-50 pointer-events-none">
-                            Evaluaciones clínicas validadas y finalizadas exitosamente durante el día de hoy.
+                            Diagnósticos clínicos validados y finalizadas exitosamente durante el día de hoy.
                           </div>
                         </div>
                      </div>
                      <p className="text-3xl font-extrabold text-dentBlue-900">{stats?.evaluaciones_hoy || 0}</p>
-                     <p className="text-sm text-indigo-500 font-medium mt-2 flex items-center">
-                       Pacientes atendidos hoy
-                     </p>
+                     
+                     {stats && stats.evaluaciones_ayer !== undefined ? (
+                       <div className="mt-2 flex items-center">
+                         {stats.evaluaciones_hoy > stats.evaluaciones_ayer ? (
+                           <p className="text-sm text-green-600 font-medium flex items-center">
+                             <TrendingUp className="w-4 h-4 mr-1" /> {(stats.evaluaciones_hoy - stats.evaluaciones_ayer).toString()} más que ayer
+                           </p>
+                         ) : stats.evaluaciones_hoy < stats.evaluaciones_ayer ? (
+                           <p className="text-sm text-red-500 font-medium flex items-center">
+                             <TrendingDown className="w-4 h-4 mr-1" /> {(stats.evaluaciones_ayer - stats.evaluaciones_hoy).toString()} menos que ayer
+                           </p>
+                         ) : (
+                           <p className="text-sm text-gray-500 font-medium flex items-center">
+                             <TrendingUp className="w-4 h-4 mr-1 text-gray-400" /> Igual que ayer
+                           </p>
+                         )}
+                       </div>
+                     ) : (
+                       <p className="text-sm text-indigo-500 font-medium mt-2 flex items-center">
+                         Pacientes atendidos hoy
+                       </p>
+                     )}
                   </div>
                </div>
 
@@ -152,21 +173,24 @@ const Dashboard = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     
                     <button 
-                      onClick={() => navigate('/nueva-evaluacion')}
+                      onClick={() => navigate('/nueva-evaluacion', { state: { forceNew: true } })}
                       className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed"
                     >
                       <PlusCircle className="w-8 h-8 mb-2 text-white group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-semibold">Nueva evaluación</span>
+                      <span className="text-sm font-semibold">Nuevo diagnóstico</span>
+                    </button>
+
+                    <button 
+                      onClick={() => navigate('/pacientes')}
+                      className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed"
+                    >
+                      <Users className="w-8 h-8 mb-2 text-white group-hover:scale-110 transition-transform" />
+                      <span className="text-sm font-semibold">Ver Pacientes</span>
                     </button>
 
                       <button className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
-                        <Users className="w-8 h-8 mb-2 text-white group-hover:scale-110 transition-transform" />
-                        <span className="text-sm font-semibold">Ver Pacientes</span>
-                      </button>
-
-                      <button className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
                         <Clock className="w-8 h-8 mb-2 text-white group-hover:scale-110 transition-transform" />
-                        <span className="text-sm font-semibold">Evaluaciones Pendientes</span>
+                        <span className="text-sm font-semibold">Diagnósticos Pendientes</span>
                       </button>
 
                       <button className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
@@ -180,10 +204,10 @@ const Dashboard = () => {
                  {/* Fila Inferior: Panel Izquierdo y Derecho */}
                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
-                    {/* Panel Izquierdo: Últimas Evaluaciones */}
+                    {/* Panel Izquierdo: Últimos Diagnósticos */}
                     <div className="lg:col-span-2 bg-white/90 border border-dentBlue-900/10 rounded-2xl shadow-sm p-6">
                       <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-5 flex items-center">
-                        <Calendar className="w-4 h-4 mr-2" /> Últimas Evaluaciones
+                        <Calendar className="w-4 h-4 mr-2" /> Últimos Diagnósticos
                       </h3>
                       
                       <div className="space-y-4">
@@ -201,7 +225,7 @@ const Dashboard = () => {
                                        <button 
                                           onClick={() => navigate('/nueva-evaluacion', { state: { resume: true, id_paciente: evaluacion.id_paciente, id_evaluacion: evaluacion.id_evaluacion } })}
                                           className="p-2 bg-dentBlue-900 hover:bg-dentBlue-800 text-white rounded-lg transition-colors flex items-center justify-center shadow-sm"
-                                          title="Continuar evaluación"
+                                          title="Continuar diagnóstico"
                                        >
                                           <ArrowRight className="w-4 h-4" />
                                        </button>
@@ -217,44 +241,44 @@ const Dashboard = () => {
                               </div>
                            ))
                         ) : (
-                           <div className="text-center text-gray-500 py-4">No hay evaluaciones recientes</div>
+                           <div className="text-center text-gray-500 py-4">No hay diagnósticos recientes</div>
                         )}
                       </div>
                     </div>
 
-                    {/* Panel Derecho: Gráfico Rápido (Severidad de Caries CSS nativo) */}
+{/* Panel Derecho: Gráfico Rápido */}
                     <div className="bg-white/90 border border-dentBlue-900/10 rounded-2xl shadow-sm p-6 flex flex-col">
                       <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-5 flex items-center">
-                        <Activity className="w-4 h-4 mr-2" /> Detecciones por Severidad
+                        <Activity className="w-4 h-4 mr-2" /> Caries Más Encontradas
                       </h3>
-                      
+
                       <div className="flex-1 flex items-end justify-center space-x-6 pt-4 relative">
                          {/* Bar 1 */}
                          <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_severidad?.avanzada || 0}</span>
-                            <div 
-                               className="w-12 bg-red-400 rounded-t-lg group-hover:bg-red-500 transition-colors shadow-sm" 
-                               style={{ height: `${Math.max(16, (stats?.detecciones_severidad?.avanzada || 0) * 10)}px` }}
+                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_localizacion?.Corona || 0}</span>
+                            <div
+                               className="w-12 bg-red-400 rounded-t-lg group-hover:bg-red-500 transition-colors shadow-sm"
+                               style={{ height: `${Math.max(16, (stats?.detecciones_localizacion?.Corona || 0) * 10)}px` }}
                             ></div>
-                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Avanzada</span>
+                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Corona</span>
                          </div>
                          {/* Bar 2 */}
                          <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_severidad?.moderada || 0}</span>
-                            <div 
-                               className="w-12 bg-orange-400 rounded-t-lg group-hover:bg-orange-500 transition-colors shadow-sm" 
-                               style={{ height: `${Math.max(16, (stats?.detecciones_severidad?.moderada || 0) * 10)}px` }}
+                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_localizacion?.Interdental || 0}</span>
+                            <div
+                               className="w-12 bg-orange-400 rounded-t-lg group-hover:bg-orange-500 transition-colors shadow-sm"
+                               style={{ height: `${Math.max(16, (stats?.detecciones_localizacion?.Interdental || 0) * 10)}px` }}
                             ></div>
-                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Moderada</span>
+                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Interdental</span>
                          </div>
                          {/* Bar 3 */}
                          <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_severidad?.incipiente || 0}</span>
-                            <div 
-                               className="w-12 bg-yellow-400 rounded-t-lg group-hover:bg-yellow-500 transition-colors shadow-sm" 
-                               style={{ height: `${Math.max(16, (stats?.detecciones_severidad?.incipiente || 0) * 10)}px` }}
+                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_localizacion?.Fisura || 0}</span>
+                            <div
+                               className="w-12 bg-yellow-400 rounded-t-lg group-hover:bg-yellow-500 transition-colors shadow-sm"
+                               style={{ height: `${Math.max(16, (stats?.detecciones_localizacion?.Fisura || 0) * 10)}px` }}
                             ></div>
-                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Incipiente</span>
+                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Fisura</span>
                          </div>
                       </div>
                       

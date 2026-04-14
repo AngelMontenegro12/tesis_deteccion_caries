@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('frontend/src/pages/EvaluacionDetalle.jsx', 'utf8'); c = c.replace(/No se encontró la evaluación/g, 'No se encontró el diagnóstico'); c = c.replace(/Historial Evaluaciones/g, 'Historial de Diagnósticos'); fs.writeFileSync('frontend/src/pages/EvaluacionDetalle.jsx', c);
