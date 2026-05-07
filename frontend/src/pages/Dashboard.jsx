@@ -62,10 +62,13 @@ const Dashboard = () => {
   return (
     <>
       {/* Topbar opcional u oculto por ahora */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm shrink-0">
-        <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">
-          Panel de Inicio
-        </h1>
+      <header className="px-8 py-6 bg-white/90 backdrop-blur-sm border-b border-gray-100 shrink-0 z-10 sticky top-0">
+        <div>
+          <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Panel de Inicio</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Visualiza el resumen general, métricas y actividad reciente de la clínica.
+          </p>
+        </div>
       </header>
 
       {/* Área donde irán las tablas, gráficos, etc. */}

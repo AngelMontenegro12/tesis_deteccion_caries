@@ -5,6 +5,7 @@ import {
   Stethoscope, FileText, ChevronRight, Check, AlertTriangle, ShieldAlert
 } from 'lucide-react';
 import MOCK_EVAL from './MockEvaluacionDetalleData'; // fallback
+import bgDashboard from '../assets/fondo_dashboard_2.png';
 // This file will render the details of an evaluation
 
 const EvaluacionDetalle = () => {
@@ -63,21 +64,24 @@ const EvaluacionDetalle = () => {
   const currentRadiografia = radiografias[activeImageIndex] || null;
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 overflow-y-auto relative">
+    <div 
+      className="flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed overflow-y-auto relative"
+      style={{ backgroundImage: `url(${bgDashboard})` }}
+    >
       
       {/* Navegacion Breadcrumb */}
-      <div className="px-8 pt-6 pb-2 max-w-7xl mx-auto w-full shrink-0 flex items-center text-sm font-medium text-slate-500">
+      <div className="px-4 md:px-6 pt-6 pb-2 max-w-[98%] 2xl:max-w-[1600px] mx-auto w-full shrink-0 flex items-center text-sm font-medium text-slate-500">
         <Link to="/historial" className="hover:text-dentBlue-900 transition-colors flex items-center">
           <ChevronLeft className="w-4 h-4 mr-1" />
           Historial de Diagnósticos
         </Link>
         <span className="mx-2 text-slate-300">/</span>
-        <span className="font-semibold text-slate-700">{paciente.nombres} {paciente.apellidos}</span>
+        <span className="font-semibold text-slate-700 bg-white/50 px-2 py-0.5 rounded-md">{paciente.nombres} {paciente.apellidos}</span>
       </div>
 
       {/* 1. Cabecera tipo "Tarjeta de Perfil Blanca" */}
-      <div className="px-8 pt-2 max-w-7xl mx-auto w-full shrink-0">
-        <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-gray-100">
+      <div className="px-4 md:px-6 pt-2 max-w-[98%] 2xl:max-w-[1600px] mx-auto w-full shrink-0">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-gray-100">
           
           {/* Izquierda (Avatar y Nombres) */}
           <div className="flex items-center gap-6 w-full md:w-auto">
@@ -109,11 +113,11 @@ const EvaluacionDetalle = () => {
 
           {/* Derecha (Contacto) */}
           <div className="flex flex-col gap-2 text-sm text-slate-700 font-medium md:text-right w-full md:w-auto">
-            <div className="flex items-center md:justify-end gap-2">
+            <div className="flex items-center md:justify-end gap-2 bg-slate-50/50 px-3 py-1.5 rounded-lg border border-slate-100">
               <Phone className="w-4 h-4 text-gray-400" />
               {paciente.telefono || 'Sin teléfono'}
             </div>
-            <div className="flex items-center md:justify-end gap-2">
+            <div className="flex items-center md:justify-end gap-2 bg-slate-50/50 px-3 py-1.5 rounded-lg border border-slate-100">
               <Mail className="w-4 h-4 text-gray-400" />
               {paciente.correo || 'Sin correo'}
             </div>
@@ -123,11 +127,11 @@ const EvaluacionDetalle = () => {
       </div>
 
       {/* Grid Central */}
-      <div className="p-8 max-w-7xl w-full mx-auto flex-1 flex flex-col lg:flex-row gap-8">
+      <div className="p-4 md:p-6 max-w-[98%] 2xl:max-w-[1600px] w-full mx-auto flex-1 flex flex-col lg:flex-row gap-8 pb-12">
         
         {/* 2. Columna Izquierda: Evidencia Visual (60%) */}
         <div className="lg:w-3/5 flex flex-col gap-6">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center relative over-flow-hidden">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center relative over-flow-hidden">
             <div className="w-full flex items-center justify-between mb-4 border-b border-gray-50 pb-4">
               <h2 className="text-lg font-black text-gray-800 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-dentBlue-500" />
@@ -137,7 +141,28 @@ const EvaluacionDetalle = () => {
             
             {/* Visor Principal */}
             {currentRadiografia ? (
-              <div className="relative rounded-xl overflow-hidden bg-slate-100 shadow-inner w-full flex items-center justify-center border border-gray-100 min-h-[400px]">
+              <div className="relative rounded-xl overflow-hidden bg-slate-100 shadow-inner w-full flex items-center justify-center border border-gray-100 min-h-[400px] group">
+                
+                {/* Controles de navegación */}
+                {radiografias.length > 1 && (
+                  <>
+                    <button 
+                      onClick={() => setActiveImageIndex((prev) => (prev === 0 ? radiografias.length - 1 : prev - 1))}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-slate-900/40 hover:bg-slate-900/70 text-white p-2.5 rounded-full z-30 transition-all opacity-0 group-hover:opacity-100 shadow-lg"
+                      title="Imagen Anterior"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <button 
+                      onClick={() => setActiveImageIndex((prev) => (prev === radiografias.length - 1 ? 0 : prev + 1))}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-900/40 hover:bg-slate-900/70 text-white p-2.5 rounded-full z-30 transition-all opacity-0 group-hover:opacity-100 shadow-lg"
+                      title="Imagen Siguiente"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </>
+                )}
+
                 <img 
                   src={`http://localhost:5000/${currentRadiografia.ruta_archivo}`} 
                   alt="Radiografia" 
@@ -203,7 +228,7 @@ const EvaluacionDetalle = () => {
           </div>
 
           {/* Tarjeta 3: Diagnóstico Clínico Final (Solo Lectura) */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-5">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-5">
             <h3 className="font-extrabold text-gray-900 flex items-center">
               <Stethoscope className="w-5 h-5 mr-2 text-teal-600" />
               Diagnóstico Clínico
@@ -247,7 +272,7 @@ const EvaluacionDetalle = () => {
         <div className="lg:w-2/5 flex flex-col gap-6">
           
           {/* Tarjeta 1: Contexto de la Visita */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-extrabold text-gray-900 flex items-center">
                 <Calendar className="w-4 h-4 mr-2 text-dentBlue-500" />
@@ -281,7 +306,7 @@ const EvaluacionDetalle = () => {
           </div>
 
           {/* Tarjeta 2: Hallazgos de la IA */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100">
             <h3 className="font-extrabold text-gray-900 flex items-center mb-5">
               <Info className="w-5 h-5 mr-2 text-red-500" />
               Hallazgos del Modelo IA

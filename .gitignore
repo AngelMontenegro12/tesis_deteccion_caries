@@ -6,6 +6,7 @@ build/
 
 # Entornos y dependencias de Python / Backend
 venv/
+.venv/
 env/
 __pycache__/
 *.pyc
@@ -32,6 +33,21 @@ __pycache__/
 
 # Archivos subidos por usuarios (imágenes de prueba, rayos X, etc.)
 backend/uploads/
+api_ia_sonrie/uploads/
 
-# Modelos pesados (Descomenta esto si tu modelo pesa más de 100MB, el límite de GitHub)
-# backend/ia_models/*.pt
+# Modelos pesados (PyTorch, YOLO) - GitHub límite 100MB
+*.pt
+*.pth
+*.onnx
+backend/ia_models/*.pt
+api_ia_sonrie/models/*.pt
+
+# YOLO Entrenamientos y Logs
+runs/
+yolov8n.pt
+
+# Datasets
+api_ia_sonrie/dataset/raw/
+api_ia_sonrie/dataset/processed/
+api_ia_sonrie/dataset/images/
+api_ia_sonrie/dataset/labels/

@@ -14,19 +14,15 @@ def listar_pacientes():
         for p in pacientes:
             p_dict = p.to_dict()
             
-            # Obtener todas las evaluaciones del paciente, ordenadas por fecha descendente
             evaluaciones = p.evaluaciones
             evals_sorted = sorted(evaluaciones, key=lambda e: e.fecha_evaluacion, reverse=True)
             
-            # Convertir a diccionarios
             evals_dict = [e.to_dict() for e in evals_sorted]
             
             p_dict['evaluaciones'] = evals_dict
             
-            # Determinar si tiene evaluación pendiente
             p_dict['evaluacion_pendiente'] = any(e['estado'] == 'pendiente' for e in evals_dict)
             
-            # Determinar la última atención (si tiene alguna evaluación)
             p_dict['ultima_atencion'] = evals_dict[0]['fecha_evaluacion'][:10] if evals_dict else None
             
             lista_completa.append(p_dict)
@@ -60,7 +56,7 @@ def buscar_paciente():
 def crear_paciente():
     data = request.json
     try:
-        # Calcular la edad del paciente en backend por seguridad
+        # Calcular la edad del paciente
         fecha_nac = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d')
         today = datetime.today()
         edad_calculada = today.year - fecha_nac.year - ((today.month, today.day) < (fecha_nac.month, fecha_nac.day))

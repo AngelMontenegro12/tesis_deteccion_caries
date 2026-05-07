@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import bgDashboard from '../assets/fondo_dashboard_2.png';
 
 const HistorialEvaluaciones = () => {
   const [evaluaciones, setEvaluaciones] = useState([]);
@@ -91,8 +92,11 @@ const HistorialEvaluaciones = () => {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-50 flex flex-col h-full">
-      <header className="bg-white border-b border-gray-200 px-8 py-6 shrink-0 flex justify-between items-center">
+    <div 
+      className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed"
+      style={{ backgroundImage: `url(${bgDashboard})` }}
+    >
+      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 shrink-0 flex justify-between items-center z-10 sticky top-0">
         <div>
           <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Historial de Diagnósticos</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -101,10 +105,10 @@ const HistorialEvaluaciones = () => {
         </div>
       </header>
 
-      <div className="p-8 flex-1 flex flex-col space-y-6">
+      <div className="p-8 flex-1 flex flex-col space-y-6 animate-fade-in-up">
         
         {/* Barra de Filtros */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col xl:flex-row gap-4 items-center justify-between">
+        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col xl:flex-row gap-4 items-center justify-between">
           <div className="flex flex-col md:flex-row w-full xl:w-auto gap-4 flex-1">
             <div className="relative w-full md:w-80 flex shrink-0">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -191,13 +195,13 @@ const HistorialEvaluaciones = () => {
         </div>
 
         {/* Contenedor Principal (Tabla) */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
           
           {error && <div className="p-4 text-red-500 bg-red-50 text-sm">{error}</div>}
           
           <div className="overflow-x-auto flex-1">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+              <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Paciente

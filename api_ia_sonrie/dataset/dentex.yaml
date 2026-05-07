@@ -1,0 +1,10 @@
+path: ../dataset # path relativo desde donde entrena
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: caries
+  1: deep_caries
+  2: periapical_lesion
+  3: calculus

@@ -17,7 +17,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"Segoe UI"', 'system-ui', 'sans-serif'], // Fuente principal
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial'], // Fuente principal actualizada
       },
       animation: {
         'fade-in-up': 'fadeInUp 0.5s ease-out forwards',

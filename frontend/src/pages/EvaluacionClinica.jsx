@@ -51,6 +51,19 @@ const EvaluacionClinica = () => {
     if (location.state?.forceNew) {
       return defaultVal;
     }
+
+    // Prevenir fuga de estado: Si entramos a reanudar un paciente DISTINTO al que está en memoria, ignoramos cache
+    if (location.state?.resume && location.state?.paciente_preseleccionado) {
+      const savedPatientStr = sessionStorage.getItem('eval_selectedPatient');
+      if (savedPatientStr) {
+        try {
+          const savedPatient = JSON.parse(savedPatientStr);
+          if (savedPatient && String(savedPatient.id_paciente) !== String(location.state.paciente_preseleccionado.id_paciente)) {
+            return defaultVal; // Borrón y cuenta nueva para este render inicial
+          }
+        } catch(e) {}
+      }
+    }
     
     const saved = sessionStorage.getItem(key);
     if (saved) {
@@ -97,7 +110,19 @@ const EvaluacionClinica = () => {
     observaciones: ''
   }));
 
-  // Efecto para guardar en sessionStorage
+  const [isAnalyzing, setIsAnalyzing] = useState(() => getInitialState('eval_isAnalyzing', false));
+  const [analysisItems, setAnalysisItems] = useState(() => getInitialState('eval_analysisItems', []));
+  const [analysisTime, setAnalysisTime] = useState(() => getInitialState('eval_analysisTime', 0));
+
+  // --- Estado para el Paso 5: Resultados ---
+  const [activeResultIndex, setActiveResultIndex] = useState(() => getInitialState('eval_activeResultIndex', 0));
+  const [hoveredBox, setHoveredBox] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [finalDiagnosis, setFinalDiagnosis] = useState(() => getInitialState('eval_finalDiagnosis', ''));
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [finishProgress, setFinishProgress] = useState(0);
+
+  // Efecto para guardar en sessionStorage y precaver pérdida de pausas en localStorage
   useEffect(() => {
     sessionStorage.setItem('eval_currentStep', JSON.stringify(currentStep));
     sessionStorage.setItem('eval_patientMode', JSON.stringify(patientMode));
@@ -105,10 +130,50 @@ const EvaluacionClinica = () => {
     sessionStorage.setItem('eval_selectedPatient', JSON.stringify(selectedPatient));
     sessionStorage.setItem('eval_formData', JSON.stringify(formData));
     sessionStorage.setItem('eval_contextoClinico', JSON.stringify(contextoClinico));
-  }, [currentStep, patientMode, evaluacionId, selectedPatient, formData, contextoClinico]);
+    sessionStorage.setItem('eval_isAnalyzing', JSON.stringify(isAnalyzing));
+    sessionStorage.setItem('eval_analysisItems', JSON.stringify(analysisItems));
+    sessionStorage.setItem('eval_analysisTime', JSON.stringify(analysisTime));
+    sessionStorage.setItem('eval_activeResultIndex', JSON.stringify(activeResultIndex));
+    sessionStorage.setItem('eval_finalDiagnosis', JSON.stringify(finalDiagnosis));
+
+    // Si estamos en Fase 4 o superior, guardamos siempre la pausa en vivo
+    // para evitar que se pierda si el usuario sale bruscamente o desmonta el componente
+    if (evaluacionId && currentStep >= 4) {
+      const pausas = JSON.parse(localStorage.getItem('eval_pausas') || '{}');
+      pausas[evaluacionId] = {
+        currentStep,
+        isAnalyzing,
+        analysisItems,
+        analysisTime,
+        activeResultIndex,
+        finalDiagnosis
+      };
+      localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+    }
+  }, [currentStep, patientMode, evaluacionId, selectedPatient, formData, contextoClinico, isAnalyzing, analysisItems, analysisTime, activeResultIndex, finalDiagnosis]);
 
   // Limpiar estado al desmontar en un caso específico o cuando termine
-  const clearSessionStorageState = () => {
+  const clearSessionStorageState = (finishing = false) => {
+    // Si tenemos una evaluación activa, podemos guardar su progreso (Fase 4 o 5) en localStorage como una "pausa"
+    if (evaluacionId) {
+      const pausas = JSON.parse(localStorage.getItem('eval_pausas') || '{}');
+      if (finishing) {
+        // Múltiples limpiezas
+        delete pausas[evaluacionId];
+      } else if (currentStep >= 4) {
+        // Pausamos el AI State temporalmente
+        pausas[evaluacionId] = {
+          currentStep,
+          isAnalyzing,
+          analysisItems,
+          analysisTime,
+          activeResultIndex,
+          finalDiagnosis
+        };
+      }
+      localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+    }
+
     sessionStorage.removeItem('eval_currentStep');
     sessionStorage.removeItem('eval_patientMode');
     sessionStorage.removeItem('eval_evaluacionId');
@@ -116,6 +181,11 @@ const EvaluacionClinica = () => {
     sessionStorage.removeItem('eval_formData');
     sessionStorage.removeItem('eval_contextoClinico');
     sessionStorage.removeItem('eval_radiografias');
+    sessionStorage.removeItem('eval_isAnalyzing');
+    sessionStorage.removeItem('eval_analysisItems');
+    sessionStorage.removeItem('eval_analysisTime');
+    sessionStorage.removeItem('eval_activeResultIndex');
+    sessionStorage.removeItem('eval_finalDiagnosis');
   };
 
   const handleRestart = () => {
@@ -149,6 +219,11 @@ const EvaluacionClinica = () => {
       observaciones: ''
     });
     setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
+    setIsAnalyzing(false);
+    setAnalysisItems([]);
+    setAnalysisTime(0);
+    setActiveResultIndex(0);
+    setFinalDiagnosis('');
     setModalRestart(false);
   };
 
@@ -187,19 +262,6 @@ const EvaluacionClinica = () => {
   // Estado para el modal de previsualización (pantalla completa dentro del sistema)
   const [previewModal, setPreviewModal] = useState({ isOpen: false, url: null });
 
-  // --- Estado para el Paso 4: Detección ---
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisItems, setAnalysisItems] = useState([]);
-  const [analysisTime, setAnalysisTime] = useState(0);
-
-  // --- Estado para el Paso 5: Resultados ---
-  const [activeResultIndex, setActiveResultIndex] = useState(0);
-  const [hoveredBox, setHoveredBox] = useState(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [finalDiagnosis, setFinalDiagnosis] = useState('');
-  const [isFinishing, setIsFinishing] = useState(false);
-  const [finishProgress, setFinishProgress] = useState(0);
-  
   // Data simulada para las radiografías
   const MOCK_DETECTIONS = {
     0: [
@@ -284,11 +346,8 @@ const EvaluacionClinica = () => {
           } else {
             clearInterval(progressInterval);
             clearInterval(timeInterval);
-            // Ya todas terminaron. Pasar automáticamente al Paso 5 (Resultados)
-            setTimeout(() => {
-              setIsAnalyzing(false);
-              setCurrentStep(5);
-            }, 800);
+            // Ya todas terminaron. El usuario presionará "Ver resultados" para avanzar.
+            // Eliminamos el timeout que cerraba el modal automáticamente.
           }
         }
         return newItems;
@@ -768,6 +827,33 @@ const EvaluacionClinica = () => {
   }, [location.state, location.pathname, navigate]);
 
   const handleSelectPatient = async (paciente) => {
+    // 1. Verificar si el paciente a evaluar es el mismo que teníamos en sesión
+    const savedPatientStr = sessionStorage.getItem('eval_selectedPatient');
+    let isSamePatient = false;
+    let savedStep = 1;
+    if (savedPatientStr) {
+      try {
+        const savedPatient = JSON.parse(savedPatientStr);
+        if (savedPatient && String(savedPatient.id_paciente) === String(paciente.id_paciente)) {
+          isSamePatient = true;
+          savedStep = parseInt(JSON.parse(sessionStorage.getItem('eval_currentStep'))) || 1;
+        }
+      } catch(e) { }
+    }
+
+    // 2. Si es un paciente DUAL limpiar toda su variable local, caso contrario mantenemos
+    if (!isSamePatient || location.state?.forceNew) {
+      clearSessionStorageState();
+      setActiveResultIndex(0);
+      setIsAnalyzing(false);
+      setAnalysisItems([]);
+      setFinalDiagnosis('');
+      setAnalysisTime(0);
+      setZoomLevel(1);
+      // Faltaba resetear step temporalmente antes que el fecth lo cambie, previniendo glitch visual a step 5
+      setCurrentStep(1); 
+    }
+    
     setSelectedPatient(paciente);
 
     try {
@@ -782,7 +868,7 @@ const EvaluacionClinica = () => {
           observaciones: evalPendiente.observaciones || ''
         });
         
-        // Si la evaluación pendiente ya tiene radiografías, las cargamos y saltamos al paso 5
+        // Si la evaluación pendiente ya tiene radiografías, las cargamos
         if (evalPendiente.radiografias && evalPendiente.radiografias.length > 0) {
           const loadedRads = evalPendiente.radiografias.map(rad => ({
             id: rad.id_radiografia.toString(),
@@ -792,25 +878,56 @@ const EvaluacionClinica = () => {
             tipo: rad.id_tipo.toString()
           }));
           setRadiografias(loadedRads);
-          setSuccessMessage('Diagnóstico pendiente recuperado');
+          setSuccessMessage('Diagnóstico pendiente recuperado. Revise los datos y continúe.');
           setIsSuccess(true);
-          setCurrentStep(5);
+          
+          // VERIFICAMOS SI TENIA ESTADO PAUSADO EN LOCALSTORAGE (Fase 4 o 5)
+          const pausas = JSON.parse(localStorage.getItem('eval_pausas') || '{}');
+          const pausaActiva = pausas[evalPendiente.id_evaluacion];
+
+          if (pausaActiva && pausaActiva.currentStep >= 4) {
+            setCurrentStep(pausaActiva.currentStep);
+            setIsAnalyzing(pausaActiva.isAnalyzing || false);
+            setAnalysisItems(pausaActiva.analysisItems || []);
+            setAnalysisTime(pausaActiva.analysisTime || 0);
+            setActiveResultIndex(pausaActiva.activeResultIndex || 0);
+            setFinalDiagnosis(pausaActiva.finalDiagnosis || '');
+          } else {
+            // Si recordamos el mismo paciente, respetamos el step guardado asumiendo que avanzó más
+            if (isSamePatient && savedStep > 3) {
+              setCurrentStep(savedStep);
+            } else {
+              setCurrentStep(4); // Saltar al paso 4 (Detección IA) base
+            }
+          }
         } else {
-          setSuccessMessage('Diagnóstico pendiente recuperado');
+          setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]); // Limpiar si no hay guardadas
+          setSuccessMessage('Diagnóstico pendiente recuperado. Revise los datos y continúe.');
           setIsSuccess(true);
-          setCurrentStep(3); // Saltar al paso 3 (Carga de Radiografías)
+          if (isSamePatient && savedStep >= 3) {
+             setCurrentStep(savedStep);
+          } else {
+             setCurrentStep(3); // Saltar al paso 3 (Carga de Radiografías)
+          }
         }
         
         setTimeout(() => setIsSuccess(false), 4000);
       } else {
         // No hay pendiente (404), limpiar evaluación por si había alguna en estado
         setEvaluacionId(null);
+        setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
         setContextoClinico({
           tipo_visita: 'Primera vez',
           motivo_consulta: '',
           observaciones: ''
         });
-        setCurrentStep(2); // Avanzar directamente al Contexto Clínico
+        
+        // Si devolvemos el mismo pacience pero no hay eval, tal vez era create state
+        if (isSamePatient && savedStep >= 2) {
+          setCurrentStep(savedStep);
+        } else {
+          setCurrentStep(1); // Mantenemos en la fase 1 para que el usuario presione "Continuar"
+        }
       }
     } catch (error) {
       console.error('Error verificando evaluación pendiente:', error);
@@ -883,11 +1000,16 @@ const EvaluacionClinica = () => {
       )}
 
       {/* Topbar */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm shrink-0">
-        <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight flex items-center">
-          <Stethoscope className="w-8 h-8 mr-3 text-dentGreen-500" />
-          Nuevo Diagnóstico Clínico
-        </h1>
+      <header className="px-8 py-6 bg-white/90 backdrop-blur-sm border-b border-gray-100 flex items-center justify-between shrink-0 z-10 sticky top-0">
+        <div>
+          <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight flex items-center">
+            <Stethoscope className="w-8 h-8 mr-3 text-dentGreen-500" />
+            Nuevo Diagnóstico Clínico
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Crea y registra un nuevo diagnóstico clínico asistido con inteligencia artificial.
+          </p>
+        </div>
         
         <div className="flex items-center gap-4">
           {/* Info del Paciente seleccionado */}
@@ -1099,6 +1221,11 @@ const EvaluacionClinica = () => {
                                   setCurrentStep(1);
                                   sessionStorage.removeItem('eval_radiografias');
                                   setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
+                                  setIsAnalyzing(false);
+                                  setAnalysisItems([]);
+                                  setAnalysisTime(0);
+                                  setActiveResultIndex(0);
+                                  setFinalDiagnosis('');
                                 }}
                                 className="text-xs font-bold text-gray-500 hover:text-dentBlue-900 transition-colors"
                               >
@@ -1729,7 +1856,7 @@ const EvaluacionClinica = () => {
                             className="max-h-[60vh] md:max-h-[70vh] object-contain shadow-2xl border border-gray-300 rounded-lg pointer-events-none"
                           />
                           
-                          {/* Bounding Boxes (Simulados) */}
+                          {/* Simulacion*/}
                           {(MOCK_DETECTIONS[activeResultIndex] || []).map((det) => (
                             <div
                               key={det.id}
@@ -1915,8 +2042,7 @@ const EvaluacionClinica = () => {
                               }
                               
                               console.log("Guardando en BD:", { finalDiagnosis, evaluacionId });
-                              clearSessionStorageState();
-                              
+                                clearSessionStorageState(true);
                               // Mostrar Modal de Finalización con barra de progreso
                               setIsFinishing(true);
                               
@@ -2172,16 +2298,10 @@ const EvaluacionClinica = () => {
               
               {analysisItems.length > 0 && analysisItems.every(i => i.status === 'completed') ? (
                 <button
-                  onClick={async () => {
-                    try {
-                      await fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/completar`, {
-                        method: 'PUT'
-                      });
-                    } catch(e) {
-                      console.error("Error al completar evaluación", e);
-                    }
+                  onClick={() => {
                     setIsAnalyzing(false);
                     setCurrentStep(5);
+                    sessionStorage.setItem('eval_currentStep', 5); // Remarcar forzadamente
                   }}
                   className="flex items-center justify-center px-8 py-3 rounded-lg font-bold text-sm shadow-md transition-all duration-300 ml-auto bg-dentBlue-900 hover:bg-dentBlue-800 text-white hover:shadow-lg animate-fade-in-up"
                 >

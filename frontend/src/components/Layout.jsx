@@ -15,6 +15,7 @@ import {
 const Layout = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [user, setUser] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,8 +31,11 @@ const Layout = () => {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/login');
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      localStorage.removeItem('user');
+      navigate('/login');
+    }, 1500);
   };
 
   // Menu de navegación principal
@@ -180,6 +184,22 @@ const Layout = () => {
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <Outlet />
       </main>
+
+      {/* Pantalla de Carga - Cerrar Sesión */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm transition-opacity">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center transform transition-all scale-100 opacity-100">
+            <div className="relative mb-6">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-dentBlue-900 border-l-4 border-l-transparent border-r-4 border-r-transparent"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <LogOut className="h-6 w-6 text-dentBlue-900" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Cerrando sesión</h3>
+            <p className="text-sm text-gray-500 font-medium">Por favor, espere un momento...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
