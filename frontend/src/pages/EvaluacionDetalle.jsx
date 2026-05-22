@@ -181,9 +181,13 @@ const EvaluacionDetalle = () => {
                     height: det.bbox_alto && !det.isFallbackPercentage ? `${(det.bbox_alto / 1024) * 100}%` : (det.bbox_alto ? `${det.bbox_alto}%` : (index === 0 ? '15%' : '12%')) 
                   };
 
-                  let boxColor = 'border-amber-400 bg-amber-400/20 text-amber-700'; // Inicial
-                  if (det.severidad === 'moderada') boxColor = 'border-orange-500 bg-orange-500/20 text-orange-800';
-                  if (det.severidad === 'avanzada') boxColor = 'border-red-500 bg-red-500/20 text-red-700';
+                  let labelSeveridad = 'Incipiente';
+                  if (det.severidad === 'moderada') labelSeveridad = 'Moderada';
+                  if (det.severidad === 'avanzada') labelSeveridad = 'Avanzada';
+
+                  let boxColor = 'border-yellow-400 bg-yellow-400/20 text-yellow-700'; // Incipiente
+                  if (det.severidad === 'moderada') boxColor = 'border-orange-500 bg-orange-500/20 text-orange-800'; // Moderada
+                  if (det.severidad === 'avanzada') boxColor = 'border-red-500 bg-red-500/20 text-red-700'; // Avanzada
 
                   return (
                     <div 
@@ -193,7 +197,7 @@ const EvaluacionDetalle = () => {
                     >
                       <span className={`absolute -top-7 left-1/2 -translate-x-1/2 bg-white border ${boxColor.split(' ')[0]} ${boxColor.split(' ')[2]} text-[11px] font-black px-3 py-1 rounded-full whitespace-nowrap shadow-lg flex items-center gap-1`}>
                          <svg className="w-3 h-3 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.5 2 6 5 6 8.5C6 11 7 13 8 15V20C8 21.1 8.9 22 10 22H14C15.1 22 16 21.1 16 20V15C17 13 18 11 18 8.5C18 5 15.5 2 12 2M14 18H10V14.5C8.8 13.1 8 11.4 8 9.5C8 6.5 9.8 4 12 4C14.2 4 16 6.5 16 9.5C16 11.4 15.2 13.1 14 18Z"/></svg>
-                         D{det.numero_diente} - {Math.round(det.confianza * 100)}%
+                         {labelSeveridad} - {Math.round(det.confianza * 100)}%
                       </span>
                     </div>
                   );
@@ -318,30 +322,34 @@ const EvaluacionDetalle = () => {
                    [{id_deteccion: 1, numero_diente: '46', localizacion: 'Corona', confianza: 0.95, severidad: 'avanzada'}, {id_deteccion: 2, numero_diente: '35', localizacion: 'Interdental', confianza: 0.95, severidad: 'moderada'}]
                 )).map((det, i) => {
                   
-                  // Generamos las probabilidades ficticias de los otros factores para que la barra sea identica al Step 5
-                  const labelPrincipal = det.localizacion === 'Corona' ? 'Caries de Corona' : (det.localizacion === 'Interdental' ? 'Caries Interdental' : 'Caries Radicular');
+                  // Reemplazando mapeo por los niveles reales del modelo
+                  const labelPrincipal = det.severidad === 'incipiente' ? 'Caries Incipiente' : (det.severidad === 'moderada' ? 'Caries Moderada' : 'Lesión Periapical (Avanzada)');
                   
-                  // Por defecto
-                  let probs = { corona: 3, interdental: 2, radicular: 1 };
-                  if (det.localizacion === 'Corona') { probs.corona = Math.round(det.confianza * 100); probs.interdental = 3; probs.radicular = 2; }
-                  else if (det.localizacion === 'Interdental') { probs.interdental = Math.round(det.confianza * 100); probs.corona = 3; probs.radicular = 2; }
-                  else { probs.radicular = Math.round(det.confianza * 100); probs.corona = 5; probs.interdental = 2; }
+                  // Distribución ficticia basada en severidad si solo hay un % devuelto
+                  let probs = { incipiente: 2, moderada: 1, periapical: 0 };
+                  if (det.severidad === 'incipiente') { probs.incipiente = Math.round(det.confianza * 100); probs.moderada = 3; probs.periapical = 0; }
+                  else if (det.severidad === 'moderada') { probs.moderada = Math.round(det.confianza * 100); probs.incipiente = 3; probs.periapical = 2; }
+                  else { probs.periapical = Math.round(det.confianza * 100); probs.moderada = 5; probs.incipiente = 2; }
 
                   const probList = [
-                    { label: 'Caries de Corona', key: 'corona', val: probs.corona },
-                    { label: 'Caries Interdental', key: 'interdental', val: probs.interdental },
-                    { label: 'Caries Radicular', key: 'radicular', val: probs.radicular }
+                    { label: 'Caries Incipiente', key: 'incipiente', val: probs.incipiente },
+                    { label: 'Caries Moderada', key: 'moderada', val: probs.moderada },
+                    { label: 'Lesión Periapical', key: 'periapical', val: probs.periapical }
                   ].sort((a, b) => b.val - a.val);
+
+                  let badgeColor = "bg-yellow-50 text-yellow-600 border-yellow-100";
+                  if (det.severidad === 'moderada') badgeColor = "bg-orange-50 text-orange-600 border-orange-100";
+                  if (det.severidad === 'avanzada') badgeColor = "bg-red-50 text-red-600 border-red-100";
 
                   return (
                     <div key={i} className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                       <div className="bg-gray-50/50 p-4 border-b border-gray-100 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2C8.5 2 6 5 6 8.5C6 11 7 13 8 15V20C8 21.1 8.9 22 10 22H14C15.1 22 16 21.1 16 20V15C17 13 18 11 18 8.5C18 5 15.5 2 12 2M14 18H10V14.5C8.8 13.1 8 11.4 8 9.5C8 6.5 9.8 4 12 4C14.2 4 16 6.5 16 9.5C16 11.4 15.2 13.1 14 18Z"/></svg>
-                          <span className="font-extrabold text-slate-800 tracking-tight text-[15px]">Diente {det.numero_diente}</span>
+                          <span className="font-extrabold text-slate-800 tracking-tight text-[15px]">Hallazgo {i+1}</span>
                         </div>
-                        <span className="uppercase text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-100">
-                          {det.localizacion || det.severidad}
+                        <span className={`uppercase text-[10px] font-bold px-2 py-1 rounded-md border ${badgeColor}`}>
+                          {labelPrincipal}
                         </span>
                       </div>
                       
