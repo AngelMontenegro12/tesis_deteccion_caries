@@ -51,3 +51,12 @@ api_ia_sonrie/dataset/raw/
 api_ia_sonrie/dataset/processed/
 api_ia_sonrie/dataset/images/
 api_ia_sonrie/dataset/labels/
+api_ia_sonrie/dataset/class_distribution*.png
+api_ia_sonrie/dataset/dentex_v1_2.yaml
+api_ia_sonrie/dataset/dentex_v2_oversample.yaml
+api_ia_sonrie/dataset/processed_v1_2/
+api_ia_sonrie/dataset/processed_v2_oversample/
+
+# Artefactos de entrenamiento y resultados
+api_ia_sonrie/models/
+backend/logs/

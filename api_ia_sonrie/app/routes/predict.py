@@ -11,9 +11,16 @@ async def predict_image(file: UploadFile = File(...)):
     
     # 2. Ejecutar inferencia
     results = run_inference(image_data)
-    
-    # 3. Retornar resultados
+
+    # Si run_inference devuelve un dict con valid/detections, unificarla
+    if isinstance(results, dict):
+        results_out = results.copy()
+        results_out['filename'] = file.filename
+        return results_out
+
     return {
         "filename": file.filename,
+        "valid": True,
+        "error": None,
         "detections": results
     }

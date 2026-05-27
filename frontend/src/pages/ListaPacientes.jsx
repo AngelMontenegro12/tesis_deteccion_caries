@@ -219,11 +219,23 @@ const ListaPacientes = () => {
       
       {/* Cabecera y Filtros "Pill" (Minimalismo puro) */}
       <header className="px-8 py-6 bg-white/90 backdrop-blur-sm border-b border-gray-100 shrink-0 z-10 sticky top-0">
-        <div>
-          <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Gestión de Pacientes</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Visualiza, busca y gestiona los expedientes de todos los pacientes.
-          </p>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Gestión de Pacientes</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Visualiza, busca y gestiona los expedientes de todos los pacientes.
+            </p>
+          </div>
+
+          <div className="inline-flex items-center gap-3 self-start lg:self-auto bg-dentBlue-50 border border-dentBlue-100 rounded-2xl px-4 py-3 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-dentBlue-900 font-extrabold shadow-sm border border-dentBlue-100">
+              {patients.length}
+            </div>
+            <div>
+              <p className="text-xs font-extrabold text-dentBlue-900 uppercase tracking-widest">Total pacientes</p>
+              <p className="text-sm text-gray-600 font-medium">Pacientes activos cargados en el sistema</p>
+            </div>
+          </div>
         </div>
       </header>
 

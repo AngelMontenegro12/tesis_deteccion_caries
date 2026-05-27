@@ -48,7 +48,7 @@ const Layout = () => {
 
   // Menu de navegación secundario
   const bottomMenuItems = [
-    { icon: Users, label: 'Gestión de usuarios', path: '/usuarios' },
+    { icon: Users, label: 'Odontólogos', path: '/usuarios' },
     { icon: Settings, label: 'Configuración', path: '/configuracion' },
     { icon: HelpCircle, label: 'Soporte / Ayuda', path: '/ayuda' },
   ];

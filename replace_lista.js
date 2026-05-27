@@ -1,1 +1,0 @@
-const fs = require('fs'); let c = fs.readFileSync('frontend/src/pages/ListaPacientes.jsx', 'utf8'); c = c.replace(/Con Evaluaci.n Pendiente/g, 'Con Diagnóstico Pendiente'); fs.writeFileSync('frontend/src/pages/ListaPacientes.jsx', c);

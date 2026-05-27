@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 import time
 from app.models import EvaluacionDiagnostica, Radiografia, DiagnosticoOdontologo, db
+from app.services.ia_service import procesar_radiografia_con_ia
 from datetime import datetime
 
 evaluaciones_bp = Blueprint('evaluaciones', __name__, url_prefix='/api/evaluaciones')
@@ -23,11 +24,18 @@ def obtener_evaluaciones():
         tipo_visita = request.args.get('tipo_visita', '', type=str)
         fecha_inicio = request.args.get('fecha_inicio', '', type=str)
         fecha_fin = request.args.get('fecha_fin', '', type=str)
+        sort_by = request.args.get('sort_by', 'fecha_evaluacion', type=str)
+        sort_dir = request.args.get('sort_dir', 'desc', type=str).lower()
         
         # Base query
         from app.models import Paciente
-        query = db.session.query(EvaluacionDiagnostica, Paciente)\
+        query = db.session.query(
+            EvaluacionDiagnostica,
+            Paciente,
+            db.func.count(Radiografia.id_radiografia).label('radiografias_count')
+        )\
             .join(Paciente, EvaluacionDiagnostica.id_paciente == Paciente.id_paciente)\
+            .outerjoin(Radiografia, Radiografia.id_evaluacion == EvaluacionDiagnostica.id_evaluacion)\
             .filter(EvaluacionDiagnostica.id_odontologo == id_odontologo_harcoded)
         
         # Filters
@@ -55,21 +63,45 @@ def obtener_evaluaciones():
         if fecha_fin:
             # fecha_fin se espera en formato 'YYYY-MM-DD'
             query = query.filter(EvaluacionDiagnostica.fecha_evaluacion <= f"{fecha_fin} 23:59:59")
-            
-        # Order by newest first
-        query = query.order_by(EvaluacionDiagnostica.fecha_evaluacion.desc())
+
+        query = query.group_by(
+            EvaluacionDiagnostica.id_evaluacion,
+            Paciente.id_paciente
+        )
+
+        sort_is_asc = sort_dir == 'asc'
+        sort_field_map = {
+            'paciente': (
+                Paciente.nombres,
+                Paciente.apellidos
+            ),
+            'fecha_evaluacion': (EvaluacionDiagnostica.fecha_evaluacion,),
+            'motivo_consulta': (EvaluacionDiagnostica.motivo_consulta,),
+            'tipo_visita': (EvaluacionDiagnostica.tipo_visita,),
+            'radiografias_count': (db.func.count(Radiografia.id_radiografia),),
+            'estado': (EvaluacionDiagnostica.estado,),
+        }
+
+        order_fields = sort_field_map.get(sort_by, (EvaluacionDiagnostica.fecha_evaluacion,))
+        if sort_by == 'paciente':
+            if sort_is_asc:
+                query = query.order_by(Paciente.nombres.asc(), Paciente.apellidos.asc())
+            else:
+                query = query.order_by(Paciente.nombres.desc(), Paciente.apellidos.desc())
+        else:
+            primary_field = order_fields[0]
+            query = query.order_by(primary_field.asc() if sort_is_asc else primary_field.desc())
         
         # Paginate
         paginated_data = query.paginate(page=page, per_page=per_page, error_out=False)
         
         resultados = []
-        for eval_obj, pac_obj in paginated_data.items:
+        for eval_obj, pac_obj, rad_count in paginated_data.items:
             data_dict = eval_obj.to_dict()
             data_dict['paciente'] = pac_obj.to_dict()
             
             # Radiografías count
-            rad_count = Radiografia.query.filter_by(id_evaluacion=eval_obj.id_evaluacion).count()
-            data_dict['radiografias_count'] = rad_count
+            data_dict['radiografias_count'] = int(rad_count or 0)
             resultados.append(data_dict)
             
         return jsonify({
@@ -312,6 +344,7 @@ def subir_radiografias(id_evaluacion):
             lista_completa.append(d)
 
         db.session.commit()
+
         return jsonify({
             "message": "Radiografías guardadas con éxito", 
             "radiografias": lista_completa
@@ -320,6 +353,36 @@ def subir_radiografias(id_evaluacion):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@evaluaciones_bp.route('/<int:id_evaluacion>/procesar', methods=['POST'])
+def procesar_evaluacion(id_evaluacion):
+    try:
+        evaluacion = EvaluacionDiagnostica.query.get(id_evaluacion)
+        if not evaluacion:
+            return jsonify({"error": "Evaluación no encontrada"}), 404
+
+        radiografias = Radiografia.query.filter_by(id_evaluacion=id_evaluacion).all()
+        if not radiografias:
+            return jsonify({"error": "No hay radiografías para procesar"}), 400
+
+        resultados = []
+        for rad in radiografias:
+            resultado_ia = procesar_radiografia_con_ia(rad.id_radiografia)
+            resultados.append({
+                'id_radiografia': rad.id_radiografia,
+                'nombre_archivo': rad.nombre_archivo,
+                'resultado': resultado_ia
+            })
+
+        return jsonify({
+            'message': 'Procesamiento IA completado',
+            'resultados': resultados
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 
 @evaluaciones_bp.route('/<int:id_evaluacion>/detalle', methods=['GET'])
@@ -351,18 +414,36 @@ def obtener_evaluacion_detalle(id_evaluacion):
         detecciones_data = []
         for rd in radiografias_data:
             if rd['id_resultado']:
-                sql_det = text("SELECT d.id_deteccion, d.numero_diente, d.confianza, d.severidad, d.bbox_x, d.bbox_y, d.bbox_ancho, d.bbox_alto, l.nombre AS local_nombre FROM detecciones_caries d LEFT JOIN localizacion_caries l ON d.id_localizacion = l.id_localizacion WHERE d.id_resultado = :id_res")
+                sql_det = text("SELECT d.id_deteccion, d.numero_diente, d.confianza, d.severidad, d.bbox_x, d.bbox_y, d.bbox_ancho, d.bbox_alto, d.class_probabilities, l.nombre AS local_nombre FROM detecciones_caries d LEFT JOIN localizacion_caries l ON d.id_localizacion = l.id_localizacion WHERE d.id_resultado = :id_res")
                 dets = db.session.execute(sql_det, {"id_res": rd['id_resultado']}).fetchall()
                 for d in dets:
+                    # d indices: 0:id_deteccion,1:numero_diente,2:confianza,3:severidad,4:bbox_x,5:bbox_y,6:bbox_ancho,7:bbox_alto,8:class_probabilities,9:local_nombre
+                    class_probs = None
+                    try:
+                        class_probs = d[8]
+                        # Si la columna viene como string JSON, cargarlo
+                        import json
+                        if isinstance(class_probs, str) and class_probs.strip():
+                            try:
+                                class_probs = json.loads(class_probs)
+                            except Exception:
+                                # dejar como string si no es JSON válido
+                                pass
+                    except Exception:
+                        class_probs = None
+
                     detecciones_data.append({
                         'id_resultado': rd['id_resultado'],
+                        'id_deteccion': d[0],
                         'numero_diente': d[1],
                         'confianza': d[2],
                         'severidad': d[3],
                         'bbox_x': d[4],
                         'bbox_y': d[5],
                         'bbox_ancho': d[6],
-                        'bbox_alto': d[7], 'localizacion': d[8] if len(d) > 8 else ''
+                        'bbox_alto': d[7],
+                        'class_probabilities': class_probs,
+                        'localizacion': d[9] if len(d) > 9 else ''
                     })
 
         # Diagnostico final

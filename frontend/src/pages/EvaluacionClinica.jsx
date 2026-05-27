@@ -20,22 +20,23 @@ import {
   FileImage,
   Trash2,
   Plus,
-  AlertCircle,
   Info,
   Play,
   Bot,
   Clock,
-  Sparkles,
   ScanLine,
   CheckCircle2,
   Cog,
   ZoomIn,
   ZoomOut,
   Maximize2,
+  AlertCircle,
   AlertTriangle,
   MousePointer2,
-  Activity
+  Activity,
+  Sparkles
 } from 'lucide-react';
+import BoundingBoxViewer from '../components/BoundingBoxViewer';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 import dienteImg from '../assets/diente.png';
 import ModalConfirmacion from '../components/ModalConfirmacion';
@@ -113,28 +114,84 @@ const EvaluacionClinica = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(() => getInitialState('eval_isAnalyzing', false));
   const [analysisItems, setAnalysisItems] = useState(() => getInitialState('eval_analysisItems', []));
   const [analysisTime, setAnalysisTime] = useState(() => getInitialState('eval_analysisTime', 0));
+  const [analysisResultsReady, setAnalysisResultsReady] = useState(false);
 
   // --- Estado para el Paso 5: Resultados ---
   const [activeResultIndex, setActiveResultIndex] = useState(() => getInitialState('eval_activeResultIndex', 0));
   const [hoveredBox, setHoveredBox] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [imagePan, setImagePan] = useState({ x: 0, y: 0 });
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const dragStartRef = useRef(null);
+  const [selectedHallazgoId, setSelectedHallazgoId] = useState(null);
+  const [showBoxes, setShowBoxes] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
+  const [modalInvalidImage, setModalInvalidImage] = useState({ isOpen: false, message: '' });
   const [finalDiagnosis, setFinalDiagnosis] = useState(() => getInitialState('eval_finalDiagnosis', ''));
   const [isFinishing, setIsFinishing] = useState(false);
   const [finishProgress, setFinishProgress] = useState(0);
+  const [detalleResultados, setDetalleResultados] = useState({ radiografias: [], detecciones: [] });
+
+  const isUsablePreviewSrc = (src) => Boolean(src && !src.startsWith('blob:'));
+  const createEmptyRadiografia = () => ({ id: Date.now(), file: null, preview: null, previewPersisted: null, tipo: '1' });
+  const getRadiografiaPreviewSrc = (rad) => {
+    if (!rad) return '';
+    const previewSrc = isUsablePreviewSrc(rad.previewPersisted) ? rad.previewPersisted : rad.preview;
+    return isUsablePreviewSrc(previewSrc) ? previewSrc : '';
+  };
+  const hasRadiografiaPreview = (rad) => Boolean(getRadiografiaPreviewSrc(rad));
+  const hasOnlyPanoramicRadiografias = () => radiografias.length > 0 && radiografias.every((rad) => rad.tipo === '1');
+  const compactAnalysisItems = (items = []) => items.map((item, idx) => ({
+    id: item.id ?? idx,
+    id_bd: item.id_bd ?? null,
+    id_radiografia: item.id_radiografia ?? null,
+    nombre_archivo: item.nombre_archivo || item.nombreArchivo || item.file?.name || null,
+    tipo: item.tipo || '1',
+    status: item.status || 'waiting',
+    progress: Number(item.progress ?? 0),
+    startTime: item.startTime ?? null,
+  }));
+
+  const clearAnalysisPersistence = () => {
+    sessionStorage.removeItem('eval_isAnalyzing');
+    sessionStorage.removeItem('eval_analysisItems');
+    sessionStorage.removeItem('eval_analysisTime');
+    sessionStorage.removeItem('eval_activeResultIndex');
+    sessionStorage.removeItem('eval_finalDiagnosis');
+
+    if (evaluacionId) {
+      const pausas = JSON.parse(localStorage.getItem('eval_pausas') || '{}');
+      delete pausas[evaluacionId];
+      try {
+        localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+      } catch (error) {
+        console.warn('No se pudo limpiar pausa de análisis (cuota excedida):', error);
+      }
+    }
+  };
 
   // Efecto para guardar en sessionStorage y precaver pérdida de pausas en localStorage
   useEffect(() => {
-    sessionStorage.setItem('eval_currentStep', JSON.stringify(currentStep));
-    sessionStorage.setItem('eval_patientMode', JSON.stringify(patientMode));
-    sessionStorage.setItem('eval_evaluacionId', JSON.stringify(evaluacionId));
-    sessionStorage.setItem('eval_selectedPatient', JSON.stringify(selectedPatient));
-    sessionStorage.setItem('eval_formData', JSON.stringify(formData));
-    sessionStorage.setItem('eval_contextoClinico', JSON.stringify(contextoClinico));
-    sessionStorage.setItem('eval_isAnalyzing', JSON.stringify(isAnalyzing));
-    sessionStorage.setItem('eval_analysisItems', JSON.stringify(analysisItems));
-    sessionStorage.setItem('eval_analysisTime', JSON.stringify(analysisTime));
-    sessionStorage.setItem('eval_activeResultIndex', JSON.stringify(activeResultIndex));
-    sessionStorage.setItem('eval_finalDiagnosis', JSON.stringify(finalDiagnosis));
+    const compactItems = compactAnalysisItems(analysisItems);
+
+    try {
+      sessionStorage.setItem('eval_currentStep', JSON.stringify(currentStep));
+      sessionStorage.setItem('eval_patientMode', JSON.stringify(patientMode));
+      sessionStorage.setItem('eval_evaluacionId', JSON.stringify(evaluacionId));
+      sessionStorage.setItem('eval_selectedPatient', JSON.stringify(selectedPatient));
+      sessionStorage.setItem('eval_formData', JSON.stringify(formData));
+      sessionStorage.setItem('eval_contextoClinico', JSON.stringify(contextoClinico));
+      sessionStorage.setItem('eval_isAnalyzing', JSON.stringify(isAnalyzing));
+      sessionStorage.setItem('eval_analysisItems', JSON.stringify(compactItems));
+      sessionStorage.setItem('eval_analysisTime', JSON.stringify(analysisTime));
+      sessionStorage.setItem('eval_activeResultIndex', JSON.stringify(activeResultIndex));
+      sessionStorage.setItem('eval_finalDiagnosis', JSON.stringify(finalDiagnosis));
+    } catch (error) {
+      console.warn('No se pudo persistir estado en sessionStorage (cuota excedida):', error);
+      try {
+        sessionStorage.removeItem('eval_analysisItems');
+      } catch (_) {}
+    }
 
     // Si estamos en Fase 4 o superior, guardamos siempre la pausa en vivo
     // para evitar que se pierda si el usuario sale bruscamente o desmonta el componente
@@ -143,12 +200,16 @@ const EvaluacionClinica = () => {
       pausas[evaluacionId] = {
         currentStep,
         isAnalyzing,
-        analysisItems,
+        analysisItems: compactItems,
         analysisTime,
         activeResultIndex,
         finalDiagnosis
       };
-      localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+      try {
+        localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+      } catch (error) {
+        console.warn('No se pudo persistir pausa en localStorage (cuota excedida):', error);
+      }
     }
   }, [currentStep, patientMode, evaluacionId, selectedPatient, formData, contextoClinico, isAnalyzing, analysisItems, analysisTime, activeResultIndex, finalDiagnosis]);
 
@@ -165,13 +226,17 @@ const EvaluacionClinica = () => {
         pausas[evaluacionId] = {
           currentStep,
           isAnalyzing,
-          analysisItems,
+          analysisItems: compactAnalysisItems(analysisItems),
           analysisTime,
           activeResultIndex,
           finalDiagnosis
         };
       }
-      localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+      try {
+        localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+      } catch (error) {
+        console.warn('No se pudo guardar pausa al limpiar estado (cuota excedida):', error);
+      }
     }
 
     sessionStorage.removeItem('eval_currentStep');
@@ -242,15 +307,41 @@ const EvaluacionClinica = () => {
       // Necesito reconstruir los objects pero cuidando que el 'file' no es serializable.
       // Así que los files se perderán al hacer F5, tienen que volverlos a subir,
       // PERO pueden cargarse los de bd si existieran.
-      return saved.map(r => ({ ...r, file: null }));
+      return saved.map(r => ({
+        ...r,
+        file: null,
+        preview: isUsablePreviewSrc(r.preview) ? r.preview : null,
+        previewPersisted: isUsablePreviewSrc(r.previewPersisted) ? r.previewPersisted : (isUsablePreviewSrc(r.preview) ? r.preview : null)
+      }));
     }
-    return [{ id: Date.now(), file: null, preview: null, tipo: '1' }];
+    return [createEmptyRadiografia()];
   });
 
   useEffect(() => {
     // Al guardar las radiografias, no guardamos el file porque da error de circular structure o no es serializable.
-    const radsToSave = radiografias.map(r => ({ ...r, file: null }));
-    sessionStorage.setItem('eval_radiografias', JSON.stringify(radsToSave));
+    const radsToSave = radiografias.map(r => ({
+      ...r,
+      file: null,
+      preview: isUsablePreviewSrc(r.preview) ? r.preview : null,
+      previewPersisted: isUsablePreviewSrc(r.previewPersisted) ? r.previewPersisted : (isUsablePreviewSrc(r.preview) ? r.preview : null)
+    }));
+
+    try {
+      sessionStorage.setItem('eval_radiografias', JSON.stringify(radsToSave));
+    } catch (error) {
+      console.warn('No se pudo persistir eval_radiografias (cuota excedida), guardando versión liviana.', error);
+      const lightweight = radiografias.map(r => ({
+        ...r,
+        file: null,
+        preview: null,
+        previewPersisted: null,
+      }));
+      try {
+        sessionStorage.setItem('eval_radiografias', JSON.stringify(lightweight));
+      } catch (_) {
+        // Si incluso la versión liviana falla, evitamos romper la UI.
+      }
+    }
   }, [radiografias]);
 
   // Estado para el modal de eliminación de radiografía
@@ -262,109 +353,357 @@ const EvaluacionClinica = () => {
   // Estado para el modal de previsualización (pantalla completa dentro del sistema)
   const [previewModal, setPreviewModal] = useState({ isOpen: false, url: null });
 
-  // Data simulada para las radiografías
-  const MOCK_DETECTIONS = {
-    0: [
-      { id: 1, tooth: '46', type: 'Corona', score: 95, probs: { corona: 95, interdental: 3, radicular: 2 }, box: { top: '35%', left: '40%', width: '8%', height: '15%' } },
-      { id: 2, tooth: '35', type: 'Interdental', score: 95, probs: { corona: 3, interdental: 95, radicular: 2 }, box: { top: '50%', left: '60%', width: '6%', height: '12%' } },
-    ],
-    1: [
-      { id: 3, tooth: '11', type: 'Radicular', score: 88, probs: { corona: 10, interdental: 2, radicular: 88 }, box: { top: '45%', left: '48%', width: '5%', height: '10%' } },
-    ],
-    // 2, 3, etc fallbacks
+  const obtenerDetalleResultados = async () => {
+    if (!evaluacionId) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/detalle`);
+      if (!response.ok) return;
+      const data = await response.json();
+
+      setDetalleResultados({
+        radiografias: Array.isArray(data.radiografias) ? data.radiografias : [],
+        detecciones: Array.isArray(data.detecciones_caries) ? data.detecciones_caries : []
+      });
+    } catch (error) {
+      console.error('Error cargando detalle de resultados:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentStep === 5 && evaluacionId) {
+      obtenerDetalleResultados();
+    }
+  }, [currentStep, evaluacionId]);
+
+  const radiografiasResultados = detalleResultados.radiografias.length > 0
+    ? detalleResultados.radiografias
+    : radiografias;
+  const totalRadiografiasResultados = radiografiasResultados.length;
+  const safeActiveResultIndex = totalRadiografiasResultados > 0
+    ? Math.min(Math.max(activeResultIndex, 0), totalRadiografiasResultados - 1)
+    : 0;
+  const hasMultipleRadiografiasResultados = totalRadiografiasResultados > 1;
+
+  useEffect(() => {
+    if (totalRadiografiasResultados === 0) return;
+    if (activeResultIndex < 0) {
+      setActiveResultIndex(0);
+      return;
+    }
+    if (activeResultIndex > totalRadiografiasResultados - 1) {
+      setActiveResultIndex(totalRadiografiasResultados - 1);
+    }
+  }, [activeResultIndex, totalRadiografiasResultados]);
+
+  const goToPrevRadiografia = () => {
+    if (!hasMultipleRadiografiasResultados) return;
+    setActiveResultIndex((prev) => (prev - 1 + totalRadiografiasResultados) % totalRadiografiasResultados);
+  };
+
+  const goToNextRadiografia = () => {
+    if (!hasMultipleRadiografiasResultados) return;
+    setActiveResultIndex((prev) => (prev + 1) % totalRadiografiasResultados);
+  };
+
+  const activeRadiografiaResultado = radiografiasResultados[safeActiveResultIndex] || null;
+  const deteccionesActivas = activeRadiografiaResultado?.id_resultado
+    ? detalleResultados.detecciones.filter(d => d.id_resultado === activeRadiografiaResultado.id_resultado)
+    : [];
+
+  useEffect(() => {
+    if (deteccionesActivas.length === 0) {
+      setSelectedHallazgoId(null);
+      return;
+    }
+
+    setSelectedHallazgoId((currentSelectedId) => {
+      const stillExists = deteccionesActivas.some((det) => (det.id_deteccion ?? null) === currentSelectedId);
+      return stillExists ? currentSelectedId : deteccionesActivas[0].id_deteccion ?? null;
+    });
+  }, [deteccionesActivas]);
+
+  const getResultadoSeverityLabel = (severidad) => {
+    if (severidad === 'avanzada') return 'Caries Periapical (Avanzada)';
+    if (severidad === 'moderada') return 'Caries Profunda';
+    return 'Caries Incipiente';
+  };
+
+  const getResultadoSeverityClass = (severidad) => {
+    if (severidad === 'avanzada') return 'text-red-700 bg-red-50 border-red-100';
+    if (severidad === 'moderada') return 'text-orange-800 bg-orange-50 border-orange-100';
+    return 'text-amber-800 bg-amber-50 border-amber-100';
+  };
+
+  const getRadiografiaSrc = (rad) => {
+    if (!rad) return '';
+    const previewSrc = getRadiografiaPreviewSrc(rad);
+    if (previewSrc) return previewSrc;
+    if (rad.ruta_archivo) return `http://localhost:5000/${rad.ruta_archivo}`;
+    return '';
   };
   
+  const resetRadiografiaView = () => {
+    setZoomLevel(1);
+    setImagePan({ x: 0, y: 0 });
+    setIsDraggingImage(false);
+    dragStartRef.current = null;
+  };
+
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.5, 3));
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.5, 1));
-  const handleZoomReset = () => setZoomLevel(1);
+  const handleZoomOut = () => setZoomLevel(prev => {
+    const next = Math.max(prev - 0.5, 1);
+    if (next === 1) {
+      setImagePan({ x: 0, y: 0 });
+    }
+    return next;
+  });
+  const handleZoomReset = resetRadiografiaView;
 
-  const startAnalysis = () => {
-    // Tiempo total deseado por imagen (5 segundos = 5000ms)
-    const TIME_PER_IMAGE = 5000;
+  const showInvalidImageModal = (message) => {
+    setModalInvalidImage({
+      isOpen: true,
+      message: message || 'La imagen subida no es una radiografía. Suba nuevamente.'
+    });
+  };
 
-    // Inicializar los items en base a las radiografías subidas
+  const handleImageWheel = (event) => {
+    event.preventDefault();
+    const direction = event.deltaY < 0 ? 0.15 : -0.15;
+
+    setZoomLevel((prev) => {
+      const next = Math.min(Math.max(prev + direction, 1), 3);
+      if (next === 1) {
+        setImagePan({ x: 0, y: 0 });
+      }
+      return Number(next.toFixed(2));
+    });
+  };
+
+  const handleImagePointerDown = (event) => {
+    if (zoomLevel <= 1 || event.button !== 0) {
+      return;
+    }
+
+    if (event.target.closest('button')) {
+      return;
+    }
+
+    dragStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      panX: imagePan.x,
+      panY: imagePan.y,
+    };
+    setIsDraggingImage(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleImagePointerMove = (event) => {
+    if (!isDraggingImage || !dragStartRef.current) {
+      return;
+    }
+
+    setImagePan({
+      x: dragStartRef.current.panX + (event.clientX - dragStartRef.current.x),
+      y: dragStartRef.current.panY + (event.clientY - dragStartRef.current.y),
+    });
+  };
+
+  const stopImageDragging = (event) => {
+    if (event?.currentTarget?.releasePointerCapture && event.pointerId !== undefined) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    setIsDraggingImage(false);
+    dragStartRef.current = null;
+  };
+
+  const startAnalysis = async () => {
+    if (!evaluacionId) {
+      return;
+    }
+
+    if (!radiografias.length) {
+      return;
+    }
+
     const items = radiografias.map((rad, index) => ({
-      ...rad,
-      // Estados: 'waiting', 'analyzing', 'completed'
+      id: rad.id ?? index,
+      id_bd: rad.id_bd ?? null,
+      id_radiografia: rad.id_radiografia ?? null,
+      nombre_archivo: rad.file?.name || rad.nombreArchivo || rad.nombre_archivo || null,
+      tipo: rad.tipo || '1',
       status: index === 0 ? 'analyzing' : 'waiting',
-      progress: 0,
+      progress: index === 0 ? 1 : 0,
       startTime: index === 0 ? Date.now() : null
     }));
+
     setAnalysisItems(items);
     setAnalysisTime(0);
     setIsAnalyzing(true);
+    setAnalysisResultsReady(false);
 
-    // Simulacion temporal de analisis (luego lo conectaremos al backend)
-    let currentActiveIndex = 0;
+    const MIN_ANALYSIS_DELAY = 4000;
+    const MAX_ANALYSIS_DELAY = 6000;
+    const analysisDelay = Math.floor(Math.random() * (MAX_ANALYSIS_DELAY - MIN_ANALYSIS_DELAY + 1)) + MIN_ANALYSIS_DELAY;
+
+    const waitForMinimumDelay = new Promise((resolve) => {
+      setTimeout(resolve, analysisDelay);
+    });
+
+    let stopAnimation = false;
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const animateItemProgress = (itemIndex, durationMs = 4200, tickMs = 80) => new Promise((resolve) => {
+      const animationStart = Date.now();
+      const targetProgress = 98;
+
+      const timer = setInterval(() => {
+        if (stopAnimation) {
+          clearInterval(timer);
+          resolve();
+          return;
+        }
+
+        const elapsed = Date.now() - animationStart;
+        const ratio = Math.min(elapsed / durationMs, 1);
+        const nextProgress = Math.max(1, Math.floor(ratio * targetProgress));
+
+        setAnalysisItems((prev) => prev.map((item, idx) => (
+          idx === itemIndex
+            ? { ...item, status: 'analyzing', progress: nextProgress }
+            : item
+        )));
+
+        if (ratio >= 1) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, tickMs);
+    });
+
+    const runVisualQueue = async () => {
+      for (let idx = 0; idx < items.length; idx++) {
+        if (stopAnimation) {
+          return;
+        }
+
+        setAnalysisItems(prev => prev.map((item, itemIdx) => {
+          if (itemIdx < idx) return { ...item, status: 'completed', progress: 100 };
+          if (itemIdx === idx) return { ...item, status: 'analyzing', progress: Math.max(1, Number(item.progress || 0)), startTime: Date.now() };
+          return { ...item, status: 'waiting', progress: 0 };
+        }));
+
+        await animateItemProgress(idx, 4200, 80);
+
+        if (stopAnimation) {
+          return;
+        }
+
+        await sleep(200);
+        setAnalysisItems(prev => prev.map((item, itemIdx) => (
+          itemIdx === idx ? { ...item, status: 'completed', progress: 100 } : item
+        )));
+      }
+    };
 
     const timeInterval = setInterval(() => {
       setAnalysisTime(prev => prev + 1);
     }, 1000);
 
-    const progressInterval = setInterval(() => {
-      setAnalysisItems(prev => {
-        const newItems = [...prev];
-        
-        // Encontramos el elemento en análisis activo (evita bugs de doble render en React)
-        let currentActiveIndex = newItems.findIndex(i => i.status === 'analyzing');
-        
-        // Si no hay nadie analizando, cerramos el ciclo (si ya todos fueron completados)
-        if (currentActiveIndex === -1) {
-          clearInterval(progressInterval);
-          clearInterval(timeInterval);
-          return prev;
-        }
+    try {
+      const visualQueuePromise = runVisualQueue();
 
-        const currentItem = { ...newItems[currentActiveIndex] };
+      const responsePromise = fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/procesar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-        if (!currentItem.startTime) {
-          currentItem.startTime = Date.now();
-        }
+      const response = await Promise.all([responsePromise, waitForMinimumDelay]).then(([res]) => res);
 
-        // Calcular progreso real en porcentaje (0-100)
-        const elapsed = Date.now() - currentItem.startTime;
-        const currentProgress = (elapsed / TIME_PER_IMAGE) * 100;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'No se pudo procesar la evaluación');
+      }
 
-        if (currentProgress < 100) {
-          // Guardar el progreso como entero para evitar decimales largos
-          currentItem.progress = Math.floor(currentProgress);
-          newItems[currentActiveIndex] = currentItem;
-        } else {
-          // Si llegó a 100, se completa y pasa al siguiente
-          currentItem.progress = 100;
-          currentItem.status = 'completed';
-          newItems[currentActiveIndex] = currentItem;
+      // Intentar leer la respuesta para detectar validaciones (por ejemplo: imagen no es radiografía)
+      let resData = {};
+      try {
+        resData = await response.json();
+      } catch (e) {
+        resData = {};
+      }
 
-          const nextIndex = currentActiveIndex + 1;
-          if (newItems[nextIndex]) {
-             // Iniciar la siguiente radiografía
-            newItems[nextIndex] = {
-              ...newItems[nextIndex],
-              status: 'analyzing',
-              startTime: Date.now()
-            };
-          } else {
-            clearInterval(progressInterval);
-            clearInterval(timeInterval);
-            // Ya todas terminaron. El usuario presionará "Ver resultados" para avanzar.
-            // Eliminamos el timeout que cerraba el modal automáticamente.
+      // Comprobaciones defensivas: distintos backends pueden devolver keys diferentes.
+      const invalidFlag = (
+        resData.validation === false ||
+        resData.validacion === false ||
+        resData.valid === false ||
+        resData.is_radiograph === false ||
+        resData.any_invalid_images === true ||
+        resData.image_valid === false ||
+        resData.status === 'invalid_image' ||
+        resData.status === 'error'
+      );
+
+      // Si el backend agrupa resultados por radiografía, revisar cada resultado anidado
+      if (!invalidFlag && Array.isArray(resData.resultados)) {
+        for (const r of resData.resultados) {
+          const inner = r?.resultado || r?.result || r;
+          if (!inner) continue;
+          if (inner.status === 'invalid_image' || inner.status === 'error' || inner.valid === false) {
+            stopAnimation = true;
+            clearAnalysisPersistence();
+            setAnalysisResultsReady(false);
+            setCurrentStep(4);
+            setAnalysisItems([]);
+            showInvalidImageModal('La imagen subida no es una radiografía. Suba nuevamente.');
+            setIsAnalyzing(false);
+            return;
           }
         }
-        return newItems;
-      });
-    }, 50); // Se actualiza visualmente a 50ms, pero no depende de la pestaña activa
+      }
+
+      if (invalidFlag) {
+        // No avanzar a resultados; informar al usuario y resetear estado de análisis
+        stopAnimation = true;
+        clearAnalysisPersistence();
+        setAnalysisResultsReady(false);
+        setCurrentStep(4);
+        setAnalysisItems([]);
+        showInvalidImageModal('La imagen subida no es una radiografía. Suba nuevamente.');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      await visualQueuePromise;
+      setAnalysisResultsReady(true);
+    } catch (error) {
+      stopAnimation = true;
+      setAnalysisResultsReady(false);
+      console.error('Error al procesar radiografías:', error);
+      setAnalysisItems(prev => prev.map(item => ({
+        ...item,
+        status: 'waiting',
+        progress: 0
+      })));
+      setIsAnalyzing(false);
+    } finally {
+      clearInterval(timeInterval);
+    }
   };
 
   const addRadiografiaRow = () => {
     setRadiografias([
       ...radiografias,
-      { id: Date.now(), file: null, preview: null, tipo: '1' }
+      createEmptyRadiografia()
     ]);
   };
 
   const removeRadiografiaRow = (idToRemove) => {
     const rad = radiografias.find(r => r.id === idToRemove);
-    if (rad && (rad.file || rad.preview)) {
+    if (rad && (rad.file || hasRadiografiaPreview(rad))) {
       setModalEliminarImg({ isOpen: true, idToRemove });
     } else {
       executeRemoveRadiografia(idToRemove);
@@ -373,7 +712,7 @@ const EvaluacionClinica = () => {
 
   const executeRemoveRadiografia = (idToRemove) => {
     if (radiografias.length === 1) {
-      setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
+      setRadiografias([createEmptyRadiografia()]);
     } else {
       setRadiografias(radiografias.filter(rad => rad.id !== idToRemove));
     }
@@ -393,12 +732,64 @@ const EvaluacionClinica = () => {
     }));
   };
 
-  const handleFileChange = (id, e) => {
+  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const fileToCompressedDataUrl = async (file, maxSide = 900, quality = 0.65) => {
+    const originalDataUrl = await fileToDataUrl(file);
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const width = img.naturalWidth || img.width;
+        const height = img.naturalHeight || img.height;
+
+        if (!width || !height) {
+          resolve(originalDataUrl);
+          return;
+        }
+
+        const scale = Math.min(1, maxSide / Math.max(width, height));
+        const targetW = Math.max(1, Math.round(width * scale));
+        const targetH = Math.max(1, Math.round(height * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(originalDataUrl);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+        // Guardamos una miniatura JPEG para reducir drásticamente el tamaño en sessionStorage.
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed || originalDataUrl);
+      };
+      img.onerror = () => resolve(originalDataUrl);
+      img.src = originalDataUrl;
+    });
+  };
+
+  const handleFileChange = async (id, e) => {
     const file = e.target.files[0];
     if (file) {
       const previewUrl = URL.createObjectURL(file);
-      setRadiografias(radiografias.map(rad => 
-        rad.id === id ? { ...rad, file, preview: previewUrl } : rad
+      let previewPersisted = '';
+      try {
+        previewPersisted = await fileToCompressedDataUrl(file);
+      } catch (error) {
+        previewPersisted = previewUrl;
+      }
+      setRadiografias(prev => prev.map(rad => 
+        rad.id === id ? { ...rad, file, preview: previewUrl, previewPersisted } : rad
       ));
     }
   };
@@ -408,14 +799,20 @@ const EvaluacionClinica = () => {
     e.stopPropagation();
   };
 
-  const handleDrop = (id, e) => {
+  const handleDrop = async (id, e) => {
     e.preventDefault();
     e.stopPropagation();
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       const previewUrl = URL.createObjectURL(file);
-      setRadiografias(radiografias.map(rad => 
-        rad.id === id ? { ...rad, file, preview: previewUrl } : rad
+      let previewPersisted = '';
+      try {
+        previewPersisted = await fileToCompressedDataUrl(file);
+      } catch (error) {
+        previewPersisted = previewUrl;
+      }
+      setRadiografias(prev => prev.map(rad => 
+        rad.id === id ? { ...rad, file, preview: previewUrl, previewPersisted } : rad
       ));
     }
   };
@@ -548,6 +945,8 @@ const EvaluacionClinica = () => {
     { id: 5, title: 'Resultados' }
   ];
 
+  const isStep3Locked = currentStep === 3 && isSubmitting;
+
   const handleNext = async () => {
     if (currentStep === 1 && patientMode === 'create') {
       setIsSubmitting(true);
@@ -646,6 +1045,10 @@ const EvaluacionClinica = () => {
         alert('Hubo un error de red al intentar guardar la evaluación.');
       }
     } else if (currentStep === 3) {
+      if (!hasOnlyPanoramicRadiografias()) {
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const formDataPayload = new FormData();
@@ -655,9 +1058,10 @@ const EvaluacionClinica = () => {
           let fileToUpload = rad.file;
 
           // Intentar recuperar el archivo desde el blob URL si se perdió por navegar entre vistas (sin F5)
-          if (!fileToUpload && !rad.id_bd && rad.preview && rad.preview.startsWith('blob:')) {
+          const previewSrc = getRadiografiaPreviewSrc(rad);
+          if (!fileToUpload && !rad.id_bd && previewSrc) {
             try {
-              const resBlob = await fetch(rad.preview);
+              const resBlob = await fetch(previewSrc);
               const blobData = await resBlob.blob();
               fileToUpload = new File([blobData], `imagen_recuperada_${index}.jpg`, { type: blobData.type || 'image/jpeg' });
             } catch (err) {
@@ -763,7 +1167,8 @@ const EvaluacionClinica = () => {
     
     if (currentStep === 3) {
       if (radiografias.length === 0) return true;
-      const isAnyIncomplete = radiografias.some(rad => (!rad.file && !rad.id_bd && !rad.preview) || !rad.tipo);
+      if (!hasOnlyPanoramicRadiografias()) return true;
+      const isAnyIncomplete = radiografias.some(rad => (!rad.file && !rad.id_bd && !hasRadiografiaPreview(rad)) || !rad.tipo);
       if (isAnyIncomplete) return true;
       return false;
     }
@@ -901,7 +1306,7 @@ const EvaluacionClinica = () => {
             }
           }
         } else {
-          setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]); // Limpiar si no hay guardadas
+          setRadiografias([createEmptyRadiografia()]); // Limpiar si no hay guardadas
           setSuccessMessage('Diagnóstico pendiente recuperado. Revise los datos y continúe.');
           setIsSuccess(true);
           if (isSamePatient && savedStep >= 3) {
@@ -915,7 +1320,7 @@ const EvaluacionClinica = () => {
       } else {
         // No hay pendiente (404), limpiar evaluación por si había alguna en estado
         setEvaluacionId(null);
-        setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
+        setRadiografias([createEmptyRadiografia()]);
         setContextoClinico({
           tipo_visita: 'Primera vez',
           motivo_consulta: '',
@@ -957,6 +1362,18 @@ const EvaluacionClinica = () => {
         cancelText="Cancelar"
         icon={Info}
         colorTheme="blue"
+      />
+
+      <ModalConfirmacion
+        isOpen={modalInvalidImage.isOpen}
+        onClose={() => setModalInvalidImage({ isOpen: false, message: '' })}
+        onConfirm={() => setModalInvalidImage({ isOpen: false, message: '' })}
+        title="Imagen no válida"
+        message={modalInvalidImage.message}
+        confirmText="Cerrar"
+        hideCancelButton={true}
+        icon={AlertTriangle}
+        colorTheme="red"
       />
 
       {/* Estilos locales para las animaciones del toast */}
@@ -1042,7 +1459,7 @@ const EvaluacionClinica = () => {
         className="flex-1 overflow-auto p-8 bg-cover bg-center bg-no-repeat bg-fixed"
         style={{ backgroundImage: `url(${bgDashboard})` }}
       >
-        <div className="max-w-[90%] 2xl:max-w-7xl mx-auto">
+        <div className={currentStep === 5 ? 'w-full max-w-[98%] 2xl:max-w-[1600px] mx-auto' : 'max-w-[90%] 2xl:max-w-7xl mx-auto'}>
           
           {/* Progress Bar */}
           <div className="mb-14 px-4 max-w-5xl mx-auto">
@@ -1220,7 +1637,7 @@ const EvaluacionClinica = () => {
                                   setContextoClinico({tipo_visita: 'Primera vez', motivo_consulta: '', observaciones: ''});
                                   setCurrentStep(1);
                                   sessionStorage.removeItem('eval_radiografias');
-                                  setRadiografias([{ id: Date.now(), file: null, preview: null, tipo: '1' }]);
+                                  setRadiografias([createEmptyRadiografia()]);
                                   setIsAnalyzing(false);
                                   setAnalysisItems([]);
                                   setAnalysisTime(0);
@@ -1572,7 +1989,15 @@ const EvaluacionClinica = () => {
 
               {/* Paso 3: Carga de Radiografías */}
               {currentStep === 3 && (
-                <div className="animate-fade-in-up">
+                <div className="animate-fade-in-up relative">
+                  {isStep3Locked && (
+                    <div className="absolute inset-0 z-20 rounded-2xl bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
+                      <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm border border-gray-200 text-sm font-bold text-dentBlue-900">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Guardando radiografías...
+                      </div>
+                    </div>
+                  )}
                   <div className="p-6 border-b border-gray-100 bg-gray-50/50">
                     <h2 className="text-xl font-bold text-dentBlue-900 flex items-center">
                       <Stethoscope className="w-5 h-5 mr-2 text-dentGreen-500" /> 
@@ -1581,7 +2006,7 @@ const EvaluacionClinica = () => {
                     <p className="text-sm text-gray-500 mt-1">Seleccione y suba las imágenes radiográficas necesarias para que la Inteligencia Artificial analice las lesiones.</p>
                   </div>
                   
-                  <div className="p-8 px-4 md:px-12 lg:px-16">
+                  <div className={`p-8 px-4 md:px-12 lg:px-16 ${isStep3Locked ? 'pointer-events-none select-none opacity-70' : ''}`} aria-busy={isStep3Locked}>
                     <div className="space-y-6">
                       {radiografias.map((rad, index) => (
                         <div key={rad.id} className={`p-5 rounded-2xl border transition-all duration-300 relative bg-white ${rad.file ? 'border-dentGreen-200 ring-1 ring-dentGreen-50' : 'border-gray-200'}`}>
@@ -1608,6 +2033,7 @@ const EvaluacionClinica = () => {
                                 <select
                                   value={rad.tipo}
                                   onChange={(e) => handleTipoRadiografiaChange(rad.id, e.target.value)}
+                                  disabled={isStep3Locked}
                                   className="w-full px-4 py-3 pb-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700 appearance-none"
                                 >
                                   <option value="1">Panorámica</option>
@@ -1651,18 +2077,19 @@ const EvaluacionClinica = () => {
                                     Por el momento el análisis por IA solo está entrenado para formato Panorámica.
                                   </p>
                                 </div>
-                              ) : !rad.preview ? (
+                              ) : !hasRadiografiaPreview(rad) ? (
                                 /* Zona de Drag & Drop */
                                 <label 
                                   onDragOver={handleDragOver}
                                   onDrop={(e) => handleDrop(rad.id, e)}
-                                  className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-blue-50/50 hover:border-dentBlue-900/50 transition-colors cursor-pointer group"
+                                  className={`flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 transition-colors group ${isStep3Locked ? 'cursor-not-allowed' : 'hover:bg-blue-50/50 hover:border-dentBlue-900/50 cursor-pointer'}`}
                                 >
                                   <UploadCloud className="w-8 h-8 text-gray-400 group-hover:text-dentBlue-900 mb-2 transition-colors" />
                                   <p className="text-sm font-medium text-gray-600"><span className="text-dentBlue-900 font-bold">Haga clic</span> para seleccionar</p>
                                   <p className="text-xs text-gray-400 mt-1">o arrastre y suelte su imagen aquí</p>
                                   <input 
                                     type="file" className="hidden" accept="image/*"
+                                    disabled={isStep3Locked}
                                     onChange={(e) => handleFileChange(rad.id, e)}
                                   />
                                 </label>
@@ -1670,7 +2097,7 @@ const EvaluacionClinica = () => {
                                 /* View de Imagen subida */
                                 <div className="relative w-full h-36 bg-gray-900 rounded-xl overflow-hidden group">
                                   <img 
-                                    src={rad.preview} 
+                                    src={getRadiografiaPreviewSrc(rad)} 
                                     alt="Preview" 
                                     className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity"
                                   />
@@ -1679,6 +2106,7 @@ const EvaluacionClinica = () => {
                                       Cambiar Imagen
                                       <input 
                                         type="file" className="hidden" accept="image/*"
+                                        disabled={isStep3Locked}
                                         onChange={(e) => handleFileChange(rad.id, e)}
                                       />
                                     </label>
@@ -1705,7 +2133,8 @@ const EvaluacionClinica = () => {
                       {/* Botón Agregar Radiografía Adicional */}
                       <button
                         onClick={addRadiografiaRow}
-                        className="w-full py-4 border-2 border-dashed border-dentGreen-300 text-dentGreen-600 hover:bg-dentGreen-50 rounded-xl flex items-center justify-center text-sm font-bold transition-colors shadow-sm"
+                        disabled={isStep3Locked}
+                        className={`w-full py-4 border-2 border-dashed rounded-xl flex items-center justify-center text-sm font-bold transition-colors shadow-sm ${isStep3Locked ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50' : 'border-dentGreen-300 text-dentGreen-600 hover:bg-dentGreen-50'}`}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Agregar radiografía adicional
@@ -1755,7 +2184,7 @@ const EvaluacionClinica = () => {
                   </div>
 
                   {/* Right Column: Previsualización tipo Lista (dentro de tarjeta) */}
-                  {radiografias.some(r => r.preview) && (
+                  {radiografias.some(r => hasRadiografiaPreview(r)) && (
                     <div className="bg-white/80 p-8 rounded-3xl border border-gray-100 shadow-xl w-full max-w-md flex flex-col max-h-[500px] relative overflow-hidden">
                       <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
                         <h4 className="text-lg font-extrabold text-gray-800 tracking-tight flex items-center">
@@ -1765,14 +2194,14 @@ const EvaluacionClinica = () => {
                       </div>
                       
                       <div className="overflow-y-auto pb-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent pr-2 -mr-2 flex flex-col gap-4">
-                        {radiografias.filter(r => r.preview).map((rad, idx) => (
+                        {radiografias.filter(r => hasRadiografiaPreview(r)).map((rad, idx) => (
                           <div key={idx} className="bg-gray-50 rounded-2xl border border-gray-100 p-3 flex gap-4 items-center hover:bg-white hover:border-dentGreen-200 transition-all duration-300 shadow-sm group">
                             
                             {/* Imagen Miniatura */}
                             <div className="relative w-24 h-16 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer shadow-inner border border-gray-100"
-                                 onClick={() => setPreviewModal({ isOpen: true, url: rad.preview })}>
+                                 onClick={() => setPreviewModal({ isOpen: true, url: getRadiografiaSrc(rad) })}>
                               <img 
-                                src={rad.preview} 
+                                src={getRadiografiaSrc(rad)} 
                                 alt={`Radiografía ${idx+1}`} 
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                               />
@@ -1815,95 +2244,104 @@ const EvaluacionClinica = () => {
 
               {/* Paso 5: Resultados de IA */}
               {currentStep === 5 && (
-                <div className="flex flex-col h-full animate-fade-in-up bg-gray-50">
+                <div className="flex flex-col h-full w-full animate-fade-in-up bg-gray-50">
                   {/* Contenedor Principal Dividido */}
-                  <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-[600px]">
+                  <div className="grid flex-1 overflow-hidden min-h-[600px] gap-4 lg:gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(460px,1.05fr)]">
                     
                     {/* VISOR PRINCIPAL (Izquierda - 60%) */}
-                    <div className="lg:w-[60%] flex flex-col border-r border-gray-200 bg-black/5 relative">
-                      {/* Toolbar del Visor */}
-                      <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-10 shrink-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold bg-white text-dentBlue-900 border border-gray-200 px-3 py-1.5 rounded-lg flex items-center shadow-sm">
-                            <Activity className="w-4 h-4 mr-2 text-dentBlue-900" />
-                            Radiografía {activeResultIndex + 1}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-lg border border-gray-200">
-                          <button onClick={handleZoomOut} className="p-1.5 hover:bg-white rounded-md text-gray-600 hover:text-dentBlue-900 transition-colors shadow-sm" title="Alejar">
-                            <ZoomOut className="w-4 h-4" />
+                    <div className="flex min-w-0 flex-col border-r border-gray-200 bg-black/5 relative">
+                      <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-10 shrink-0 gap-3">
+                        <span className="text-xs font-bold bg-white text-dentBlue-900 border border-gray-200 px-3 py-1.5 rounded-lg flex items-center shadow-sm">
+                          <Activity className="w-4 h-4 mr-2 text-dentBlue-900" />
+                          Radiografía {safeActiveResultIndex + 1}
+                        </span>
+
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setShowBoxes((value) => !value)}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${showBoxes ? 'bg-dentBlue-900 text-white border-dentBlue-900' : 'bg-white text-gray-600 border-gray-200 hover:border-dentBlue-300'}`}
+                          >
+                            {showBoxes ? 'Ocultar cajas' : 'Mostrar cajas'}
                           </button>
-                          <span className="text-xs font-bold text-gray-600 w-12 text-center tabular-nums">{Math.round(zoomLevel * 100)}%</span>
-                          <button onClick={handleZoomIn} className="p-1.5 hover:bg-white rounded-md text-gray-600 hover:text-dentBlue-900 transition-colors shadow-sm" title="Acercar">
-                            <ZoomIn className="w-4 h-4" />
-                          </button>
-                          <div className="w-[1px] h-4 bg-gray-300 mx-1"></div>
-                          <button onClick={handleZoomReset} className="p-1.5 hover:bg-white rounded-md text-gray-600 hover:text-dentBlue-900 transition-colors shadow-sm" title="Ajustar">
-                            <Maximize2 className="w-4 h-4" />
+                          <button
+                            type="button"
+                            onClick={() => setShowLabels((value) => !value)}
+                            disabled={!showBoxes}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${
+                              !showBoxes
+                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                : showLabels
+                                  ? 'bg-dentGreen-600 text-white border-dentGreen-600'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-dentGreen-300'
+                            }`}
+                          >
+                            {showLabels ? 'Ocultar etiquetas' : 'Mostrar etiquetas'}
                           </button>
                         </div>
                       </div>
 
-                      {/* Area Interactiva de la Imagen */}
-                      <div className="flex-1 relative overflow-auto grid place-items-center bg-gray-900/5 cursor-grab active:cursor-grabbing pb-24">
-                        <div 
-                          className="relative max-w-full max-h-full transition-transform duration-300 ease-out origin-center select-none"
-                          style={{ transform: `scale(${zoomLevel})` }}
-                        >
-                          <img 
-                            src={radiografias[activeResultIndex]?.preview || ''} 
-                            alt="Radiografía Procesada" 
-                            className="max-h-[60vh] md:max-h-[70vh] object-contain shadow-2xl border border-gray-300 rounded-lg pointer-events-none"
-                          />
-                          
-                          {/* Simulacion*/}
-                          {(MOCK_DETECTIONS[activeResultIndex] || []).map((det) => (
-                            <div
-                              key={det.id}
-                              className={`absolute border-2 transition-all duration-200 cursor-pointer ${
-                                hoveredBox === det.id 
-                                  ? 'border-red-500 bg-red-500/20 z-20 shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
-                                  : 'border-red-400 bg-red-500/10 z-10'
-                              }`}
-                              style={{
-                                top: det.box.top,
-                                left: det.box.left,
-                                width: det.box.width,
-                                height: det.box.height
-                              }}
-                              onMouseEnter={() => setHoveredBox(det.id)}
-                              onMouseLeave={() => setHoveredBox(null)}
+                      <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-gray-900/5 px-2 py-3 pb-24 lg:px-3">
+                        {hasMultipleRadiografiasResultados && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={goToPrevRadiografia}
+                              className="absolute left-4 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-dentBlue-900 shadow-lg backdrop-blur transition-all hover:bg-white hover:scale-105"
+                              aria-label="Ver radiografía anterior"
                             >
-                              {/* Tooltip on Hover */}
-                              <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg pointer-events-none transition-all duration-200 ${
-                                hoveredBox === det.id ? 'opacity-100 -translate-y-1' : 'opacity-0 translate-y-0'
-                              }`}>
-                                {det.type} - {det.score}%
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                              <ChevronLeft className="h-6 w-6" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={goToNextRadiografia}
+                              className="absolute right-4 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-dentBlue-900 shadow-lg backdrop-blur transition-all hover:bg-white hover:scale-105"
+                              aria-label="Ver radiografía siguiente"
+                            >
+                              <ChevronRight className="h-6 w-6" />
+                            </button>
+                          </>
+                        )}
+
+                        {activeRadiografiaResultado ? (
+                          <BoundingBoxViewer
+                            imageSrc={getRadiografiaSrc(activeRadiografiaResultado)}
+                            alt="Radiografía Panorámica"
+                            title="Radiografía Panorámica"
+                            detections={deteccionesActivas}
+                            selectedDetectionId={selectedHallazgoId}
+                            onDetectionClick={(det) => setSelectedHallazgoId(det.id_deteccion ?? null)}
+                            showBoxes={showBoxes}
+                            showLabels={showLabels}
+                          />
+                        ) : (
+                          <div className="w-full h-full min-h-[400px] bg-white/70 rounded-xl flex items-center justify-center text-gray-400 border border-gray-100">
+                            Sin imagen disponible
+                          </div>
+                        )}
                       </div>
 
                       {/* Thumbnail Carrusel (Inferior) */}
                       <div className="absolute bottom-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-t border-gray-200 flex items-center px-4 gap-4 overflow-x-auto shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-                        {radiografias.map((rad, idx) => (
+                        {radiografiasResultados.map((rad, idx) => (
                           <div 
-                            key={rad.id}
+                            key={rad.id_radiografia || rad.id || idx}
                             onClick={() => {
                               setActiveResultIndex(idx);
                               setZoomLevel(1);
+                              setImagePan({ x: 0, y: 0 });
                             }}
                             className={`relative cursor-pointer flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                              activeResultIndex === idx 
-                                ? 'border-dentBlue-900 shadow-[0_0_0_2px_rgba(30,58,138,0.2)]' 
-                                : 'border-gray-200 hover:border-gray-400'
+                              safeActiveResultIndex === idx 
+                                ? 'border-dentBlue-900 ring-2 ring-dentBlue-900/25 shadow-[0_10px_25px_rgba(30,58,138,0.28)] scale-110 -translate-y-1 z-10' 
+                                : 'border-gray-200 hover:border-gray-400 hover:scale-105'
                             }`}
                           >
-                            <img src={rad.preview} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
-                            {activeResultIndex === idx && (
-                              <div className="absolute inset-0 bg-dentBlue-900/10 mix-blend-overlay"></div>
+                            <img src={getRadiografiaSrc(rad)} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                            {safeActiveResultIndex === idx && (
+                              <>
+                                <div className="absolute inset-0 bg-dentBlue-900/10 mix-blend-overlay"></div>
+                              </>
                             )}
                           </div>
                         ))}
@@ -1911,9 +2349,9 @@ const EvaluacionClinica = () => {
                     </div>
 
                     {/* PANEL DE HALLAZGOS (Derecha - 40%) */}
-                    <div className="lg:w-[40%] bg-white flex flex-col h-full border-l border-white shrink-0">
+                    <div className="min-w-0 bg-white flex flex-col h-full border-l border-white">
                       
-                      <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
+                      <div className="px-5 py-4 lg:px-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
                         <div>
                           <h3 className="text-xl font-extrabold text-gray-800 tracking-tight flex items-center">
                             Resultados
@@ -1925,77 +2363,116 @@ const EvaluacionClinica = () => {
                       </div>
 
                       {/* Lista de Tarjetas de Lesiones */}
-                      <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-5">
+                      <div className="flex-1 overflow-y-auto px-5 py-4 lg:px-6 bg-gray-50">
                         
                         {/* Resumen Header */}
-                        <div className="flex items-center bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-sm">
+                        <div className="flex items-center bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-sm mb-4">
                           <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 flex-shrink-0" />
                           <p className="text-sm font-bold text-amber-800">
-                            Se detectaron {(MOCK_DETECTIONS[activeResultIndex] || []).length} posibles lesiones en esta radiografía.
+                            Se detectaron {deteccionesActivas.length} posibles lesiones en esta radiografía.
                           </p>
                         </div>
 
-                        {(MOCK_DETECTIONS[activeResultIndex] || []).length === 0 ? (
-                          <div className="text-center py-10">
+                        {deteccionesActivas.length === 0 ? (
+                          <div className="text-center py-10 col-span-2">
                             <CheckCircle2 className="w-12 h-12 text-dentGreen-400 mx-auto mb-3 opacity-50" />
-                            <p className="text-sm font-bold text-gray-500">No se detectaron anomalías en esta imagen.</p>
+                            <p className="text-sm font-bold text-gray-500">No se detectaron caries en esta imagen.</p>
                           </div>
                         ) : (
-                          (MOCK_DETECTIONS[activeResultIndex] || []).map((det) => {
-                            // Ordenar probabilidades de mayor a menor
-                            const probList = [
-                              { label: 'Caries de Corona', key: 'corona', val: det.probs.corona },
-                              { label: 'Caries Interdental', key: 'interdental', val: det.probs.interdental },
-                              { label: 'Caries Radicular', key: 'radicular', val: det.probs.radicular }
-                            ].sort((a, b) => b.val - a.val);
+                          <div className="grid gap-4 lg:grid-cols-2">
+                            {deteccionesActivas.map((det, idx) => {
+                              const severityLabel = getResultadoSeverityLabel(det.severidad);
+                              const severityClass = getResultadoSeverityClass(det.severidad);
+                              const confidence = Math.round((Number(det.confianza) || 0) * 100);
+                              const isOddLastCard = deteccionesActivas.length % 2 === 1 && idx === deteccionesActivas.length - 1;
+                              const isSelected = selectedHallazgoId !== null && det.id_deteccion === selectedHallazgoId;
 
-                            return (
-                              <div 
-                                key={det.id}
-                                onMouseEnter={() => setHoveredBox(det.id)}
-                                onMouseLeave={() => setHoveredBox(null)}
-                                className={`bg-white rounded-2xl border transition-all duration-300 shadow-sm overflow-hidden ${
-                                  hoveredBox === det.id 
-                                    ? 'border-red-300 ring-2 ring-red-50 translate-x-1' 
-                                    : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                              >
+                              return (
+                                <div 
+                                  key={det.id_deteccion || idx}
+                                  onClick={() => setSelectedHallazgoId(det.id_deteccion ?? null)}
+                                  className={`bg-white rounded-2xl border transition-all duration-300 shadow-sm overflow-hidden cursor-pointer hover:border-gray-300 ${isOddLastCard ? 'lg:col-span-2' : ''} ${isSelected ? 'border-dentBlue-900 ring-2 ring-dentBlue-900/20 shadow-lg' : 'border-gray-200'}`}
+                                >
                                 <div className="bg-gray-50/80 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                                   <h4 className="text-sm font-extrabold text-dentBlue-900 flex items-center">
                                     <img src={dienteImg} alt="Diente" className="w-4 h-4 mr-2 opacity-70 grayscale" />
-                                    Diente {det.tooth}
+                                    {det.numero_diente ? `Diente ${det.numero_diente}` : `Hallazgo ${idx + 1}`}
                                   </h4>
-                                  <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded-md uppercase tracking-wide">
-                                    {det.type}
+                                  <span className={`text-[10px] font-bold border px-2 py-1 rounded-md uppercase tracking-wide ${severityClass}`}>
+                                    {det.localizacion || severityLabel}
                                   </span>
                                 </div>
                                 
-                                <div className="p-4 space-y-3">
-                                  {probList.map((prob, idx) => {
-                                    const isHighest = idx === 0 && prob.val > 50;
+                                <div className="p-4 lg:p-3 xl:p-4 space-y-3">
+                                  {/* Mostrar las 3 clases con porcentajes y destacar la mayor */}
+                                  {(() => {
+                                    // Preferir probabilidades reales si se entregan desde la BD
+                                    const probs = det.class_probabilities || null;
+                                    let classVals;
+
+                                    if (probs && typeof probs === 'object') {
+                                      // Convertir a porcentajes enteros
+                                      let inc = Math.round((probs['Caries Incipiente'] || probs['Caries Incipiente'] === 0 ? Number(probs['Caries Incipiente']) : 0) * 100);
+                                      let mod = Math.round((probs['Caries Profunda'] || probs['Caries Profunda'] === 0 ? Number(probs['Caries Profunda']) : 0) * 100);
+                                      let adv = Math.round((probs['Caries Periapical (Avanzada)'] || probs['Caries Periapical (Avanzada)'] === 0 ? Number(probs['Caries Periapical (Avanzada)']) : 0) * 100);
+
+                                      // Asegurar suma 100 (ajustar por redondeo)
+                                      let total = inc + mod + adv;
+                                      if (total !== 100) {
+                                        const diff = 100 - total;
+                                        // añadir la diferencia al mayor
+                                        const maxKey = Math.max(inc, mod, adv);
+                                        if (maxKey === inc) inc += diff;
+                                        else if (maxKey === mod) mod += diff;
+                                        else adv += diff;
+                                      }
+
+                                      classVals = { incipiente: inc, moderada: mod, avanzada: adv };
+                                    } else {
+                                      // Fallback a la simulación antigua si no hay probabilidades
+                                      const mainConf = Math.round((Number(det.confianza) || 0) * 100);
+                                      const rem = 100 - mainConf;
+                                      const otherA = Math.round(rem / 2);
+                                      const otherB = rem - otherA;
+
+                                      classVals = {
+                                        incipiente: det.severidad === 'incipiente' ? mainConf : otherA,
+                                        moderada: det.severidad === 'moderada' ? mainConf : (det.severidad === 'incipiente' ? otherB : (det.severidad === 'avanzada' ? otherA : otherA)),
+                                        avanzada: det.severidad === 'avanzada' ? mainConf : otherB
+                                      };
+                                    }
+
+                                    const maxVal = Math.max(classVals.incipiente, classVals.moderada, classVals.avanzada);
+
+                                    const rows = [
+                                      { key: 'incipiente', label: 'Caries Incipiente', val: classVals.incipiente },
+                                      { key: 'moderada', label: 'Caries Profunda', val: classVals.moderada },
+                                      { key: 'avanzada', label: 'Caries Periapical (Avanzada)', val: classVals.avanzada }
+                                    ];
+
                                     return (
-                                      <div 
-                                        key={prob.key} 
-                                        className={isHighest ? "bg-red-50/50 p-2.5 -mx-2.5 rounded-lg border border-red-100/50" : ""}
-                                      >
-                                        <div className="flex justify-between text-xs font-bold mb-1">
-                                          <span className={isHighest ? "text-red-700" : "text-gray-600"}>
-                                            {prob.label}
-                                          </span>
-                                          <span className={prob.val > 50 ? 'text-red-600 font-black' : 'text-gray-500'}>
-                                            {prob.val}%
-                                          </span>
-                                        </div>
-                                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                          <div className={`h-full rounded-full transition-all duration-1000 ease-out ${prob.val > 50 ? 'bg-red-500' : 'bg-gray-400'}`} style={{ width: `${prob.val}%` }}></div>
-                                        </div>
+                                      <div className="space-y-3">
+                                        {rows.map((r) => (
+                                          <div key={r.key} className={`flex items-center justify-between text-xs ${r.val === maxVal ? 'font-extrabold' : 'font-medium'}`}>
+                                            <div className="w-1/2 text-sm text-gray-700">{r.label}</div>
+                                            <div className="w-1/2 pl-3">
+                                              <div className="flex items-center justify-between mb-1">
+                                                <div className="flex-1 mr-3 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                  <div className={`h-2 rounded-full ${r.val === maxVal ? 'bg-dentBlue-900' : 'bg-gray-300'}`} style={{ width: `${r.val}%` }} />
+                                                </div>
+                                                <div className="w-12 text-right text-xs text-gray-800">{r.val}%</div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
                                     );
-                                  })}
+                                  })()}
                                 </div>
-                              </div>
-                            );
-                          })
+                                  </div>
+                              );
+                            })}
+                          </div>
                         )}
 
                         {/* Cierre del Flujo Médico */}
@@ -2296,9 +2773,10 @@ const EvaluacionClinica = () => {
                 </span>
               </div>
               
-              {analysisItems.length > 0 && analysisItems.every(i => i.status === 'completed') ? (
+              {analysisResultsReady && analysisItems.length > 0 && analysisItems.every(i => i.status === 'completed') ? (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    await obtenerDetalleResultados();
                     setIsAnalyzing(false);
                     setCurrentStep(5);
                     sessionStorage.setItem('eval_currentStep', 5); // Remarcar forzadamente

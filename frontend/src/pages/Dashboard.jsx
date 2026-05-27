@@ -21,11 +21,25 @@ import api from '../services/api';
 // Importamos la imagen de fondo para el dashboard
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 
+const BAR_STYLES = [
+  'bg-red-400 group-hover:bg-red-500',
+  'bg-orange-400 group-hover:bg-orange-500',
+  'bg-yellow-400 group-hover:bg-yellow-500',
+  'bg-amber-400 group-hover:bg-amber-500',
+  'bg-rose-400 group-hover:bg-rose-500',
+  'bg-indigo-400 group-hover:bg-indigo-500',
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const deteccionesSeries = stats?.detecciones_localizacion_series || [];
+  const maxDetecciones = deteccionesSeries.length > 0
+    ? Math.max(...deteccionesSeries.map((item) => Number(item.cantidad) || 0), 1)
+    : 1;
 
   useEffect(() => {
     // Verificamos si existe usuario guardado en localStorage
@@ -191,12 +205,12 @@ const Dashboard = () => {
                       <span className="text-sm font-semibold">Ver Pacientes</span>
                     </button>
 
-                      <button className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
+                      <button onClick={() => navigate('/pendientes')} className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
                         <Clock className="w-8 h-8 mb-2 text-white group-hover:scale-110 transition-transform" />
                         <span className="text-sm font-semibold">Diagnósticos Pendientes</span>
                       </button>
 
-                      <button className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
+                      <button onClick={() => navigate('/reportes')} className="flex flex-col items-center justify-center py-4 px-2 bg-white/10 hover:bg-dentGreen-500 transition-colors rounded-xl group border border-white/5 border-dashed">
                         <BarChart2 className="w-8 h-8 mb-2 text-white group-hover:scale-110 transition-transform" />
                         <span className="text-sm font-semibold">Estadísticas y Reportes</span>
                       </button>
@@ -255,34 +269,30 @@ const Dashboard = () => {
                         <Activity className="w-4 h-4 mr-2" /> Caries Más Encontradas
                       </h3>
 
-                      <div className="flex-1 flex items-end justify-center space-x-6 pt-4 relative">
-                         {/* Bar 1 */}
-                         <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_localizacion?.Corona || 0}</span>
-                            <div
-                               className="w-12 bg-red-400 rounded-t-lg group-hover:bg-red-500 transition-colors shadow-sm"
-                               style={{ height: `${Math.max(16, (stats?.detecciones_localizacion?.Corona || 0) * 10)}px` }}
-                            ></div>
-                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Corona</span>
-                         </div>
-                         {/* Bar 2 */}
-                         <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_localizacion?.Interdental || 0}</span>
-                            <div
-                               className="w-12 bg-orange-400 rounded-t-lg group-hover:bg-orange-500 transition-colors shadow-sm"
-                               style={{ height: `${Math.max(16, (stats?.detecciones_localizacion?.Interdental || 0) * 10)}px` }}
-                            ></div>
-                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Interdental</span>
-                         </div>
-                         {/* Bar 3 */}
-                         <div className="flex flex-col items-center group cursor-pointer">
-                            <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{stats?.detecciones_localizacion?.Fisura || 0}</span>
-                            <div
-                               className="w-12 bg-yellow-400 rounded-t-lg group-hover:bg-yellow-500 transition-colors shadow-sm"
-                               style={{ height: `${Math.max(16, (stats?.detecciones_localizacion?.Fisura || 0) * 10)}px` }}
-                            ></div>
-                            <span className="text-xs font-semibold text-gray-500 mt-3 rotate-0">Fisura</span>
-                         </div>
+                      <div className="flex-1 flex items-end justify-center gap-4 pt-4 relative min-h-[220px]">
+                        {deteccionesSeries.length > 0 ? deteccionesSeries.map((item, index) => {
+                          const cantidad = Number(item.cantidad) || 0;
+                          const heightPx = Math.max(18, Math.round((cantidad / maxDetecciones) * 150));
+                          const barClass = BAR_STYLES[index % BAR_STYLES.length];
+
+                          return (
+                            <div key={item.localizacion} className="flex flex-col items-center group cursor-pointer w-20">
+                              <span className="text-xs font-bold text-gray-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {cantidad}
+                              </span>
+                              <div
+                                className={`w-12 rounded-t-lg transition-colors shadow-sm ${barClass}`}
+                                style={{ height: `${heightPx}px` }}
+                                title={`${item.localizacion}: ${cantidad}`}
+                              ></div>
+                              <span className="text-xs font-semibold text-gray-500 mt-3 text-center leading-tight break-words">
+                                {item.localizacion}
+                              </span>
+                            </div>
+                          );
+                        }) : (
+                          <div className="text-sm text-gray-400 py-10">Aún no hay detecciones registradas</div>
+                        )}
                       </div>
                       
                     </div>

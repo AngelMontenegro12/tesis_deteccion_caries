@@ -4,6 +4,9 @@ import {
   Filter, 
   ChevronLeft, 
   ChevronRight, 
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
   Eye, 
   Activity, 
   AlertCircle,
@@ -30,6 +33,8 @@ const HistorialEvaluaciones = () => {
   const [tipoVisita, setTipoVisita] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
+  const [sortBy, setSortBy] = useState('fecha_evaluacion');
+  const [sortDirection, setSortDirection] = useState('desc');
   
   const navigate = useNavigate();
 
@@ -44,7 +49,9 @@ const HistorialEvaluaciones = () => {
           estado,
           tipo_visita: tipoVisita,
           fecha_inicio: fechaInicio,
-          fecha_fin: fechaFin
+            fecha_fin: fechaFin,
+            sort_by: sortBy,
+            sort_dir: sortDirection
         }
       });
       
@@ -66,7 +73,7 @@ const HistorialEvaluaciones = () => {
       fetchEvaluaciones();
     }, 400); // 400ms debounce
     return () => clearTimeout(timeoutId);
-  }, [page, estado, search, tipoVisita, fechaInicio, fechaFin]);
+  }, [page, estado, search, tipoVisita, fechaInicio, fechaFin, sortBy, sortDirection]);
 
   const handleClearFilters = () => {
     setSearch('');
@@ -76,6 +83,40 @@ const HistorialEvaluaciones = () => {
     setFechaFin('');
     setPage(1);
   };
+
+  const handleSort = (column) => {
+    setPage(1);
+    if (sortBy === column) {
+      setSortDirection((currentDirection) => (currentDirection === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setSortBy(column);
+    setSortDirection(column === 'fecha_evaluacion' ? 'desc' : 'asc');
+  };
+
+  const getSortIcon = (column) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+    }
+
+    return sortDirection === 'asc'
+      ? <ChevronUp className="w-4 h-4 text-dentBlue-900" />
+      : <ChevronDown className="w-4 h-4 text-dentBlue-900" />;
+  };
+
+  const renderSortableHeader = (label, column, centered = false) => (
+    <button
+      type="button"
+      onClick={() => handleSort(column)}
+      className={`w-full flex items-center gap-2 ${centered ? 'justify-center text-center' : 'justify-start text-left'} text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-dentBlue-900 transition-colors`}
+      aria-label={`Ordenar por ${label}`}
+      aria-sort={sortBy === column ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <span>{label}</span>
+      {getSortIcon(column)}
+    </button>
+  );
 
   const handleVerDetalles = (id) => {
     // Por ahora podemos navegar a algun lado (quizas en un futuro tengamos /evaluacion/:id)
@@ -203,20 +244,20 @@ const HistorialEvaluaciones = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Paciente
+                  <th scope="col" className="px-6 py-4 text-left">
+                    {renderSortableHeader('Paciente', 'paciente')}
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Fecha / Hora
+                  <th scope="col" className="px-6 py-4 text-left">
+                    {renderSortableHeader('Fecha / Hora', 'fecha_evaluacion')}
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Motivo / Visita
+                  <th scope="col" className="px-6 py-4 text-left">
+                    {renderSortableHeader('Motivo / Visita', 'motivo_consulta')}
                   </th>
-                  <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Radiografías
+                  <th scope="col" className="px-6 py-4 text-center">
+                    {renderSortableHeader('Radiografías', 'radiografias_count', true)}
                   </th>
-                  <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Estado
+                  <th scope="col" className="px-6 py-4 text-center">
+                    {renderSortableHeader('Estado', 'estado', true)}
                   </th>
                   <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Acciones

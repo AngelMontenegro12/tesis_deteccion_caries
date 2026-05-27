@@ -141,3 +141,63 @@ class DiagnosticoOdontologo(db.Model):
             'actualizado_en': self.actualizado_en.isoformat() if self.actualizado_en else None
         }
 
+class ResultadosDeteccion(db.Model):
+    __tablename__ = 'resultados_deteccion'
+    
+    id_resultado = db.Column(db.Integer, primary_key=True)
+    id_radiografia = db.Column(db.Integer, db.ForeignKey('radiografias.id_radiografia', ondelete='CASCADE'), nullable=False)
+    modelo_version = db.Column(db.String(50), nullable=False)
+    caries_detectada = db.Column(db.Boolean, nullable=False)
+    confianza_global = db.Column(db.Numeric(5, 4))
+    imagen_resultado = db.Column(db.String(500))
+    tiempo_proceso_ms = db.Column(db.Integer)
+    error_descripcion = db.Column(db.Text)
+    creado_en = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    detecciones = db.relationship('DeteccionesCaries', backref='resultado', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id_resultado': self.id_resultado,
+            'id_radiografia': self.id_radiografia,
+            'modelo_version': self.modelo_version,
+            'caries_detectada': self.caries_detectada,
+            'confianza_global': float(self.confianza_global) if self.confianza_global else None,
+            'imagen_resultado': self.imagen_resultado,
+            'tiempo_proceso_ms': self.tiempo_proceso_ms,
+            'error_descripcion': self.error_descripcion,
+            'creado_en': str(self.creado_en)
+        }
+
+class DeteccionesCaries(db.Model):
+    __tablename__ = 'detecciones_caries'
+    
+    id_deteccion = db.Column(db.Integer, primary_key=True)
+    id_resultado = db.Column(db.Integer, db.ForeignKey('resultados_deteccion.id_resultado', ondelete='CASCADE'), nullable=False)
+    id_localizacion = db.Column(db.Integer, nullable=False, default=1)
+    numero_diente = db.Column(db.String(10))
+    confianza = db.Column(db.Numeric(5, 4), nullable=False)
+    bbox_x = db.Column(db.Integer)
+    bbox_y = db.Column(db.Integer)
+    bbox_ancho = db.Column(db.Integer)
+    bbox_alto = db.Column(db.Integer)
+    severidad = db.Column(db.Enum('incipiente', 'moderada', 'avanzada'), nullable=True)
+    class_probabilities = db.Column(db.JSON, nullable=True)
+    creado_en = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    def to_dict(self):
+        return {
+            'id_deteccion': self.id_deteccion,
+            'id_resultado': self.id_resultado,
+            'id_localizacion': self.id_localizacion,
+            'numero_diente': self.numero_diente,
+            'confianza': float(self.confianza),
+            'bbox_x': self.bbox_x,
+            'bbox_y': self.bbox_y,
+            'bbox_ancho': self.bbox_ancho,
+            'bbox_alto': self.bbox_alto,
+            'severidad': self.severidad,
+            'class_probabilities': self.class_probabilities,
+            'creado_en': str(self.creado_en)
+        }
+

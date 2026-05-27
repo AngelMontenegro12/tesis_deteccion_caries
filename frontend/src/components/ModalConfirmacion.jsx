@@ -9,6 +9,7 @@ const ModalConfirmacion = ({
   message, 
   confirmText = 'Continuar', 
   cancelText = 'Cancelar',
+  hideCancelButton = false,
   icon: Icon = AlertCircle,
   colorTheme = 'blue' // Soporta 'blue', 'green', 'red'
 }) => {
@@ -59,12 +60,14 @@ const ModalConfirmacion = ({
           </p>
         </div>
         <div className="p-6 bg-white flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-          <button 
-            onClick={onClose}
-            className="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors w-full sm:w-auto"
-          >
-            {cancelText}
-          </button>
+          {!hideCancelButton && (
+            <button 
+              onClick={onClose}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors w-full sm:w-auto"
+            >
+              {cancelText}
+            </button>
+          )}
           <button 
             onClick={onConfirm}
             className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm hover:shadow-md transition-all active:scale-95 w-full sm:w-auto ${currentTheme.buttonBg}`}
