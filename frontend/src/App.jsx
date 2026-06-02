@@ -7,6 +7,8 @@ import HistorialEvaluaciones from './pages/HistorialEvaluaciones';
 import ListaPacientes from './pages/ListaPacientes';
 import EvaluacionDetalle from './pages/EvaluacionDetalle';
 import Usuarios from './pages/Usuarios';
+import Pendientes from './pages/Pendientes';
+import Reportes from './pages/Reportes';
 import EnConstruccion from './pages/EnConstruccion';
 
 function App() {
@@ -26,8 +28,8 @@ function App() {
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/configuracion" element={<EnConstruccion title="Configuración" description="La configuración general del sistema todavía está en desarrollo." />} />
           <Route path="/ayuda" element={<EnConstruccion title="Soporte / Ayuda" description="El centro de soporte y ayuda estará disponible pronto." />} />
-          <Route path="/pendientes" element={<EnConstruccion title="Diagnósticos pendientes" description="Aquí se mostrará la cola de diagnósticos pendientes cuando esté habilitada." />} />
-          <Route path="/reportes" element={<EnConstruccion title="Estadísticas y reportes" description="Este módulo reunirá reportes y métricas cuando esté listo." />} />
+          <Route path="/pendientes" element={<Pendientes />} />
+          <Route path="/reportes" element={<Reportes />} />
         </Route>
       </Routes>
     </Router>

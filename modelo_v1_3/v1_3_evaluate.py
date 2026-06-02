@@ -55,7 +55,7 @@ def main():
     ap50      = metrics.box.ap50
 
     ap_by_class = {cls: float(ap50[i]) if i < len(ap50) else 0.0
-                   for i, cls in enumerate(CLASSES)}
+                for i, cls in enumerate(CLASSES)}
 
     # ── RESULTADOS GLOBALES ───────────────────────────────────────────────────────
     print(f"\n{'═'*65}")

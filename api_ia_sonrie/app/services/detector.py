@@ -23,9 +23,9 @@ CLASS_DISPLAY = {
 
 try:
     model = YOLO(MODEL_PATH)
-    print(f"✅ Modelo cargado: {MODEL_PATH}")
+    print(f"Modelo cargado: {MODEL_PATH}")
 except Exception as e:
-    print(f"⚠️ Error cargando YOLOv8: {e}")
+    print(f"Error cargando YOLOv8: {e}")
     model = None
 
 

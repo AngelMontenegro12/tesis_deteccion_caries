@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
-  ClipboardList
+  ClipboardList,
+  BarChart2
 } from 'lucide-react';
 
 const Layout = () => {
@@ -48,6 +49,7 @@ const Layout = () => {
 
   // Menu de navegación secundario
   const bottomMenuItems = [
+    { icon: BarChart2, label: 'Reportes', path: '/reportes' },
     { icon: Users, label: 'Odontólogos', path: '/usuarios' },
     { icon: Settings, label: 'Configuración', path: '/configuracion' },
     { icon: HelpCircle, label: 'Soporte / Ayuda', path: '/ayuda' },
