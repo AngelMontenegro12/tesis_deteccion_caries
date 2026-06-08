@@ -658,7 +658,7 @@ const EvaluacionClinica = () => {
             setAnalysisResultsReady(false);
             setCurrentStep(4);
             setAnalysisItems([]);
-            showInvalidImageModal('La imagen subida no es una radiografía. Suba nuevamente.');
+            showInvalidImageModal('Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
             setIsAnalyzing(false);
             return;
           }
@@ -672,7 +672,7 @@ const EvaluacionClinica = () => {
         setAnalysisResultsReady(false);
         setCurrentStep(4);
         setAnalysisItems([]);
-        showInvalidImageModal('La imagen subida no es una radiografía. Suba nuevamente.');
+        showInvalidImageModal('Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
         setIsAnalyzing(false);
         return;
       }
@@ -778,9 +778,42 @@ const EvaluacionClinica = () => {
     });
   };
 
+  const validateImage = async (file) => {
+    try {
+      setIsSubmitting(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('http://localhost:8000/api/validate', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (!data.valid) {
+          showInvalidImageModal('Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
+          return false;
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Error validando imagen:", error);
+      return true; // Continuar si hay un error de red
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleFileChange = async (id, e) => {
     const file = e.target.files[0];
     if (file) {
+      const isValid = await validateImage(file);
+      if (!isValid) {
+        e.target.value = null; // Reset input
+        return;
+      }
+
       const previewUrl = URL.createObjectURL(file);
       let previewPersisted = '';
       try {
@@ -804,6 +837,9 @@ const EvaluacionClinica = () => {
     e.stopPropagation();
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
+      const isValid = await validateImage(file);
+      if (!isValid) return;
+
       const previewUrl = URL.createObjectURL(file);
       let previewPersisted = '';
       try {

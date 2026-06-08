@@ -24,3 +24,21 @@ async def predict_image(file: UploadFile = File(...)):
         "error": None,
         "detections": results
     }
+
+@router.post("/validate", tags=["Predicción"])
+async def validate_only(file: UploadFile = File(...)):
+    from app.services.detector import validar_imagen_panoramica
+    
+    image_data = await process_image(file)
+    es_valida, mensaje, _ = validar_imagen_panoramica(image_data)
+    
+    if not es_valida:
+        return {
+            "valid": False,
+            "error": mensaje
+        }
+        
+    return {
+        "valid": True,
+        "error": None
+    }
