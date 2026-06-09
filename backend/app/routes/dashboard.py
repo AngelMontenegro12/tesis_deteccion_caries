@@ -70,7 +70,7 @@ def get_dashboard_stats():
         # 5. Últimas Evaluaciones (lista)
         # Traeremos el nombre del paciente, el tipo_visita, fecha y estado
         query_ultimas = text("""
-            SELECT p.id_paciente, ed.id_evaluacion, p.nombres, p.apellidos, ed.tipo_visita, ed.fecha_evaluacion, ed.estado
+            SELECT p.id_paciente, ed.id_evaluacion, p.nombres, p.apellidos, ed.tipo_visita, ed.fecha_evaluacion, ed.estado, ed.creado_en, ed.actualizado_en
             FROM evaluaciones_diagnosticas ed
             JOIN pacientes p ON p.id_paciente = ed.id_paciente
             WHERE ed.id_odontologo = :id_odo
@@ -87,7 +87,9 @@ def get_dashboard_stats():
                 "paciente": f"{row.nombres} {row.apellidos}",
                 "tipo_visita": row.tipo_visita,
                 "fecha_evaluacion": str(row.fecha_evaluacion) if row.fecha_evaluacion else "",
-                "estado": row.estado
+                "estado": row.estado,
+                "creado_en": str(row.creado_en) if row.creado_en else "",
+                "actualizado_en": str(row.actualizado_en) if row.actualizado_en else ""
             })
 
         return jsonify({

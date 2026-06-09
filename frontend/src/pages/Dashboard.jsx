@@ -233,9 +233,18 @@ const Dashboard = () => {
                               <div key={index} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-white transition-colors">
                                  <div className="flex flex-col">
                                     <span className="font-bold text-dentBlue-900">{evaluacion.paciente}</span>
-                                    <span className="text-xs text-gray-500 font-medium">
+                                    <span className="text-xs text-gray-500 font-medium mb-1">
                                        {evaluacion.tipo_visita} • {new Date(evaluacion.fecha_evaluacion).toLocaleDateString()}
                                     </span>
+                                    {evaluacion.estado === 'completada' ? (
+                                       <span className="text-xs text-gray-400">
+                                         Creado: {evaluacion.creado_en ? new Date(evaluacion.creado_en).toLocaleString() : 'N/A'} • Finalizado: {evaluacion.actualizado_en ? new Date(evaluacion.actualizado_en).toLocaleString() : 'N/A'}
+                                       </span>
+                                    ) : (
+                                       <span className="text-xs text-gray-400">
+                                         Creado: {evaluacion.creado_en ? new Date(evaluacion.creado_en).toLocaleString() : 'N/A'} • Actualizado: {evaluacion.actualizado_en ? new Date(evaluacion.actualizado_en).toLocaleString() : 'N/A'}
+                                       </span>
+                                    )}
                                  </div>
                                  <div className="flex items-center space-x-3">
                                     {evaluacion.estado !== 'completada' && (

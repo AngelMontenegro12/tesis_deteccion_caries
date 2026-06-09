@@ -615,12 +615,19 @@ const EvaluacionClinica = () => {
     try {
       const visualQueuePromise = runVisualQueue();
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 segundos
+
       const responsePromise = fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/procesar`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal
       });
 
-      const response = await Promise.all([responsePromise, waitForMinimumDelay]).then(([res]) => res);
+      const response = await Promise.all([responsePromise, waitForMinimumDelay]).then(([res]) => {
+        clearTimeout(timeoutId);
+        return res;
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -658,7 +665,7 @@ const EvaluacionClinica = () => {
             setAnalysisResultsReady(false);
             setCurrentStep(4);
             setAnalysisItems([]);
-            showInvalidImageModal('Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
+            showInvalidImageModal(inner.message || inner.error || 'Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
             setIsAnalyzing(false);
             return;
           }
@@ -672,7 +679,7 @@ const EvaluacionClinica = () => {
         setAnalysisResultsReady(false);
         setCurrentStep(4);
         setAnalysisItems([]);
-        showInvalidImageModal('Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
+        showInvalidImageModal(resData.message || resData.error || 'Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
         setIsAnalyzing(false);
         return;
       }
@@ -792,7 +799,7 @@ const EvaluacionClinica = () => {
       if (response.ok) {
         const data = await response.json();
         if (!data.valid) {
-          showInvalidImageModal('Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
+          showInvalidImageModal(data.error || data.message || 'Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
           return false;
         }
       }
@@ -2809,7 +2816,7 @@ const EvaluacionClinica = () => {
                 </span>
               </div>
               
-              {analysisResultsReady && analysisItems.length > 0 && analysisItems.every(i => i.status === 'completed') ? (
+              {analysisResultsReady && analysisItems.length > 0 ? (
                 <button
                   onClick={async () => {
                     await obtenerDetalleResultados();
