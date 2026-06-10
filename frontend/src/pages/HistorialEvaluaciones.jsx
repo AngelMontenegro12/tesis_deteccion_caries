@@ -343,13 +343,28 @@ const HistorialEvaluaciones = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <button
-                          onClick={() => handleVerDetalles(evaluacion.id_evaluacion)}
-                          className="text-dentBlue-900 hover:text-white hover:bg-dentBlue-900 bg-blue-50 px-3 py-1.5 rounded flex items-center justify-center transition-colors shadow-sm mx-auto"
-                        >
-                          <Eye size={16} className="mr-1.5" />
-                          Ver detalle
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleVerDetalles(evaluacion.id_evaluacion)}
+                            className="text-dentBlue-900 hover:text-white hover:bg-dentBlue-900 bg-blue-50 px-3 py-1.5 rounded flex items-center justify-center transition-colors shadow-sm"
+                            title="Ver detalle"
+                          >
+                            <Eye size={16} />
+                            <span className="ml-1.5 hidden sm:inline">Ver detalle</span>
+                          </button>
+                          
+                          {evaluacion.estado === 'pendiente' && (
+                            <button
+                              type="button"
+                              onClick={() => navigate('/nueva-evaluacion', { state: { resume: true, id_paciente: evaluacion.paciente.id_paciente, id_evaluacion: evaluacion.id_evaluacion } })}
+                              className="text-white hover:bg-dentBlue-800 bg-dentBlue-900 px-3 py-1.5 rounded flex items-center justify-center transition-colors shadow-sm"
+                              title="Continuar diagnóstico"
+                            >
+                              <Activity size={16} />
+                              <span className="ml-1.5 hidden sm:inline">Continuar</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

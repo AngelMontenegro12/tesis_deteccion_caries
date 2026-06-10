@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy import case, distinct, func, or_
-from app.models import db, DeteccionesCaries, EvaluacionDiagnostica, Paciente, ResultadosDeteccion, Radiografia, Odontologo
+from app.models import db, DeteccionesCaries, EvaluacionDiagnostica, Paciente, ResultadosDeteccion, Radiografia, Odontologo, DiagnosticoOdontologo
 
 reportes_bp = Blueprint('reportes', __name__, url_prefix='/api/reportes')
 
@@ -236,6 +236,137 @@ def reporte_productividad():
                 'tendencia': tendencia,
                 'tipos_visita': tipos_visita,
                 'especialistas': especialistas
+            }
+        }), 200
+    except Exception as error:
+        return jsonify({
+            'status': 'error',
+            'message': str(error)
+        }), 500
+
+@reportes_bp.route('/diagnostico-individual', methods=['GET'])
+def reporte_diagnostico_individual():
+    try:
+        id_paciente = request.args.get('id_paciente', type=int)
+        if not id_paciente:
+            return jsonify({'status': 'error', 'message': 'Falta id_paciente'}), 400
+
+        paciente = Paciente.query.get(id_paciente)
+        if not paciente:
+            return jsonify({'status': 'error', 'message': 'Paciente no encontrado'}), 404
+
+        # 1. Cabecera
+        primera_visita = db.session.query(func.min(EvaluacionDiagnostica.fecha_evaluacion)).filter(EvaluacionDiagnostica.id_paciente == id_paciente).scalar()
+
+        # 2. Gráfico: Curva de Actividad
+        grafico_rows = db.session.query(
+            func.date(EvaluacionDiagnostica.fecha_evaluacion).label('fecha'),
+            func.sum(case((DeteccionesCaries.severidad == 'incipiente', 1), else_=0)).label('incipiente'),
+            func.sum(case((DeteccionesCaries.severidad == 'moderada', 1), else_=0)).label('moderada'),
+            func.sum(case((DeteccionesCaries.severidad == 'avanzada', 1), else_=0)).label('avanzada')
+        ).join(Radiografia, EvaluacionDiagnostica.id_evaluacion == Radiografia.id_evaluacion)\
+         .join(ResultadosDeteccion, Radiografia.id_radiografia == ResultadosDeteccion.id_radiografia)\
+         .join(DeteccionesCaries, ResultadosDeteccion.id_resultado == DeteccionesCaries.id_resultado)\
+         .filter(EvaluacionDiagnostica.id_paciente == id_paciente, ResultadosDeteccion.confianza_global > 0)\
+         .group_by(func.date(EvaluacionDiagnostica.fecha_evaluacion))\
+         .order_by(func.date(EvaluacionDiagnostica.fecha_evaluacion).asc()).all()
+
+        grafico_caries = []
+        for r in grafico_rows:
+            grafico_caries.append({
+                'fecha': str(r.fecha),
+                'incipiente': int(r.incipiente or 0),
+                'moderada': int(r.moderada or 0),
+                'avanzada': int(r.avanzada or 0)
+            })
+
+        # 3. Historial Clínico
+        timeline_rows = db.session.query(
+            EvaluacionDiagnostica.id_evaluacion,
+            EvaluacionDiagnostica.tipo_visita,
+            EvaluacionDiagnostica.fecha_evaluacion,
+            EvaluacionDiagnostica.estado,
+            DiagnosticoOdontologo.diagnostico_texto,
+            DiagnosticoOdontologo.plan_tratamiento
+        ).outerjoin(DiagnosticoOdontologo, EvaluacionDiagnostica.id_evaluacion == DiagnosticoOdontologo.id_evaluacion)\
+         .filter(EvaluacionDiagnostica.id_paciente == id_paciente)\
+         .order_by(EvaluacionDiagnostica.fecha_evaluacion.desc()).all()
+
+        timeline = []
+        for r in timeline_rows:
+            timeline.append({
+                'id_evaluacion': r.id_evaluacion,
+                'tipo_visita': r.tipo_visita,
+                'fecha_evaluacion': str(r.fecha_evaluacion),
+                'estado': r.estado,
+                'diagnostico_texto': r.diagnostico_texto,
+                'plan_tratamiento': r.plan_tratamiento
+            })
+
+        # 4. Comparativa Radiográfica
+        evals_con_imagenes = db.session.query(
+            EvaluacionDiagnostica.fecha_evaluacion,
+            ResultadosDeteccion.imagen_resultado,
+            ResultadosDeteccion.id_resultado,
+            Radiografia.ruta_archivo
+        ).join(Radiografia, EvaluacionDiagnostica.id_evaluacion == Radiografia.id_evaluacion)\
+         .join(ResultadosDeteccion, Radiografia.id_radiografia == ResultadosDeteccion.id_radiografia)\
+         .filter(EvaluacionDiagnostica.id_paciente == id_paciente, ResultadosDeteccion.id_resultado.isnot(None))\
+         .order_by(EvaluacionDiagnostica.fecha_evaluacion.asc()).all()
+
+        comparativa = None
+        if evals_con_imagenes and len(evals_con_imagenes) >= 1:
+            opciones = []
+            for ev in evals_con_imagenes:
+                # Obtener detecciones para esta radiografia
+                dets = DeteccionesCaries.query.filter_by(id_resultado=ev.id_resultado).all()
+                detecciones_lista = []
+                for d in dets:
+                    detecciones_lista.append({
+                        'bbox_x': d.bbox_x,
+                        'bbox_y': d.bbox_y,
+                        'bbox_ancho': d.bbox_ancho,
+                        'bbox_alto': d.bbox_alto,
+                        'severidad': d.severidad
+                    })
+
+                opciones.append({
+                    'fecha': str(ev.fecha_evaluacion),
+                    'imagen_procesada': ev.imagen_resultado,
+                    'imagen_cruda': ev.ruta_archivo,
+                    'detecciones': detecciones_lista
+                })
+            
+            ultima = opciones[-1]
+            if len(opciones) == 1:
+                comparativa = {
+                    'opciones': opciones,
+                    'antes': { 'fecha': f"{ultima['fecha']} (Cruda)", 'imagen': ultima['imagen_cruda'], 'detecciones': [] },
+                    'despues': { 'fecha': f"{ultima['fecha']} (Procesada)", 'imagen': ultima['imagen_cruda'], 'detecciones': ultima['detecciones'] }
+                }
+            else:
+                primera = opciones[0]
+                comparativa = {
+                    'opciones': opciones,
+                    'antes': { 'fecha': primera['fecha'], 'imagen': primera['imagen_cruda'], 'detecciones': primera['detecciones'] },
+                    'despues': { 'fecha': ultima['fecha'], 'imagen': ultima['imagen_cruda'], 'detecciones': ultima['detecciones'] }
+                }
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'id_report': 'diagnostico_individual',
+                'titulo': 'Evolución Longitudinal del Paciente',
+                'paciente': {
+                    'nombres': paciente.nombres,
+                    'apellidos': paciente.apellidos,
+                    'edad': paciente.edad,
+                    'genero': paciente.genero,
+                    'primera_visita': str(primera_visita) if primera_visita else None
+                },
+                'grafico_caries': grafico_caries,
+                'timeline': timeline,
+                'comparativa': comparativa
             }
         }), 200
     except Exception as error:

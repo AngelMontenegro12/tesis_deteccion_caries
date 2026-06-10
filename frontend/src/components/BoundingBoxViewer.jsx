@@ -49,6 +49,7 @@ const BoundingBoxViewer = ({
   onDetectionClick,
   showBoxes = true,
   showLabels = true,
+  isolateSelection = false,
 }) => {
   const viewportRef = useRef(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
@@ -298,6 +299,7 @@ const BoundingBoxViewer = ({
           const confidence = Number.isFinite(det.confianza) ? Math.round(det.confianza * 100) : null;
           const detectionId = det.id_deteccion ?? `${severity}-${index}`;
           const isSelected = selectedDetectionId !== null && detectionId === selectedDetectionId;
+          const isHiddenByIsolation = isolateSelection && selectedDetectionId !== null && !isSelected;
           const labelClassName = `${getLabelPlacementClass(index)} ${getLabelAnchorClass(index)}`;
 
           return (
@@ -306,7 +308,7 @@ const BoundingBoxViewer = ({
               type="button"
               onClick={() => onDetectionClick?.(det, index)}
               data-detection-id={detectionId}
-              className={`absolute rounded-lg transition-all duration-300 pointer-events-auto text-left ${showBoxes ? `border-[3px] shadow-[0_0_15px_rgba(0,0,0,0.5)] ${styles.box}` : 'border border-transparent bg-transparent shadow-none'} ${showBoxes && isSelected ? 'ring-4 ring-dentBlue-900/80 scale-[1.02] z-20' : 'hover:scale-[1.01]'}`}
+              className={`absolute rounded-lg transition-all duration-300 pointer-events-auto text-left ${showBoxes ? `border-[3px] shadow-[0_0_15px_rgba(0,0,0,0.5)] ${styles.box}` : 'border border-transparent bg-transparent shadow-none'} ${showBoxes && isSelected ? 'ring-4 ring-dentBlue-900/80 scale-[1.02] z-20' : 'hover:scale-[1.01]'} ${isHiddenByIsolation ? 'opacity-0 pointer-events-none' : ''}`}
               style={boxStyle}
             >
               {shouldShowLabels && (

@@ -10,11 +10,13 @@ import {
   Menu,
   ChevronLeft,
   ClipboardList,
-  BarChart2
+  BarChart2,
+  ChevronDown
 } from 'lucide-react';
 
 const Layout = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
@@ -45,13 +47,21 @@ const Layout = () => {
     { icon: ClipboardList, label: 'Diagnóstico', path: '/nueva-evaluacion' },
     { icon: Users, label: 'Pacientes', path: '/pacientes' },
     { icon: Activity, label: 'Historial de diagnósticos', path: '/historial' },
+    { icon: BarChart2, label: 'Reportes', path: '/reportes' },
   ];
 
   // Menu de navegación secundario
   const bottomMenuItems = [
-    { icon: BarChart2, label: 'Reportes', path: '/reportes' },
-    { icon: Users, label: 'Odontólogos', path: '/usuarios' },
-    { icon: Settings, label: 'Configuración', path: '/configuracion' },
+    { 
+      icon: Settings, 
+      label: 'Configuración', 
+      isDropdown: true,
+      isOpen: isConfigOpen,
+      toggleOpen: () => setIsConfigOpen(!isConfigOpen),
+      subItems: [
+        { icon: Users, label: 'Odontólogos', path: '/usuarios' }
+      ]
+    },
     { icon: HelpCircle, label: 'Soporte / Ayuda', path: '/ayuda' },
   ];
 
@@ -133,21 +143,65 @@ const Layout = () => {
           <div className="pt-6 mt-6 border-t border-gray-200">
             <div className="space-y-1">
               {bottomMenuItems.map((item, index) => (
-                <Link 
-                  key={index}
-                  to={item.path}
-                  title={!isOpen ? item.label : ""}
-                  className={`group flex items-center ${isOpen ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    isActive(item.path)
-                      ? 'bg-dentBlue-900 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900'
-                  }`}
-                >
-                  <item.icon className={`${isOpen ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors ${
-                    isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-dentBlue-900'
-                  }`} />
-                  {isOpen && <span className="whitespace-nowrap">{item.label}</span>}
-                </Link>
+                <div key={index} className="space-y-1">
+                  {item.isDropdown ? (
+                    <div>
+                      <button
+                        onClick={() => {
+                          if (!isOpen) setIsOpen(true);
+                          item.toggleOpen();
+                        }}
+                        title={!isOpen ? item.label : ""}
+                        className={`w-full group flex items-center justify-between ${isOpen ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900`}
+                      >
+                        <div className="flex items-center">
+                          <item.icon className={`${isOpen ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors text-gray-400 group-hover:text-dentBlue-900`} />
+                          {isOpen && <span className="whitespace-nowrap">{item.label}</span>}
+                        </div>
+                        {isOpen && (
+                          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${item.isOpen ? 'rotate-180' : ''}`} />
+                        )}
+                      </button>
+                      
+                      {/* SubItems */}
+                      {item.isOpen && isOpen && (
+                        <div className="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
+                          {item.subItems.map((subItem, subIdx) => (
+                            <Link
+                              key={subIdx}
+                              to={subItem.path}
+                              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                isActive(subItem.path)
+                                  ? 'bg-dentBlue-900 text-white shadow-lg'
+                                  : 'text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900'
+                              }`}
+                            >
+                              <subItem.icon className={`mr-3 shrink-0 h-5 w-5 transition-colors ${
+                                isActive(subItem.path) ? 'text-white' : 'text-gray-400 group-hover:text-dentBlue-900'
+                              }`} />
+                              <span className="whitespace-nowrap">{subItem.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link 
+                      to={item.path}
+                      title={!isOpen ? item.label : ""}
+                      className={`group flex items-center ${isOpen ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                        isActive(item.path)
+                          ? 'bg-dentBlue-900 text-white shadow-lg'
+                          : 'text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900'
+                      }`}
+                    >
+                      <item.icon className={`${isOpen ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors ${
+                        isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-dentBlue-900'
+                      }`} />
+                      {isOpen && <span className="whitespace-nowrap">{item.label}</span>}
+                    </Link>
+                  )}
+                </div>
               ))}
             </div>
           </div>

@@ -172,12 +172,19 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
                         <h4 className="text-sm font-extrabold text-gray-900 mb-1">{evaluacion.tipo_visita}</h4>
                         <span className="text-xs font-medium text-gray-500">Hora: {horaStr}</span>
 
-                        {isCompletada && (
+                        {isCompletada ? (
                             <button
                               onClick={() => navigate(`/evaluacion/${evaluacion.id_evaluacion}`)}
                               className="mt-3 pt-3 border-t border-gray-50 w-full text-left text-xs font-black text-dentBlue-900 flex items-center hover:text-dentGreen-500 transition-colors"
                             >
                               Ver diagnóstico y radiografía <span className="ml-1">→</span>
+                            </button>
+                        ) : (
+                            <button
+                              onClick={() => navigate('/nueva-evaluacion', { state: { resume: true, id_paciente: patient.id_paciente, id_evaluacion: evaluacion.id_evaluacion } })}
+                              className="mt-3 pt-3 border-t border-amber-200/50 w-full text-left text-xs font-black text-amber-700 flex items-center hover:text-amber-900 transition-colors"
+                            >
+                              <Activity className="w-3.5 h-3.5 mr-1.5" /> Continuar diagnóstico pendiente <span className="ml-1">→</span>
                             </button>
                         )}
                       </div>

@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Loader2, ChevronLeft, ChevronRight, CheckCircle, LayoutGrid, Table as TableIcon, List, Columns, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, Loader2, ChevronLeft, ChevronRight, CheckCircle, LayoutGrid, Table as TableIcon, List, Columns, ArrowUpDown, ChevronUp, ChevronDown, UserPlus } from 'lucide-react';
 import PatientCard from '../components/PatientCard';
 import PatientSlideOver from '../components/PatientSlideOver';
 import ModalEditarPaciente from '../components/ModalEditarPaciente';
+import ModalNuevoPaciente from '../components/ModalNuevoPaciente';
 import ModalFinalizacion from '../components/ModalFinalizacion';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 
@@ -33,8 +34,10 @@ const ListaPacientes = () => {
 
   // Add Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successProgress, setSuccessProgress] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -193,6 +196,7 @@ const ListaPacientes = () => {
     setSelectedPatient(updatedPatient);
     
     // Iniciar ModalFinalizacion animation
+    setSuccessMessage(`Los datos de ${updatedPatient?.nombres || ''} se actualizaron correctamente.`);
     setShowSuccessModal(true);
     setSuccessProgress(0);
     
@@ -206,6 +210,28 @@ const ListaPacientes = () => {
         setTimeout(() => {
           setShowSuccessModal(false);
           setIsEditModalOpen(false); // Make sure edit modal is closed properly
+        }, 500);
+      }
+    }, 20); // 20ms * 50 = 1000ms duration
+  };
+
+  const handleCreatePatientCallback = (newPatient) => {
+    setPatients(prev => [newPatient, ...prev]);
+    
+    // Iniciar ModalFinalizacion animation
+    setSuccessMessage(`El paciente ${newPatient?.nombres || ''} ha sido registrado correctamente.`);
+    setShowSuccessModal(true);
+    setSuccessProgress(0);
+    
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += 2;
+      setSuccessProgress(currentProgress);
+      
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setShowSuccessModal(false);
         }, 500);
       }
     }, 20); // 20ms * 50 = 1000ms duration
@@ -227,14 +253,24 @@ const ListaPacientes = () => {
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-3 self-start lg:self-auto bg-dentBlue-50 border border-dentBlue-100 rounded-2xl px-4 py-3 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-dentBlue-900 font-extrabold shadow-sm border border-dentBlue-100">
-              {patients.length}
+          <div className="flex flex-col sm:flex-row items-center gap-4 self-start lg:self-auto">
+            <div className="inline-flex items-center gap-3 bg-dentBlue-50 border border-dentBlue-100 rounded-2xl px-4 py-3 shadow-sm h-full">
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-dentBlue-900 font-extrabold shadow-sm border border-dentBlue-100 shrink-0">
+                {patients.length}
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-dentBlue-900 uppercase tracking-widest">Total pacientes</p>
+                <p className="text-sm text-gray-600 font-medium">Registrados en el sistema</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-extrabold text-dentBlue-900 uppercase tracking-widest">Total pacientes</p>
-              <p className="text-sm text-gray-600 font-medium">Pacientes activos cargados en el sistema</p>
-            </div>
+
+            <button 
+              onClick={() => setIsNewModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all h-full"
+            >
+              <UserPlus className="w-5 h-5 shrink-0" />
+              Registrar Paciente
+            </button>
           </div>
         </div>
       </header>
@@ -604,12 +640,19 @@ const ListaPacientes = () => {
         onUpdate={handleUpdatePatientCallback}
       />
 
-      {/* Modal de Éxito de Edición */}
+      {/* Modal de Nuevo Paciente */}
+      <ModalNuevoPaciente
+        isOpen={isNewModalOpen}
+        onClose={() => setIsNewModalOpen(false)}
+        onCreated={handleCreatePatientCallback}
+      />
+
+      {/* Modal de Éxito de Edición o Creación */}
       <ModalFinalizacion
         isOpen={showSuccessModal}
         progress={successProgress}
-        title="¡Paciente actualizado!"
-        message={`Los datos de ${selectedPatient?.nombres || ''} se actualizaron correctamente.`}
+        title="¡Operación Exitosa!"
+        message={successMessage}
       />
 
     </div>

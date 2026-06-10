@@ -15,31 +15,28 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
+import ReporteIndividual from '../components/ReporteIndividual';
 
 const REPORT_OPTIONS = [
   {
     id: 'ia_rendimiento',
     title: 'Precisión y Rendimiento de IA',
-    subtitle: 'Confianza media y tasa de rechazo clínica.',
-    active: true
+    icon: Sparkles
   },
   {
     id: 'epidemiologico_caries',
     title: 'Epidemiológico de Caries',
-    subtitle: 'Severidad histórica, incidencia por edad y carga de enfermedad.',
-    active: true
+    icon: FlaskConical
   },
   {
     id: 'productividad_clinica',
     title: 'Productividad Clínica',
-    subtitle: 'Tendencia de evaluaciones y carga por especialista.',
-    active: true
+    icon: CircleGauge
   },
   {
     id: 'diagnostico_individual',
-    title: 'Diagnóstico Individual',
-    subtitle: 'Próximamente: reportes por paciente y casos.',
-    active: false
+    title: 'Evolución del Paciente',
+    icon: FileText
   }
 ];
 
@@ -179,6 +176,7 @@ const GroupedAgeBarChart = ({ data }) => {
 };
 
 const SmoothedAreaChart = ({ data }) => {
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const safeData = data || [];
   const height = 240;
   const width = 800;
@@ -198,17 +196,22 @@ const SmoothedAreaChart = ({ data }) => {
     y: height - padding - ((d.cantidad / maxValue) * (height - 2 * padding))
   }));
 
-  // Create path for area (with gradient)
-  const linePath = points.reduce((acc, p, i) => (i === 0 ? `M ${p.x},${p.y}` : `${acc} L ${p.x},${p.y}`), '');
+  // Create path for area (with spline curve)
+  const linePath = points.map((p, i) => {
+    if (i === 0) return `M ${p.x},${p.y}`;
+    const pPrev = points[i - 1];
+    const midX = (pPrev.x + p.x) / 2;
+    return `C ${midX},${pPrev.y} ${midX},${p.y} ${p.x},${p.y}`;
+  }).join(' ');
   const areaPath = `${linePath} L ${points[points.length - 1].x},${height - padding} L ${points[0].x},${height - padding} Z`;
 
   return (
-    <div className="w-full overflow-hidden">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="none">
+    <div className="w-full relative">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible" preserveAspectRatio="none">
         <defs>
           <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0F3B4C" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#0F3B4C" stopOpacity="0.01" />
+            <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.0" />
           </linearGradient>
         </defs>
         
@@ -222,23 +225,61 @@ const SmoothedAreaChart = ({ data }) => {
         <path d={areaPath} fill="url(#areaGradient)" />
         
         {/* The Line */}
-        <path d={linePath} fill="none" stroke="#0F3B4C" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="#0EA5E9" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Data points */}
+        {/* Data points (Visual) */}
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="4" fill="white" stroke="#0F3B4C" strokeWidth="2" />
+          <circle 
+            key={`point-${i}`} 
+            cx={p.x} 
+            cy={p.y} 
+            r={hoveredPoint === i ? "6" : "4"} 
+            fill={hoveredPoint === i ? "#0EA5E9" : "white"} 
+            stroke="#0EA5E9" 
+            strokeWidth={hoveredPoint === i ? "3" : "2"}
+            className="transition-all duration-200 pointer-events-none"
+          />
+        ))}
+
+        {/* Hit areas for easier hovering */}
+        {points.map((p, i) => (
+          <circle
+            key={`hit-${i}`}
+            cx={p.x}
+            cy={p.y}
+            r="20"
+            fill="transparent"
+            onMouseEnter={() => setHoveredPoint(i)}
+            onMouseLeave={() => setHoveredPoint(null)}
+            className="cursor-pointer outline-none"
+          />
         ))}
 
         {/* Labels X (simplified) */}
         {safeData.map((d, i) => {
           if (i % Math.ceil(safeData.length / 6) !== 0 && i !== safeData.length - 1) return null;
           return (
-            <text key={i} x={points[i].x} y={height - 15} fontSize="10" fill="#94A3B8" textAnchor="middle" fontWeight="bold">
+            <text key={`label-${i}`} x={points[i].x} y={height - 15} fontSize="10" fill="#94A3B8" textAnchor="middle" fontWeight="bold">
               {d.fecha.split('-').slice(1).reverse().join('/')}
             </text>
           );
         })}
       </svg>
+
+      {/* Tooltip */}
+      {hoveredPoint !== null && (
+        <div 
+          className="absolute z-10 bg-white/95 backdrop-blur-md border border-gray-200 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl px-4 py-3 pointer-events-none transform -translate-x-1/2 -translate-y-[calc(100%+12px)] transition-all duration-200 ease-out"
+          style={{ left: `${(points[hoveredPoint].x / width) * 100}%`, top: `${(points[hoveredPoint].y / height) * 100}%` }}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-1">
+            {safeData[hoveredPoint].fecha.split('-').reverse().join('/')}
+          </p>
+          <p className="text-xl font-extrabold text-dentBlue-900 leading-none">
+            {safeData[hoveredPoint].cantidad} <span className="text-xs font-medium text-gray-500">evals</span>
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -283,9 +324,76 @@ const RadialProgress = ({ value }) => {
   );
 };
 
+const getVisitColor = (tipo) => {
+  const t = tipo?.toLowerCase() || '';
+  if (t.includes('primera')) return '#38BDF8';
+  if (t.includes('control')) return '#10B981';
+  if (t.includes('urgencia')) return '#F43F5E';
+  return '#8B5CF6';
+};
+
+const DonutVisitChart = ({ data, total }) => {
+  const thickness = 24;
+  const safeTotal = Math.max(Number(total || 0), 0);
+  let accumulated = 0;
+  
+  const sortedData = [...(data || [])].sort((a,b) => b.cantidad - a.cantidad);
+
+  const segments = sortedData.map((item) => {
+    const ratio = safeTotal ? Number(item.cantidad || 0) / safeTotal : 0;
+    const start = accumulated;
+    const end = accumulated + ratio * 100;
+    accumulated = end;
+    return `${getVisitColor(item.tipo)} ${start}% ${end}%`;
+  });
+
+  const background = safeTotal ? `conic-gradient(${segments.join(', ')})` : 'conic-gradient(#E5E7EB 0% 100%)';
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div className="relative" style={{ width: 200, height: 200 }}>
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background,
+            WebkitMask: `radial-gradient(farthest-side, transparent calc(100% - ${thickness}px), #000 calc(100% - ${thickness}px))`,
+            mask: `radial-gradient(farthest-side, transparent calc(100% - ${thickness}px), #000 calc(100% - ${thickness}px))`
+          }}
+        />
+        <div className="absolute inset-[18px] rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(148,163,184,0.12)] flex flex-col items-center justify-center text-center px-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Total</p>
+          <p className="mt-1 text-4xl font-extrabold text-dentBlue-900 leading-none">{safeTotal}</p>
+          <p className="mt-1 text-xs text-gray-500">visitas</p>
+        </div>
+      </div>
+      <div className="mt-8 w-full space-y-3">
+        {sortedData.map((item, idx) => (
+          <div key={idx} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50">
+            <div className="flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: getVisitColor(item.tipo) }}></span>
+              <span className="text-dentBlue-900 font-bold capitalize">{item.tipo || 'Desconocido'}</span>
+            </div>
+            <div className="text-right">
+              <span className="font-extrabold text-dentBlue-900 block">{item.cantidad}</span>
+              <span className="text-[10px] text-gray-400 uppercase font-bold">{safeTotal ? Math.round((item.cantidad / safeTotal) * 100) : 0}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Reportes = () => {
   const navigate = useNavigate();
-  const [activeReport, setActiveReport] = useState('ia_rendimiento');
+  const [activeReport, setActiveReport] = useState(() => {
+    return localStorage.getItem('reportes_activeTab') || 'ia_rendimiento';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('reportes_activeTab', activeReport);
+  }, [activeReport]);
+
   const [selectedInsight, setSelectedInsight] = useState(null);
   const [hoveredInsight, setHoveredInsight] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -391,35 +499,26 @@ const Reportes = () => {
       </header>
 
       <div className="relative flex-1 overflow-auto p-8 space-y-6">
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {REPORT_OPTIONS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActiveReport(item.id)}
-              className={`text-left rounded-[1.35rem] border p-4 transition-all duration-300 shadow-sm backdrop-blur-sm ${
-                activeReport === item.id
-                  ? 'bg-white border-dentBlue-900/20 ring-2 ring-dentBlue-900/10 shadow-[0_14px_40px_rgba(15,23,42,0.06)]'
-                  : 'bg-white/80 border-gray-200 hover:border-dentBlue-900/15 hover:bg-white'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Reporte</p>
-                  <h2 className="text-sm font-extrabold leading-tight text-dentBlue-900">{item.title}</h2>
-                </div>
-                <div className={`h-9 w-9 shrink-0 rounded-xl flex items-center justify-center ${activeReport === item.id ? 'bg-dentBlue-900 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                  <FileText className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-gray-500 leading-relaxed">{item.subtitle}</p>
-              <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
-                <span className={`h-1.5 w-1.5 rounded-full ${item.active ? 'bg-dentGreen-500' : 'bg-amber-400'}`} />
-                {item.active ? 'Disponible' : 'Próximamente'}
-              </div>
-            </button>
-          ))}
-        </section>
+        <nav className="flex flex-wrap items-center gap-2 p-1.5 bg-white/60 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm w-full">
+          {REPORT_OPTIONS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeReport === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveReport(item.id)}
+                className={`flex flex-1 justify-center items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 ${
+                  isActive
+                    ? 'bg-dentBlue-900 text-white shadow-md transform scale-[1.02]'
+                    : 'text-gray-500 hover:bg-white hover:text-dentBlue-900 hover:shadow-sm'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white/90' : 'text-gray-400'}`} />
+                {item.title}
+              </button>
+            );
+          })}
+        </nav>
 
         {activeReport === 'epidemiologico_caries' ? (
           <>
@@ -491,6 +590,122 @@ const Reportes = () => {
               </div>
             </section>
           </>
+        ) : activeReport === 'productividad_clinica' ? (
+          <>
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-5">
+                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-gray-400">Total Evaluaciones</p>
+                <div className="mt-3 text-3xl font-extrabold text-dentBlue-900">{loading ? '—' : Number(reportData?.total_general || 0)}</div>
+                <p className="mt-2 text-sm text-gray-500">Evaluaciones clínicas procesadas en total.</p>
+              </div>
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-5">
+                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-gray-400">Especialistas Activos</p>
+                <div className="mt-3 text-3xl font-extrabold text-dentBlue-900">{loading ? '—' : (reportData?.especialistas?.length || 0)}</div>
+                <p className="mt-2 text-sm text-gray-500">Odontólogos con evaluaciones registradas.</p>
+              </div>
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-5">
+                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-gray-400">Promedio Evaluaciones/Médico</p>
+                <div className="mt-3 text-3xl font-extrabold text-dentBlue-900">{loading ? '—' : (reportData?.especialistas?.length ? (Number(reportData?.total_general || 0) / reportData.especialistas.length).toFixed(1) : 0)}</div>
+                <p className="mt-2 text-sm text-gray-500">Volumen promedio por especialista.</p>
+              </div>
+            </section>
+            
+            <section className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6">
+              <div className="space-y-6">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Tendencia de Evaluaciones</p>
+                      <h3 className="mt-1 text-xl font-extrabold text-dentBlue-900 tracking-tight">Volumen de Actividad</h3>
+                      <p className="mt-2 text-sm text-gray-500">Muestra la cantidad de pacientes y evaluaciones procesadas a lo largo del tiempo reciente.</p>
+                    </div>
+                  </div>
+                  <SmoothedAreaChart data={reportData?.tendencia} />
+                </div>
+
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 overflow-hidden">
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Rendimiento por Especialista</p>
+                      <h3 className="mt-1 text-xl font-extrabold text-dentBlue-900 tracking-tight">Carga de Trabajo</h3>
+                      <p className="mt-2 text-sm text-gray-500">Odontólogos más activos y estado de sus evaluaciones.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-[0.1em] text-gray-400">
+                          <th className="pb-3 font-semibold">Odontólogo</th>
+                          <th className="pb-3 font-semibold text-center">Especialidad</th>
+                          <th className="pb-3 font-semibold text-center">Completadas</th>
+                          <th className="pb-3 font-semibold text-center">En progreso</th>
+                          <th className="pb-3 font-semibold text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {(reportData?.especialistas || []).map((doc) => {
+                          const pendientes = doc.total_evaluaciones - doc.completadas;
+                          const hasPendientes = pendientes > 0;
+                          return (
+                            <tr key={doc.id} className="hover:bg-gray-50/50 transition-colors">
+                              <td className="py-4 pr-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-dentBlue-100 text-dentBlue-900 flex items-center justify-center font-bold text-sm shrink-0">
+                                    {doc.nombre.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                  </div>
+                                  <span className="font-bold text-dentBlue-900 whitespace-nowrap">{doc.nombre}</span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 text-center text-sm text-gray-500 font-medium">
+                                {doc.especialidad}
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold bg-dentGreen-50 text-dentGreen-700">
+                                  {doc.completadas}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                {hasPendientes ? (
+                                  <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600">
+                                    {pendientes} pendientes
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-xs font-medium">—</span>
+                                )}
+                              </td>
+                              <td className="py-4 pl-4 text-right">
+                                <span className="text-lg font-extrabold text-dentBlue-900">{doc.total_evaluaciones}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {(!reportData?.especialistas || reportData.especialistas.length === 0) && (
+                          <tr>
+                            <td colSpan="5" className="py-8 text-center text-gray-500 text-sm">
+                              No hay especialistas registrados.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 h-fit">
+                <div className="flex items-start justify-between gap-4 mb-6">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Distribución</p>
+                    <h3 className="mt-1 text-xl font-extrabold text-dentBlue-900 tracking-tight">Tipos de Visita</h3>
+                  </div>
+                </div>
+                <DonutVisitChart data={reportData?.tipos_visita} total={reportData?.total_general} />
+              </div>
+            </section>
+          </>
+        ) : activeReport === 'diagnostico_individual' ? (
+          <ReporteIndividual />
         ) : activeReport !== 'ia_rendimiento' ? (
           <section className="bg-white/90 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-8 min-h-[340px] flex items-center justify-center text-center">
             <div className="max-w-xl">

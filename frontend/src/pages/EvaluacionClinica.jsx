@@ -126,6 +126,7 @@ const EvaluacionClinica = () => {
   const [selectedHallazgoId, setSelectedHallazgoId] = useState(null);
   const [showBoxes, setShowBoxes] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
+  const [isolateSelection, setIsolateSelection] = useState(false);
   const [modalInvalidImage, setModalInvalidImage] = useState({ isOpen: false, message: '' });
   const [finalDiagnosis, setFinalDiagnosis] = useState(() => getInitialState('eval_finalDiagnosis', ''));
   const [isFinishing, setIsFinishing] = useState(false);
@@ -1942,7 +1943,9 @@ const EvaluacionClinica = () => {
                                 <input 
                                   type="text" name="apoderado" value={formData.apoderado} onChange={handleInputChange}
                                   placeholder="Nombre completo"
-                                  className={`w-full px-4 py-2.5 bg-white border ${formErrors.apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
+                                  disabled={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18)}
+                                  tabIndex={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18) ? -1 : 0}
+                                  className={`w-full px-4 py-2.5 bg-white border ${formErrors.apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50`}
                                 />
                                 {formErrors.apoderado && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.apoderado}</p>}
                               </div>
@@ -1951,7 +1954,9 @@ const EvaluacionClinica = () => {
                                 <input 
                                   type="tel" name="telefono_apoderado" maxLength="9" value={formData.telefono_apoderado} onChange={handleInputChange}
                                   placeholder="Ej: 999888777"
-                                  className={`w-full px-4 py-2.5 bg-white border ${formErrors.telefono_apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
+                                  disabled={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18)}
+                                  tabIndex={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18) ? -1 : 0}
+                                  className={`w-full px-4 py-2.5 bg-white border ${formErrors.telefono_apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50`}
                                 />
                                 {formErrors.telefono_apoderado && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.telefono_apoderado}</p>}
                               </div>
@@ -2321,6 +2326,21 @@ const EvaluacionClinica = () => {
                           >
                             {showLabels ? 'Ocultar etiquetas' : 'Mostrar etiquetas'}
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsolateSelection((value) => !value)}
+                            disabled={!showBoxes}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${
+                              !showBoxes
+                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                : isolateSelection
+                                  ? 'bg-amber-500 text-white border-amber-500'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-amber-300'
+                            }`}
+                            title="Muestra solo el hallazgo que selecciones"
+                          >
+                            {isolateSelection ? 'Desactivar aislamiento' : 'Aislar selección'}
+                          </button>
                         </div>
                       </div>
 
@@ -2356,6 +2376,7 @@ const EvaluacionClinica = () => {
                             onDetectionClick={(det) => setSelectedHallazgoId(det.id_deteccion ?? null)}
                             showBoxes={showBoxes}
                             showLabels={showLabels}
+                            isolateSelection={isolateSelection}
                           />
                         ) : (
                           <div className="w-full h-full min-h-[400px] bg-white/70 rounded-xl flex items-center justify-center text-gray-400 border border-gray-100">
