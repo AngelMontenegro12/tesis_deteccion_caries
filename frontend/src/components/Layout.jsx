@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
+import api from '../services/api';
 import { 
   Home, 
   Activity, 
@@ -11,7 +12,10 @@ import {
   ChevronLeft,
   ClipboardList,
   BarChart2,
-  ChevronDown
+  ChevronDown,
+  UserCog,
+  Shield,
+  User
 } from 'lucide-react';
 
 const Layout = () => {
@@ -22,6 +26,8 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [pendingSolicitudes, setPendingSolicitudes] = useState(0);
+
   useEffect(() => {
     // Verificamos si existe usuario guardado en localStorage
     const savedUser = localStorage.getItem('user');
@@ -29,7 +35,17 @@ const Layout = () => {
       // Si no hay usuario logueado, redirigir al login
       navigate('/login');
     } else {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+      
+      if (parsedUser.id_odontologo === 1) {
+        api.get('/solicitudes').then(res => {
+          if (res.data && res.data.data) {
+            const pending = res.data.data.filter(s => s.estado === 'pendiente').length;
+            setPendingSolicitudes(pending);
+          }
+        }).catch(() => {});
+      }
     }
   }, [navigate]);
 
@@ -41,8 +57,9 @@ const Layout = () => {
     }, 1500);
   };
 
-  // Menu de navegación principal
-  const mainMenuItems = [
+  const isAdmin = user?.rol === 'admin' || user?.id_odontologo === 1;
+
+  const baseMainMenuItems = [
     { icon: Home, label: 'Inicio', path: '/dashboard' },
     { icon: ClipboardList, label: 'Diagnóstico', path: '/nueva-evaluacion' },
     { icon: Users, label: 'Pacientes', path: '/pacientes' },
@@ -50,7 +67,12 @@ const Layout = () => {
     { icon: BarChart2, label: 'Reportes', path: '/reportes' },
   ];
 
-  // Menu de navegación secundario
+  // Menu de navegación principal filtrado por permisos
+  const mainMenuItems = baseMainMenuItems.filter(item => {
+    if (isAdmin) return true; // Admins y Superadmins ven todo
+    return user?.permisos?.includes(item.path);
+  });
+
   const bottomMenuItems = [
     { 
       icon: Settings, 
@@ -59,7 +81,9 @@ const Layout = () => {
       isOpen: isConfigOpen,
       toggleOpen: () => setIsConfigOpen(!isConfigOpen),
       subItems: [
-        { icon: Users, label: 'Odontólogos', path: '/usuarios' }
+        { icon: User, label: 'Mi Perfil', path: '/perfil' },
+        ...(isAdmin ? [{ icon: Users, label: 'Odontólogos', path: '/usuarios' }] : []),
+        ...(user?.id_odontologo === 1 ? [{ icon: UserCog, label: 'Solicitudes', path: '/solicitudes', badge: pendingSolicitudes > 0 ? pendingSolicitudes : null }] : [])
       ]
     },
     { icon: HelpCircle, label: 'Soporte / Ayuda', path: '/ayuda' },
@@ -73,6 +97,28 @@ const Layout = () => {
     }
     // Para rutas exactas o subrutas
     return location.pathname.startsWith(path) && path !== '/';
+  };
+
+  // Función para verificar si la ruta actual está permitida
+  const isRouteAllowed = () => {
+    if (isAdmin) return true;
+
+    // Rutas protegidas por el array de permisos
+    const isProtected = baseMainMenuItems.some(item => 
+      location.pathname.startsWith(item.path) ||
+      (item.path === '/historial' && location.pathname.startsWith('/evaluacion/'))
+    );
+
+    if (isProtected) {
+      const matchedModule = baseMainMenuItems.find(item => 
+        location.pathname.startsWith(item.path) ||
+        (item.path === '/historial' && location.pathname.startsWith('/evaluacion/'))
+      );
+      return user?.permisos?.includes(matchedModule?.path);
+    }
+    
+    // Si no es una de las rutas protegidas del menú principal (ej. perfil, ayuda), permitir.
+    return true;
   };
 
   return (
@@ -179,7 +225,12 @@ const Layout = () => {
                               <subItem.icon className={`mr-3 shrink-0 h-5 w-5 transition-colors ${
                                 isActive(subItem.path) ? 'text-white' : 'text-gray-400 group-hover:text-dentBlue-900'
                               }`} />
-                              <span className="whitespace-nowrap">{subItem.label}</span>
+                              <span className="whitespace-nowrap flex-1">{subItem.label}</span>
+                              {subItem.badge && (
+                                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white shadow-sm animate-pulse">
+                                  {subItem.badge}
+                                </span>
+                              )}
                             </Link>
                           ))}
                         </div>
@@ -211,11 +262,21 @@ const Layout = () => {
         <div className="p-4 border-t border-gray-200 shrink-0 bg-white">
           {user && (
             <div className={`flex items-center space-x-3 mb-4 ${isOpen ? '' : 'justify-center'}`}>
-              <div className="w-10 h-10 bg-dentGreen-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-medium text-lg">
-                  {user.nombres.charAt(0)}{user.apellidos ? user.apellidos.charAt(0) : ''}
-                </span>
-              </div>
+              {(user.foto_perfil && user.foto_perfil !== 'null' && user.foto_perfil.length > 5) ? (
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm border border-gray-200 bg-gray-100 relative">
+                  <User className="w-5 h-5 text-gray-400 absolute" />
+                  <img 
+                    src={`http://localhost:5000${user.foto_perfil}`} 
+                    alt="Perfil" 
+                    className="w-full h-full object-cover relative z-10" 
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-200">
+                  <User className="w-5 h-5 text-gray-400" />
+                </div>
+              )}
               {isOpen && (
                 <div className="overflow-hidden">
                   <p className="text-sm font-medium text-gray-900 truncate">{user.nombres} {user.apellidos}</p>
@@ -237,8 +298,20 @@ const Layout = () => {
       </aside>
 
       {/* Contenido Principal (Espacio de trabajo renderizado con Outlet) */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
-        <Outlet />
+      <main className="flex-1 flex flex-col overflow-hidden relative bg-gray-50/50">
+        {isRouteAllowed() ? (
+          <Outlet />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full p-6">
+            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <Shield className="w-12 h-12 text-red-600" />
+            </div>
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-3 text-center">Acceso Denegado</h2>
+            <p className="text-gray-500 text-center max-w-md text-lg">
+              No tienes permisos para visualizar este módulo. Si crees que esto es un error, por favor contacta con un administrador.
+            </p>
+          </div>
+        )}
       </main>
 
       {/* Pantalla de Carga - Cerrar Sesión */}

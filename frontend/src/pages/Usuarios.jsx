@@ -15,7 +15,13 @@ import {
   Edit3,
   ArrowUpDown,
   Sparkles,
-  X
+  X,
+  Home,
+  ClipboardList,
+  Activity,
+  BarChart2,
+  Lock,
+  Unlock
 } from 'lucide-react';
 import api from '../services/api';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
@@ -41,8 +47,44 @@ const Usuarios = () => {
   const [sortKey, setSortKey] = useState('apellidos');
   const [sortDirection, setSortDirection] = useState('asc');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPermisosModalOpen, setIsPermisosModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [permisosUser, setPermisosUser] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [permisosForm, setPermisosForm] = useState([]);
+  const [permisosRol, setPermisosRol] = useState('odontologo');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [warningMessage, setWarningMessage] = useState('');
+
+  const loggedUser = useMemo(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  }, []);
+  const isLoggedAdmin = loggedUser?.rol === 'admin';
+  const isSuperadmin = loggedUser?.id_odontologo === 1;
+  const hasAccess = isLoggedAdmin || isSuperadmin;
+
+  if (!hasAccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50/50 p-6">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+          <Shield className="w-10 h-10 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Restringido</h2>
+        <p className="text-gray-500 text-center max-w-md">
+          No tienes los permisos necesarios para acceder a la gestión de odontólogos. Si crees que esto es un error, contacta con el administrador principal.
+        </p>
+      </div>
+    );
+  }
+
+  const MODULOS_SISTEMA = [
+    { path: '/dashboard', label: 'Inicio', icon: <Home className="w-4 h-4" /> },
+    { path: '/nueva-evaluacion', label: 'Diagnóstico', icon: <ClipboardList className="w-4 h-4" /> },
+    { path: '/pacientes', label: 'Pacientes', icon: <Users className="w-4 h-4" /> },
+    { path: '/historial', label: 'Historial de diagnósticos', icon: <Activity className="w-4 h-4" /> },
+    { path: '/reportes', label: 'Reportes', icon: <BarChart2 className="w-4 h-4" /> }
+  ];
 
   const fetchOdontologos = async () => {
     try {
@@ -380,6 +422,11 @@ const Usuarios = () => {
                         Estado {sortIndicator('activo')}
                       </button>
                     </th>
+                    <th scope="col" className="px-5 py-4 text-center">
+                      <button type="button" onClick={() => handleSort('rol')} className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-gray-500 hover:text-dentBlue-900 transition-colors">
+                        Rol {sortIndicator('rol')}
+                      </button>
+                    </th>
                     <th scope="col" className="px-5 py-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Acciones</th>
                   </tr>
                 </thead>
@@ -430,8 +477,38 @@ const Usuarios = () => {
                           {odontologo.activo ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
+                      <td className="px-5 py-4 align-top text-center">
+                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
+                          odontologo.id_odontologo === 1
+                            ? 'bg-purple-100 text-purple-800 border-purple-300 shadow-sm ring-1 ring-purple-500/20'
+                            : odontologo.rol === 'admin'
+                            ? 'bg-purple-50 text-purple-700 border-purple-100'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}>
+                          {odontologo.id_odontologo === 1 ? 'Admin Principal' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
+                        </span>
+                      </td>
                       <td className="px-5 py-4 align-top">
                         <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            disabled={odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo)}
+                            onClick={() => {
+                              setPermisosUser(odontologo);
+                              setPermisosForm(odontologo.permisos || []);
+                              setPermisosRol(odontologo.rol || 'odontologo');
+                              setIsPermisosModalOpen(true);
+                            }}
+                            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                              (odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo))
+                                ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed'
+                                : 'border-gray-200 text-gray-700 hover:border-purple-900/30 hover:text-purple-700 hover:bg-purple-50'
+                            }`}
+                            title={odontologo.id_odontologo === 1 ? 'Los permisos del Administrador Principal no se pueden modificar' : (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo) ? 'No puedes modificar tus propios permisos' : 'Gestionar permisos'}
+                          >
+                            <Shield className="w-4 h-4" />
+                            Permisos
+                          </button>
                           <button
                             type="button"
                             onClick={() => openEditModal(odontologo)}
@@ -605,6 +682,225 @@ const Usuarios = () => {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {isPermisosModalOpen && permisosUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 backdrop-blur-sm px-4 py-6">
+          <div className="w-full max-w-lg bg-white rounded-[1.75rem] shadow-2xl border border-gray-100 flex flex-col max-h-[95vh] overflow-hidden">
+            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white shrink-0">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-purple-100 text-purple-700 text-xs font-bold uppercase tracking-[0.2em] mb-3">
+                  <Shield className="w-3.5 h-3.5" />
+                  Permisos de acceso
+                </div>
+                <h3 className="text-xl font-extrabold text-dentBlue-900 tracking-tight">
+                  {permisosUser.nombres} {permisosUser.apellidos}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPermisosModalOpen(false)}
+                className="w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">1. Rol del usuario</h4>
+                <p className="text-sm text-gray-500">Define el nivel de control sobre el sistema.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <label className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
+                    permisosRol === 'odontologo'
+                      ? 'border-dentBlue-500 bg-dentBlue-50/50 shadow-sm ring-1 ring-dentBlue-500'
+                      : 'border-gray-200 bg-white hover:border-dentBlue-200 hover:bg-gray-50'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Stethoscope className={`w-4 h-4 ${permisosRol === 'odontologo' ? 'text-dentBlue-700' : 'text-gray-400'}`} />
+                      <span className={`font-bold ${permisosRol === 'odontologo' ? 'text-dentBlue-900' : 'text-gray-700'}`}>Odontólogo</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Acceso clínico estándar.</p>
+                    <input
+                      type="radio"
+                      name="rol"
+                      value="odontologo"
+                      className="hidden"
+                      checked={permisosRol === 'odontologo'}
+                      onChange={() => setPermisosRol('odontologo')}
+                    />
+                  </label>
+                  <label className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
+                    permisosRol === 'admin'
+                      ? 'border-purple-500 bg-purple-50/50 shadow-sm ring-1 ring-purple-500'
+                      : 'border-gray-200 bg-white hover:border-purple-200 hover:bg-gray-50'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Shield className={`w-4 h-4 ${permisosRol === 'admin' ? 'text-purple-700' : 'text-gray-400'}`} />
+                      <span className={`font-bold ${permisosRol === 'admin' ? 'text-purple-900' : 'text-gray-700'}`}>Administrador</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Control total y configuración.</p>
+                    <input
+                      type="radio"
+                      name="rol"
+                      value="admin"
+                      className="hidden"
+                      checked={permisosRol === 'admin'}
+                      onChange={() => setPermisosRol('admin')}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2 border-t border-gray-100">
+                <div className="flex flex-col gap-1">
+                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">2. Módulos accesibles</h4>
+                  <p className="text-sm text-gray-500">Selecciona qué apartados podrá ver este odontólogo en su menú.</p>
+                  <div className="bg-purple-50 rounded-lg p-2.5 mt-1 border border-purple-100 flex items-start gap-2">
+                    <Shield className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-purple-700 font-medium leading-relaxed">
+                      <strong>Nota:</strong> Los usuarios con rol de Administrador tienen acceso total a todos los módulos de forma automática, independientemente de esta selección.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-3">
+                  {MODULOS_SISTEMA.map((modulo) => {
+                    const hasAccess = permisosForm.includes(modulo.path);
+                    return (
+                      <label
+                        key={modulo.path}
+                        className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                          hasAccess
+                            ? 'border-dentGreen-300 bg-dentGreen-50/30 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-dentGreen-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${hasAccess ? 'bg-dentGreen-100 text-dentGreen-700' : 'bg-gray-100 text-gray-400'}`}>
+                            {modulo.icon}
+                          </div>
+                          <span className={`text-sm font-semibold ${hasAccess ? 'text-dentGreen-900' : 'text-gray-600'}`}>
+                            {modulo.label}
+                          </span>
+                        </div>
+                        <div className={`flex items-center justify-center w-5 h-5 rounded border transition-colors ${
+                          hasAccess
+                            ? 'bg-dentGreen-600 border-dentGreen-600 text-white'
+                            : 'bg-white border-gray-300'
+                        }`}>
+                          {hasAccess && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={hasAccess}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setPermisosForm([...permisosForm, modulo.path]);
+                            } else {
+                              setPermisosForm(permisosForm.filter((p) => p !== modulo.path));
+                            }
+                          }}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer con botones fijos */}
+            <div className="flex items-center gap-3 p-6 border-t border-gray-100 bg-gray-50 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsPermisosModalOpen(false)}
+                className="flex-1 px-5 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-white transition-colors shadow-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  try {
+                    const response = await api.put(`/odontologos/${permisosUser.id_odontologo}`, {
+                      rol: permisosRol,
+                      permisos: permisosForm,
+                      id_solicitante: loggedUser?.id_odontologo
+                    });
+                    if (response.data?.status === 'success') {
+                      await fetchOdontologos();
+                      setIsPermisosModalOpen(false);
+                      if (response.data.message.includes('solicitud')) {
+                        setSuccessMessage(response.data.message);
+                        setTimeout(() => setSuccessMessage(''), 4000);
+                      }
+                    } else if (response.data?.status === 'warning') {
+                      setWarningMessage(response.data.message);
+                    } else {
+                      setError(response.data?.message || 'Error al guardar permisos');
+                    }
+                  } catch (error) {
+                    setError('No se pudo guardar los permisos');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-purple-600 text-white font-bold shadow-md hover:bg-purple-700 hover:shadow-lg transition-all disabled:opacity-60"
+              >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                {saving ? 'Guardando' : 'Guardar configuración'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Éxito de Solicitud */}
+      {successMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">¡Solicitud Enviada!</h3>
+              <p className="text-gray-600 text-sm">{successMessage}</p>
+            </div>
+            <div className="p-4 bg-gray-50 flex justify-center">
+              <button
+                onClick={() => setSuccessMessage('')}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-100 transition-colors shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Advertencia de Solicitud Pendiente */}
+      {warningMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Solicitud Pendiente</h3>
+              <p className="text-gray-600 text-sm">{warningMessage}</p>
+            </div>
+            <div className="p-4 bg-gray-50 flex flex-col gap-2">
+              <button
+                onClick={() => setWarningMessage('')}
+                className="w-full px-4 py-2.5 bg-amber-500 rounded-xl font-bold text-white hover:bg-amber-600 transition-colors shadow-sm"
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}

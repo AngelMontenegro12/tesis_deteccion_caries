@@ -35,8 +35,7 @@ def obtener_evaluaciones():
             db.func.count(Radiografia.id_radiografia).label('radiografias_count')
         )\
             .join(Paciente, EvaluacionDiagnostica.id_paciente == Paciente.id_paciente)\
-            .outerjoin(Radiografia, Radiografia.id_evaluacion == EvaluacionDiagnostica.id_evaluacion)\
-            .filter(EvaluacionDiagnostica.id_odontologo == id_odontologo_harcoded)
+            .outerjoin(Radiografia, Radiografia.id_evaluacion == EvaluacionDiagnostica.id_evaluacion)
         
         # Filters
         if search:
@@ -207,10 +206,9 @@ def obtener_evaluacion_pendiente(id_paciente):
         # TODO: En un sistema real el id_odontologo se saca de la sesión actual JWT/Login
         id_odontologo_harcoded = 1
         
-        # Buscar la última evaluación pendiente del paciente para este odontólogo
+        # Buscar la última evaluación pendiente del paciente
         evaluacion = EvaluacionDiagnostica.query.filter_by(
             id_paciente=id_paciente,
-            id_odontologo=id_odontologo_harcoded,
             estado='pendiente'
         ).order_by(EvaluacionDiagnostica.fecha_evaluacion.desc()).first()
         

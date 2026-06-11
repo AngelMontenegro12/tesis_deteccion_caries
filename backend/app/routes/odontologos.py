@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy import or_, func
 from app.models import Odontologo, db
 import bcrypt
-
+import os
+from werkzeug.utils import secure_filename
 odontologos_bp = Blueprint('odontologos', __name__, url_prefix='/api/odontologos')
 
 
@@ -122,14 +123,47 @@ def actualizar_odontologo(id_odontologo):
         odontologo.especialidad = (data.get('especialidad') or '').strip() or None
     if 'telefono' in data:
         odontologo.telefono = (data.get('telefono') or '').strip() or None
+    
+    mensaje_exito = 'Odontólogo actualizado correctamente'
+    
+    if 'rol' in data:
+        nuevo_rol = (data.get('rol') or 'odontologo').strip()
+        id_solicitante = data.get('id_solicitante')
+        
+        # Si un admin normal intenta cambiar el rol de alguien (ascender o descender), se crea una solicitud
+        if nuevo_rol != odontologo.rol and id_solicitante and int(id_solicitante) != 1:
+            from app.models import SolicitudRol
+            # Verificar si ya hay una solicitud pendiente
+            solicitud_existente = SolicitudRol.query.filter_by(
+                id_odontologo_objetivo=id_odontologo,
+                estado='pendiente'
+            ).first()
+            
+            if solicitud_existente:
+                return jsonify({
+                    'status': 'warning',
+                    'message': 'Ya existe una solicitud de rol pendiente para este usuario. Debes esperar a que el Admin. Principal la apruebe o rechace antes de crear otra.'
+                }), 200
+
+            nueva_solicitud = SolicitudRol(
+                id_solicitante=int(id_solicitante),
+                id_odontologo_objetivo=id_odontologo,
+                estado='pendiente'
+            )
+            db.session.add(nueva_solicitud)
+            mensaje_exito = f'Permisos actualizados. La solicitud de cambio de rol a {nuevo_rol.capitalize()} fue enviada al Admin. Principal.'
+        else:
+            odontologo.rol = nuevo_rol
+            
+    if 'permisos' in data:
+        odontologo.permisos = data.get('permisos')
     if 'activo' in data:
         odontologo.activo = _normalizar_booleano(data.get('activo'), odontologo.activo)
     if data.get('contrasena'):
-        odontologo.contrasena_hash = bcrypt.hashpw(data['contrasena'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
+        odontologo.contrasena_hash = data['contrasena']
     try:
         db.session.commit()
-        return jsonify({'status': 'success', 'message': 'Odontólogo actualizado correctamente', 'data': odontologo.to_dict() | {'activo': odontologo.activo}}), 200
+        return jsonify({'status': 'success', 'message': mensaje_exito, 'data': odontologo.to_dict() | {'activo': odontologo.activo}}), 200
     except Exception as error:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(error)}), 400
@@ -154,3 +188,61 @@ def cambiar_estado_odontologo(id_odontologo):
     except Exception as error:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(error)}), 400
+
+
+@odontologos_bp.route('/<int:id_odontologo>/password', methods=['PUT'])
+def cambiar_password(id_odontologo):
+    data = request.get_json(silent=True) or {}
+    odontologo = Odontologo.query.get(id_odontologo)
+    if not odontologo:
+        return jsonify({'status': 'error', 'message': 'Odontólogo no encontrado'}), 404
+
+    actual = data.get('contrasena_actual')
+    nueva = data.get('nueva_contrasena')
+
+    if not actual or not nueva:
+        return jsonify({'status': 'error', 'message': 'Debe proporcionar la contraseña actual y la nueva'}), 400
+
+    if actual != odontologo.contrasena_hash:
+        return jsonify({'status': 'error', 'message': 'La contraseña actual es incorrecta'}), 401
+
+    odontologo.contrasena_hash = nueva
+
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Contraseña actualizada correctamente'}), 200
+    except Exception as error:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(error)}), 400
+
+
+@odontologos_bp.route('/<int:id_odontologo>/avatar', methods=['POST'])
+def actualizar_avatar(id_odontologo):
+    odontologo = Odontologo.query.get(id_odontologo)
+    if not odontologo:
+        return jsonify({'status': 'error', 'message': 'Odontólogo no encontrado'}), 404
+
+    if 'foto' not in request.files:
+        return jsonify({'status': 'error', 'message': 'No se encontró la imagen'}), 400
+
+    file = request.files['foto']
+    if file.filename == '':
+        return jsonify({'status': 'error', 'message': 'No se seleccionó una imagen'}), 400
+
+    try:
+        filename = secure_filename(f"avatar_{id_odontologo}.png")
+        upload_folder = os.path.join(os.getcwd(), 'uploads', 'avatars')
+        os.makedirs(upload_folder, exist_ok=True)
+        filepath = os.path.join(upload_folder, filename)
+        
+        file.save(filepath)
+        
+        # Ruta relativa para la bd
+        ruta_relativa = f"/uploads/avatars/{filename}"
+        odontologo.foto_perfil = ruta_relativa
+        db.session.commit()
+
+        return jsonify({'status': 'success', 'message': 'Avatar actualizado', 'foto_perfil': ruta_relativa}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500

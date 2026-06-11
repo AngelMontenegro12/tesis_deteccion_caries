@@ -16,8 +16,8 @@ def get_dashboard_stats():
         total_pacientes = Paciente.query.filter_by(activo=True).count()
 
         # 2. Evaluaciones
-        eval_completadas = EvaluacionDiagnostica.query.filter_by(id_odontologo=id_odontologo, estado='completada').count()
-        eval_pendientes = EvaluacionDiagnostica.query.filter_by(id_odontologo=id_odontologo, estado='pendiente').count()
+        eval_completadas = EvaluacionDiagnostica.query.filter_by(estado='completada').count()
+        eval_pendientes = EvaluacionDiagnostica.query.filter_by(estado='pendiente').count()
         total_evaluaciones = eval_completadas + eval_pendientes
 
         # 3. Evaluaciones Hoy y Ayer
@@ -25,20 +25,18 @@ def get_dashboard_stats():
         ayer = hoy - timedelta(days=1)
         
         evaluaciones_hoy = EvaluacionDiagnostica.query.filter(
-            EvaluacionDiagnostica.id_odontologo == id_odontologo,
             func.date(EvaluacionDiagnostica.fecha_evaluacion) == hoy
         ).count()
         
         evaluaciones_ayer = EvaluacionDiagnostica.query.filter(
-            EvaluacionDiagnostica.id_odontologo == id_odontologo,
             func.date(EvaluacionDiagnostica.fecha_evaluacion) == ayer
         ).count()
 
         # 3.5 Total de radiografias subidas
-        total_radiografias = Radiografia.query.join(EvaluacionDiagnostica).filter(EvaluacionDiagnostica.id_odontologo == id_odontologo).count()
+        total_radiografias = Radiografia.query.join(EvaluacionDiagnostica).count()
 
         # 4. Caries más encontradas (Por localización)
-        # Tomamos todas las localizaciones del catálogo y contamos las detecciones reales por odontólogo.
+        # Tomamos todas las localizaciones del catálogo y contamos las detecciones reales.
         query_localizacion = text("""
             SELECT
                 lc.nombre AS localizacion,
@@ -47,13 +45,13 @@ def get_dashboard_stats():
             LEFT JOIN detecciones_caries dc ON dc.id_localizacion = lc.id_localizacion
             LEFT JOIN resultados_deteccion rd ON dc.id_resultado = rd.id_resultado
             LEFT JOIN radiografias r ON rd.id_radiografia = r.id_radiografia
-            LEFT JOIN evaluaciones_diagnosticas ed ON r.id_evaluacion = ed.id_evaluacion AND ed.id_odontologo = :id_odo
+            LEFT JOIN evaluaciones_diagnosticas ed ON r.id_evaluacion = ed.id_evaluacion
             WHERE lc.id_localizacion <> 4
             GROUP BY lc.id_localizacion, lc.nombre
             ORDER BY cantidad DESC, lc.nombre ASC
         """)
 
-        result_localizacion = db.session.execute(query_localizacion, {"id_odo": id_odontologo}).fetchall()
+        result_localizacion = db.session.execute(query_localizacion).fetchall()
 
         detecciones_localizacion = {}
         detecciones_localizacion_series = []
@@ -73,12 +71,11 @@ def get_dashboard_stats():
             SELECT p.id_paciente, ed.id_evaluacion, p.nombres, p.apellidos, ed.tipo_visita, ed.fecha_evaluacion, ed.estado, ed.creado_en, ed.actualizado_en
             FROM evaluaciones_diagnosticas ed
             JOIN pacientes p ON p.id_paciente = ed.id_paciente
-            WHERE ed.id_odontologo = :id_odo
             ORDER BY ed.fecha_evaluacion DESC
             LIMIT 3
         """)
         
-        result_ultimas = db.session.execute(query_ultimas, {"id_odo": id_odontologo}).fetchall()
+        result_ultimas = db.session.execute(query_ultimas).fetchall()
         ultimas_evaluaciones = []
         for row in result_ultimas:
             ultimas_evaluaciones.append({

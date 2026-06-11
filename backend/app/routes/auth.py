@@ -73,5 +73,62 @@ def login():
         if intentos_login[ip]['intentos'] >= MAX_INTENTOS:
             intentos_login[ip]['bloqueado_hasta'] = time.time() + TIEMPO_BLOQUEO
             return jsonify({'error': 'Demasiados intentos fallidos. Intente de nuevo más tarde.'}), 429
-            
         return jsonify({'error': 'Credenciales incorrectas'}), 401
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    correo = data.get('correo')
+    if not correo:
+        return jsonify({'error': 'Correo es requerido'}), 400
+        
+    odontologo = Odontologo.query.filter_by(correo=correo, activo=True).first()
+    if not odontologo:
+        return jsonify({'error': 'El correo ingresado no está registrado o el usuario está inactivo'}), 404
+        
+    from app.models import SolicitudPassword
+    
+    # Buscar si hay alguna solicitud
+    solicitud = SolicitudPassword.query.filter_by(id_odontologo=odontologo.id_odontologo).order_by(SolicitudPassword.fecha_solicitud.desc()).first()
+    
+    if solicitud:
+        if solicitud.estado == 'pendiente':
+            return jsonify({'status': 'pending', 'message': 'Ya tienes una solicitud de restablecimiento pendiente de aprobación.'}), 200
+        elif solicitud.estado == 'aprobada':
+            return jsonify({'status': 'approved', 'message': 'Tu solicitud ha sido aprobada. Procede a cambiar tu contraseña.'}), 200
+            
+    # Si no hay solicitud, o la última fue completada/rechazada, crear una nueva
+    nueva_solicitud = SolicitudPassword(id_odontologo=odontologo.id_odontologo)
+    db.session.add(nueva_solicitud)
+    db.session.commit()
+    
+    return jsonify({'status': 'created', 'message': 'Solicitud enviada exitosamente. Un administrador la revisará en breve.'}), 201
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    correo = data.get('correo')
+    nueva_contrasena = data.get('nueva_contrasena')
+    
+    if not correo or not nueva_contrasena:
+        return jsonify({'error': 'Faltan datos'}), 400
+        
+    odontologo = Odontologo.query.filter_by(correo=correo).first()
+    if not odontologo:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+    from app.models import SolicitudPassword
+    
+    solicitud = SolicitudPassword.query.filter_by(id_odontologo=odontologo.id_odontologo, estado='aprobada').first()
+    if not solicitud:
+        return jsonify({'error': 'No tienes una solicitud aprobada para restablecer tu contraseña'}), 403
+        
+    # Actualizar la contraseña (la guardamos en hash o en texto plano si no se usa bcrypt)
+    # Según la lógica existente, a veces se guardan en texto plano en este sistema. Vamos a guardar en texto plano para compatibilidad o hashear
+    # Wait, the system says if it starts with '$', it's hashed, otherwise it's plain text. We will just save it plain text to match whatever they are doing, or hash it. Let's not hash it to keep it simple, or hash it if they prefer. The user mentioned previously: "por ahora quiero que todo lo hagas sin encriptacion"
+    odontologo.contrasena_hash = nueva_contrasena
+    solicitud.estado = 'completada'
+    
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Contraseña actualizada exitosamente'}), 200
+

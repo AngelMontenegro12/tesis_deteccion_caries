@@ -8,15 +8,38 @@ import logoEmpresa from '../assets/logo_sonrie.jpg';
 const Login = () => {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [errorLogin, setErrorLogin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Forgot Password States
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [forgotMessage, setForgotMessage] = useState({ type: '', text: '' });
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  // Redirigir al dashboard si ya está logeado
+  // Redirigir al dashboard si ya está logeado y cargar credenciales si existen
   useEffect(() => {
     const user = localStorage.getItem('user');
     if (user) {
       navigate('/dashboard', { replace: true });
+    }
+
+    const savedLogin = localStorage.getItem('savedLogin');
+    if (savedLogin) {
+      try {
+        const parsed = JSON.parse(savedLogin);
+        if (parsed.correo && parsed.contrasena) {
+          setCorreo(parsed.correo);
+          setContrasena(parsed.contrasena);
+          setRememberMe(true);
+        }
+      } catch (e) {}
     }
   }, [navigate]);
 
@@ -43,6 +66,12 @@ const Login = () => {
       // Login exitoso
       localStorage.setItem('user', JSON.stringify(data.user));
       
+      if (rememberMe) {
+        localStorage.setItem('savedLogin', JSON.stringify({ correo, contrasena }));
+      } else {
+        localStorage.removeItem('savedLogin');
+      }
+      
       setTimeout(() => {
         navigate('/dashboard');
       }, 1000);
@@ -50,6 +79,67 @@ const Login = () => {
     } catch (err) {
       setErrorLogin(err.message);
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotMessage({ type: '', text: '' });
+    setIsForgotLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo: forgotEmail })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      if (data.status === 'pending') {
+        setForgotMessage({ type: 'warning', text: data.message });
+      } else if (data.status === 'created') {
+        setForgotMessage({ type: 'success', text: data.message });
+      } else if (data.status === 'approved') {
+        setForgotMessage({ type: 'success', text: data.message });
+        setTimeout(() => setForgotStep(2), 1500);
+      }
+    } catch (err) {
+      setForgotMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      setForgotMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+      return;
+    }
+    setForgotMessage({ type: '', text: '' });
+    setIsForgotLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo: forgotEmail, nueva_contrasena: newPassword })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      setForgotMessage({ type: 'success', text: data.message });
+      setTimeout(() => {
+        setShowForgotModal(false);
+        setForgotStep(1);
+        setForgotEmail('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setForgotMessage({ type: '', text: '' });
+      }, 2000);
+    } catch (err) {
+      setForgotMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsForgotLoading(false);
     }
   };
 
@@ -125,12 +215,25 @@ const Login = () => {
 
           <div className="flex items-center justify-between text-sm py-1">
             <label className="flex items-center text-gray-600 cursor-pointer hover:text-dentBlue-900 transition-colors">
-              <input type="checkbox" className="mr-2 h-4 w-4 rounded border-gray-300 text-dentGreen-500 focus:ring-dentGreen-500 transition-colors" />
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="mr-2 h-4 w-4 rounded border-gray-300 text-dentGreen-500 focus:ring-dentGreen-500 transition-colors" 
+              />
               Recordarme
             </label>
-            <a href="#" className="font-semibold text-dentGreen-600 hover:text-dentGreen-500 transition-colors">
+            <button 
+              type="button" 
+              onClick={() => {
+                setShowForgotModal(true);
+                setForgotStep(1);
+                setForgotMessage({ type: '', text: '' });
+              }}
+              className="font-semibold text-dentGreen-600 hover:text-dentGreen-500 transition-colors"
+            >
               ¿Olvidaste tu clave?
-            </a>
+            </button>
           </div>
 
           <button 
@@ -161,6 +264,117 @@ const Login = () => {
         </div>
 
       </div>
+
+      {/* MODAL OLVIDE MI CONTRASEÑA */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up relative">
+            <div className="p-8 pb-10">
+              <h3 className="text-2xl font-extrabold text-dentBlue-900 mb-2">
+                {forgotStep === 1 ? 'Recuperar Contraseña' : 'Nueva Contraseña'}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                {forgotStep === 1 
+                  ? 'Ingresa tu correo para consultar o generar tu solicitud de recuperación.'
+                  : 'Tu solicitud fue aprobada. Ingresa tu nueva contraseña.'}
+              </p>
+
+              {forgotMessage.text && (
+                <div className={`mb-6 p-4 rounded-xl text-sm font-medium border ${
+                  forgotMessage.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
+                  forgotMessage.type === 'warning' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                  'bg-green-50 text-green-700 border-green-200'
+                }`}>
+                  {forgotMessage.text}
+                </div>
+              )}
+
+              {forgotStep === 1 ? (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="flex flex-col relative">
+                    <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1">
+                      Correo Electrónico
+                    </label>
+                    <input 
+                      type="email" 
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-dentGreen-500 transition-all text-gray-700"
+                      placeholder="ejemplo@sonrie.pe"
+                      required
+                    />
+                  </div>
+                  <div className="flex space-x-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotModal(false)}
+                      className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm uppercase tracking-wider"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isForgotLoading}
+                      className="flex-1 px-4 py-3 bg-dentBlue-900 text-white font-bold rounded-xl hover:bg-dentGreen-500 transition-colors text-sm uppercase tracking-wider disabled:opacity-50"
+                    >
+                      {isForgotLoading ? 'Verificando...' : 'Verificar'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="flex flex-col relative">
+                    <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1">
+                      Nueva Contraseña
+                    </label>
+                    <input 
+                      type="password" 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-dentGreen-500 transition-all text-gray-700"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col relative">
+                    <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1">
+                      Confirmar Contraseña
+                    </label>
+                    <input 
+                      type="password" 
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-dentGreen-500 transition-all text-gray-700"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <div className="flex space-x-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotModal(false);
+                        setForgotStep(1);
+                      }}
+                      className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm uppercase tracking-wider"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isForgotLoading}
+                      className="flex-1 px-4 py-3 bg-dentBlue-900 text-white font-bold rounded-xl hover:bg-dentGreen-500 transition-colors text-sm uppercase tracking-wider disabled:opacity-50"
+                    >
+                      {isForgotLoading ? 'Actualizando...' : 'Actualizar'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

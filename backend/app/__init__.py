@@ -25,12 +25,14 @@ def create_app():
     from app.routes.evaluaciones import evaluaciones_bp
     from app.routes.dashboard import dashboard_bp
     from app.routes.reportes import reportes_bp
+    from app.routes.solicitudes import solicitudes_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(odontologos_bp)
     app.register_blueprint(pacientes_bp)
     app.register_blueprint(evaluaciones_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(reportes_bp)
+    app.register_blueprint(solicitudes_bp)
     
     # Servir imágenes estáticas procesadas o subidas
     @app.route('/uploads/<path:filename>')

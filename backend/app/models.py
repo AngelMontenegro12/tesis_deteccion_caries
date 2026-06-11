@@ -12,6 +12,9 @@ class Odontologo(db.Model):
     especialidad = db.Column(db.String(100))
     telefono = db.Column(db.String(20))
     activo = db.Column(db.Boolean, default=True)
+    rol = db.Column(db.String(20), default='odontologo')
+    permisos = db.Column(db.JSON, nullable=True)
+    foto_perfil = db.Column(db.String(255), nullable=True)
 
     def to_dict(self):
         return {
@@ -19,8 +22,12 @@ class Odontologo(db.Model):
             'nombres': self.nombres,
             'apellidos': self.apellidos,
             'correo': self.correo,
+            'telefono': self.telefono,
             'colegiatura': self.colegiatura,
-            'especialidad': self.especialidad
+            'especialidad': self.especialidad,
+            'rol': self.rol,
+            'permisos': self.permisos,
+            'foto_perfil': self.foto_perfil
         }
 
 class Paciente(db.Model):
@@ -201,3 +208,52 @@ class DeteccionesCaries(db.Model):
             'creado_en': str(self.creado_en)
         }
 
+class SolicitudRol(db.Model):
+    __tablename__ = 'solicitudes_rol'
+    
+    id_solicitud = db.Column(db.Integer, primary_key=True)
+    id_solicitante = db.Column(db.Integer, db.ForeignKey('odontologos.id_odontologo'), nullable=False)
+    id_odontologo_objetivo = db.Column(db.Integer, db.ForeignKey('odontologos.id_odontologo'), nullable=False)
+    estado = db.Column(db.String(20), default='pendiente')
+    fecha_solicitud = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    solicitante = db.relationship('Odontologo', foreign_keys=[id_solicitante])
+    objetivo = db.relationship('Odontologo', foreign_keys=[id_odontologo_objetivo])
+
+    def to_dict(self):
+        return {
+            'id_solicitud': self.id_solicitud,
+            'id_solicitante': self.id_solicitante,
+            'id_odontologo_objetivo': self.id_odontologo_objetivo,
+            'estado': self.estado,
+            'fecha_solicitud': str(self.fecha_solicitud),
+            'solicitante_nombre': f"{self.solicitante.nombres} {self.solicitante.apellidos}" if self.solicitante else None,
+            'objetivo_nombre': f"{self.objetivo.nombres} {self.objetivo.apellidos}" if self.objetivo else None,
+            'objetivo_rol_actual': self.objetivo.rol if self.objetivo else None,
+            'tipo_solicitud': 'Cambio de Rol'
+        }
+
+from sqlalchemy.dialects.mysql import INTEGER
+
+class SolicitudPassword(db.Model):
+    __tablename__ = 'solicitudes_password'
+    
+    id_solicitud = db.Column(db.Integer, primary_key=True)
+    id_odontologo = db.Column(INTEGER(unsigned=True), db.ForeignKey('odontologos.id_odontologo'), nullable=False)
+    estado = db.Column(db.String(20), default='pendiente')
+    fecha_solicitud = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    odontologo = db.relationship('Odontologo', foreign_keys=[id_odontologo])
+
+    def to_dict(self):
+        return {
+            'id_solicitud': f"pwd_{self.id_solicitud}",
+            'id_solicitante': self.id_odontologo,
+            'estado': self.estado,
+            'fecha_solicitud': str(self.fecha_solicitud),
+            'solicitante_nombre': f"{self.odontologo.nombres} {self.odontologo.apellidos}" if self.odontologo else None,
+            'objetivo_nombre': f"{self.odontologo.nombres} {self.odontologo.apellidos}" if self.odontologo else None,
+            'objetivo_rol_actual': self.odontologo.rol if self.odontologo else None,
+            'tipo_solicitud': 'Restablecer Contraseña',
+            'correo': self.odontologo.correo if self.odontologo else None
+        }
