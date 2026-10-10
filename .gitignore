@@ -44,6 +44,7 @@ api_ia_sonrie/models/*.pt
 
 # YOLO Entrenamientos y Logs
 runs/
+material_tesis/resultados/
 yolov8n.pt
 
 # Datasets
@@ -64,6 +65,7 @@ backend/logs/
 
 # Dataset clasificador
 dataset_clasificador/
+material_tesis/datasets/
 
 # Nuevos datasets generados
 processed_v1_2_LIMPIO/

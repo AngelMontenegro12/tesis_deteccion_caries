@@ -15,7 +15,7 @@ from ultralytics import YOLO
 # ── CONFIGURACIÓN ─────────────────────────────────────────────────────────────
 MODEL_PATH = r"D:\LPT ANGEL\USAT\2026-1\tesis_caries\sistema_sonrie_tesis\api_ia_sonrie\models\dentex_caries_v1_9_clahe.pt"
 YAML_PATH  = r"D:\LPT ANGEL\USAT\2026-1\tesis_caries\sistema_sonrie_tesis\api_ia_sonrie\dataset\processed_v1_9_clahe_global\dentex_clahe.yaml"
-OUTPUT_DIR = r"D:\LPT ANGEL\USAT\2026-1\tesis_caries\sistema_sonrie_tesis\runs\val"
+OUTPUT_DIR = r"D:\LPT ANGEL\USAT\2026-1\tesis_caries\sistema_sonrie_tesis\material_tesis\resultados\runs\val"
 
 CLASES = ["Caries", "Deep Caries", "Periapical Lesion"]
 
