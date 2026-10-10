@@ -97,7 +97,7 @@ se deben adaptar las rutas y el comando de activación del entorno virtual.
 ### 4.1 Obtener el código
 
 ```powershell
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/AngelMontenegro12/tesis_deteccion_caries
 cd sistema_sonrie_tesis
 ```
 
