@@ -114,7 +114,10 @@ const EvaluacionClinica = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(() => getInitialState('eval_isAnalyzing', false));
   const [analysisItems, setAnalysisItems] = useState(() => getInitialState('eval_analysisItems', []));
   const [analysisTime, setAnalysisTime] = useState(() => getInitialState('eval_analysisTime', 0));
-  const [analysisResultsReady, setAnalysisResultsReady] = useState(false);
+  const [analysisResultsReady, setAnalysisResultsReady] = useState(() => {
+    const items = getInitialState('eval_analysisItems', []);
+    return items.length > 0 && items.every(item => item.status === 'completed');
+  });
 
   // --- Estado para el Paso 5: Resultados ---
   const [activeResultIndex, setActiveResultIndex] = useState(() => getInitialState('eval_activeResultIndex', 0));
@@ -213,6 +216,13 @@ const EvaluacionClinica = () => {
       }
     }
   }, [currentStep, patientMode, evaluacionId, selectedPatient, formData, contextoClinico, isAnalyzing, analysisItems, analysisTime, activeResultIndex, finalDiagnosis]);
+
+  // Efecto para recuperar el botón "Ver resultados" cuando los items ya están completados (ej. al reanudar)
+  useEffect(() => {
+    if (analysisItems.length > 0 && analysisItems.every(item => item.status === 'completed')) {
+      setAnalysisResultsReady(true);
+    }
+  }, [analysisItems]);
 
   // Limpiar estado al desmontar en un caso específico o cuando termine
   const clearSessionStorageState = (finishing = false) => {

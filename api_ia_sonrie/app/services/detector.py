@@ -4,13 +4,13 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-# ── NUEVO: importar validador CLIP ─────────────────────────────────────────────
 from app.utils.clip_validator import validar_con_clip
+from app.utils.cls_validator  import validar_con_clasificador
 
 load_dotenv()
 
 MODEL_PATH = os.getenv("MODEL_PATH", "models/dentex_caries_v1_3_mejorado.pt")
-CONFIDENCE = float(os.getenv("CONFIDENCE", 0.45))
+CONFIDENCE = float(os.getenv("CONFIDENCE", "0.45"))
 
 CLASS_MAP = {
     0: "Caries",
@@ -26,142 +26,118 @@ CLASS_DISPLAY = {
 
 try:
     model = YOLO(MODEL_PATH)
-    print(f"Modelo cargado: {MODEL_PATH}")
+    print(f"✅ Modelo de caries cargado: {MODEL_PATH}")
 except Exception as e:
-    print(f"Error cargando YOLOv8: {e}")
+    print(f"⚠️  Error cargando YOLOv8: {e}")
     model = None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  VALIDACIÓN TÉCNICA — 6 PASOS (sin cambios respecto a tu versión actual)
+#  CAPA 0 — VALIDACIÓN TÉCNICA SIMPLIFICADA (4 pasos)
+#
+#  Solo filtra casos OBVIAMENTE inválidos antes de gastar recursos en IA.
+#  Color, contraste e histograma fueron eliminados — CLIP y el clasificador
+#  lo manejan mejor y sin falsos positivos.
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _recortar_bordes_negros(img_cv):
+    """
+    Elimina bordes negros uniformes (padding) alrededor de la imagen.
+    Necesario para radiografías con márgenes negros (ej: Roboflow, algunos equipos).
+    Solo elimina píxeles con valor < 15 en los bordes — no afecta la radiografía.
+    """
+    gris = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    _, mask = cv2.threshold(gris, 15, 255, cv2.THRESH_BINARY)
+    coords = cv2.findNonZero(mask)
+    if coords is None:
+        return img_cv  # imagen completamente negra — dejar pasar, lo rechazará Capa 1
+
+    x, y, w, h = cv2.boundingRect(coords)
+    # Margen de seguridad de 5px para no cortar contenido real
+    x = max(0, x - 5)
+    y = max(0, y - 5)
+    w = min(img_cv.shape[1] - x, w + 10)
+    h = min(img_cv.shape[0] - y, h + 10)
+    recortada = img_cv[y:y+h, x:x+w]
+
+    h_orig, w_orig = img_cv.shape[:2]
+    h_new,  w_new  = recortada.shape[:2]
+    if w_orig != w_new or h_orig != h_new:
+        print(f"  [C0] Bordes recortados: {w_orig}×{h_orig} → {w_new}×{h_new}")
+
+    return recortada
+
+
 def _check_decodificable(image_bytes: bytes):
+    """Paso 1: ¿Es un archivo de imagen válido y decodificable?"""
     nparr  = np.frombuffer(image_bytes, np.uint8)
     img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img_cv is None:
-        return None, False, "El archivo no pudo ser leído como imagen. Verifique que sea un archivo JPG o PNG válido."
+        return None, False, (
+            "El archivo no pudo ser leído como imagen. "
+            "Verifique que sea un archivo JPG, PNG o similar válido y no esté dañado."
+        )
     return img_cv, True, "OK"
 
 
-def _check_tamanio(img_cv) -> tuple[bool, str]:
-    height, width = img_cv.shape[:2]
-    if width < 400 or height < 150:
+def _check_tamanio_minimo(img_cv) -> tuple[bool, str]:
+    """
+    Paso 2: Tamaño mínimo muy permisivo.
+    Solo rechaza thumbnails, íconos y miniaturas que no tienen sentido diagnóstico.
+    """
+    h, w = img_cv.shape[:2]
+    print(f"  [C0] Tamaño (post-recorte): {w}×{h}px")
+    if w < 300 or h < 100:
         return False, (
-            f"Imagen demasiado pequeña ({width}×{height}px). "
-            "Una radiografía panorámica estándar tiene al menos 1000×400px."
+            f"La imagen es demasiado pequeña ({w}×{h}px) para ser analizada. "
+            "Por favor suba la imagen original sin reducir su resolución."
         )
     return True, "OK"
 
 
-def _check_ratio_panoramico(img_cv) -> tuple[bool, str]:
-    height, width = img_cv.shape[:2]
-    ratio = width / height
-    print(f"  [VAL] Tamaño: {width}×{height} | Ratio: {ratio:.2f}")
-    if ratio < 1.5:
-        tipo = "vertical (como un retrato)" if ratio < 1.0 else "casi cuadrada"
+def _check_ratio_basico(img_cv) -> tuple[bool, str]:
+    """
+    Paso 3: Ratio ancho/alto mínimo.
+    Solo rechaza imágenes claramente verticales (selfies, retratos) o cuadradas obvias.
+    Umbral permisivo (1.25) para cubrir panorámicas con leve padding residual.
+    """
+    h, w  = img_cv.shape[:2]
+    ratio = w / h
+    print(f"  [C0] Ratio: {ratio:.2f}")
+    if ratio < 1.25:
         return False, (
-            f"La imagen tiene forma {tipo} (ratio={ratio:.2f}). "
-            "Las radiografías panorámicas son siempre horizontales y anchas. "
-            "Si tiene una radiografía bite-wing o periapical, este sistema "
-            "solo procesa panorámicas completas."
-        )
-    if ratio > 6.0:
-        return False, (
-            f"La imagen es demasiado ancha (ratio={ratio:.2f}). "
-            "No corresponde al formato de una radiografía panorámica estándar."
+            "La imagen tiene una orientación vertical o cuadrada. "
+            "Por favor, suba nuevamente la imagen y verifique que sea una radiografía panorámica completa (formato horizontal)."
         )
     return True, "OK"
 
 
-def _check_escala_grises(img_cv) -> tuple[bool, str]:
-    b = img_cv[:, :, 0].astype(np.int32)
-    g = img_cv[:, :, 1].astype(np.int32)
-    r = img_cv[:, :, 2].astype(np.int32)
-    sat = (np.abs(r - g) + np.abs(g - b) + np.abs(r - b)).mean() / 3
-    print(f"  [VAL] Saturación de color: {sat:.2f} (umbral: 60)")
-    if sat > 60:   # ← subido de 30 a 60 para cubrir radiografías con tinte
-        return False, (
-            "La imagen contiene colores muy saturados "
-            f"(índice={sat:.1f}, máximo permitido=60). "
-            "Las radiografías dentales son en escala de grises o con leve tinte de equipo."
-        )
-    return True, "OK"
-
-
-def _check_contraste_radiografico(img_cv) -> tuple[bool, str]:
-    gray     = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    mean_val = float(np.mean(gray))
-    std_dev  = float(np.std(gray))
-    print(f"  [VAL] Brillo medio: {mean_val:.1f} | Desv. estándar: {std_dev:.1f}")
-    if mean_val < 8:
-        return False, "La imagen es casi completamente negra. Verifique que el archivo sea correcto."
-    if mean_val > 247:
-        return False, "La imagen es casi completamente blanca. Verifique que el archivo sea correcto."
-    if std_dev < 18:
-        return False, (
-            f"La imagen no tiene suficiente variación de intensidad (σ={std_dev:.1f}). "
-            "No presenta el contraste típico de una radiografía."
-        )
-    return True, "OK"
-
-
-def _check_distribucion_histograma(img_cv) -> tuple[bool, str]:
-    gray      = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    hist      = cv2.calcHist([gray], [0], None, [256], [0, 256]).flatten()
-    hist_norm = hist / hist.sum()
-
-    pct_muy_oscuro = hist_norm[:40].sum()
-    pct_oscuro     = hist_norm[:60].sum()
-    pct_claro      = hist_norm[200:].sum()
-    pct_medio      = hist_norm[80:170].sum()
-
-    print(
-        f"  [VAL] Hist — muy_oscuro: {pct_muy_oscuro:.2f} | "
-        f"oscuro: {pct_oscuro:.2f} | medio: {pct_medio:.2f} | claro: {pct_claro:.2f}"
-    )
-
-    if pct_medio > 0.70 and pct_oscuro < 0.05 and pct_claro < 0.05:
-        return False, (
-            "La distribución de intensidades no corresponde a una radiografía "
-            f"(tonos medios={pct_medio:.0%}, oscuros={pct_oscuro:.0%}, claros={pct_claro:.0%}). "
-            "Podría ser una fotografía convertida a escala de grises."
-        )
-    if pct_claro < 0.01:
-        return False, (
-            f"La imagen no tiene suficientes zonas claras (claros={pct_claro:.1%}, mínimo=1.0%). "
-            "Una radiografía panorámica siempre tiene estructuras dentales visibles."
-        )
-    if pct_oscuro < 0.10:
-        return False, (
-            f"La imagen no tiene suficientes zonas oscuras (oscuros={pct_oscuro:.1%}, mínimo=10%). "
-            "Una radiografía panorámica siempre tiene fondo oscuro."
-        )
-    if pct_muy_oscuro > 0.80 and pct_claro < 0.03:
-        return False, (
-            "La imagen tiene fondo casi completamente negro sin estructuras dentales claras."
-        )
-    return True, "OK"
-
-
-def validar_imagen_panoramica(image_bytes: bytes) -> tuple[bool, str, object]:
-    """Ejecuta los 6 pasos de validación técnica en orden."""
+def validar_capa0(image_bytes: bytes) -> tuple[bool, str, object]:
+    """
+    Capa 0: validación técnica simplificada.
+    Pasos: decodificar → recortar bordes → tamaño mínimo → ratio básico.
+    Retorna (es_valida, mensaje, img_cv).
+    """
+    # Paso 1 — decodificar
     img_cv, ok, msg = _check_decodificable(image_bytes)
     if not ok:
         return False, msg, None
 
-    for check_fn in [
-        _check_tamanio,
-        _check_ratio_panoramico,
-        _check_escala_grises,
-        _check_contraste_radiografico,
-        _check_distribucion_histograma,
-    ]:
-        ok, msg = check_fn(img_cv)
-        if not ok:
-            return False, msg, None
+    # Recortar SOLO para calcular ratio — no para pasarla al modelo
+    img_recortada = _recortar_bordes_negros(img_cv)
 
-    print("  [VAL] ✅ Validación técnica aprobada")
+    # Paso 3 — tamaño mínimo (sobre la recortada)
+    ok, msg = _check_tamanio_minimo(img_recortada)
+    if not ok:
+        return False, msg, None
+
+    # Paso 4 — ratio básico (sobre la recortada)
+    ok, msg = _check_ratio_basico(img_recortada)
+    if not ok:
+        return False, msg, None
+
+    print("  [C0] ✅ Validación técnica OK")
+    # ← Devolver img_cv ORIGINAL, no la recortada
     return True, "OK", img_cv
 
 
@@ -169,7 +145,7 @@ def validar_imagen_panoramica(image_bytes: bytes) -> tuple[bool, str, object]:
 #  EXTRACTOR DE PROBABILIDADES (sin cambios)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def extraer_probabilidades(result, cls_id, conf_ganadora):
+def extraer_probabilidades(result, cls_id: int, conf_ganadora: float) -> dict:
     class_probs = {}
     try:
         raw          = result.boxes.data
@@ -203,55 +179,71 @@ def extraer_probabilidades(result, cls_id, conf_ganadora):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  INFERENCIA PRINCIPAL — pipeline de 3 capas
+#  INFERENCIA PRINCIPAL — pipeline de 4 capas
 # ══════════════════════════════════════════════════════════════════════════════
 
 def run_inference(image_data: bytes) -> dict:
     """
     Pipeline completo de validación + detección:
 
-      Capa 0 — Validación técnica (6 pasos): ratio, color, contraste, histograma
-      Capa 1 — CLIP: validación semántica con mensaje descriptivo
-      Capa 2 — YOLOv8-cls (pendiente): clasificador entrenado panorámica/no-panorámica
-      Capa 3 — YOLOv8 detección: detecta Caries, Deep Caries, Periapical Lesion
+    ┌─────────────────────────────────────────────────────────────┐
+    │  Capa 0 — Técnica (~2ms)                                    │
+    │  Recorta bordes negros, verifica que sea imagen,            │
+    │  tamaño mínimo y ratio básico (> 1.25).                     │
+    │  Rechaza: archivos corruptos, thumbnails, imágenes          │
+    │  verticales obvias.                                         │
+    ├─────────────────────────────────────────────────────────────┤
+    │  Capa 1 — CLIP (~100-150ms)                                 │
+    │  Validación semántica sin entrenamiento propio.             │
+    │  Identifica QUÉ ES la imagen y devuelve mensaje             │
+    │  descriptivo: "parece una foto de un perro", etc.           │
+    │  Rechaza: fotos a color, capturas de pantalla,              │
+    │  radiografías de tórax obvias.                              │
+    ├─────────────────────────────────────────────────────────────┤
+    │  Capa 2 — YOLOv8-cls (~5ms)                                 │
+    │  Clasificador entrenado específicamente con                 │
+    │  panorámicas humanas vs todo lo demás.                      │
+    │  100% accuracy en validación.                               │
+    │  Rechaza: animales, periapicales, tórax, fotos B&N,         │
+    │  capturas, documentos.                                      │
+    ├─────────────────────────────────────────────────────────────┤
+    │  Capa 3 — YOLO Detección (~19ms GPU)                        │
+    │  Detecta Caries, Deep Caries, Periapical Lesion             │
+    │  con bounding boxes y probabilidades.                       │
+    └─────────────────────────────────────────────────────────────┘
     """
     if model is None:
         raise RuntimeError("El modelo YOLOv8 no pudo ser cargado.")
 
-    print(f"  [DEBUG] Bytes recibidos: {len(image_data)}")
+    print(f"\n{'─'*50}")
+    print(f"  [PIPELINE] Bytes recibidos: {len(image_data)}")
 
-    # ── Capa 0.5: Decodificar ──────────────────────────────────────────────────
-    from app.services.detector import _check_decodificable
-    img_cv, decodificable, msg_dec = _check_decodificable(image_data)
-    if not decodificable:
-        return {"valid": False, "error": "El archivo no pudo ser leído como imagen. Verifique que sea un archivo válido.", "detections": []}
-
-    # ── Capa 1: CLIP — validación semántica ────────────────────────────────────
-    es_valida_clip, mensaje_clip = validar_con_clip(img_cv)
-    if not es_valida_clip:
-        print(f"  [DEBUG] ❌ Capa 1 (CLIP) rechazó: {mensaje_clip}")
-        return {"valid": False, "error": mensaje_clip, "detections": []}
-
-    # ── Capa 0: Validación técnica ─────────────────────────────────────────────
-    es_valida, mensaje, _ = validar_imagen_panoramica(image_data)
+    # ── Capa 0: Validación técnica simplificada ────────────────────────────────
+    es_valida, mensaje, img_cv = validar_capa0(image_data)
     if not es_valida:
-        print(f"  [DEBUG] ❌ Capa 0 rechazó: {mensaje}")
-        return {"valid": False, "error": "Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.", "detections": []}
+        print(f"  [PIPELINE] ❌ Capa 0 rechazó")
+        return {"valid": False, "error": mensaje, "detections": []}
 
-    # ── Capa 2: YOLOv8-cls (comentado hasta entrenar el clasificador) ──────────
-    # from app.utils.cls_validator import validar_con_clasificador
-    # es_valida_cls, mensaje_cls = validar_con_clasificador(img_cv)
-    # if not es_valida_cls:
-    #     return {"valid": False, "error": mensaje_cls, "detections": []}
+    # ── Capa 1: CLIP ───────────────────────────────────────────────────────────
+    es_valida, mensaje = validar_con_clip(img_cv)
+    if not es_valida:
+        print(f"  [PIPELINE] ❌ Capa 1 (CLIP) rechazó")
+        return {"valid": False, "error": mensaje, "detections": []}
+
+    # ── Capa 2: Clasificador YOLOv8-cls ───────────────────────────────────────
+    es_valida, mensaje = validar_con_clasificador(img_cv)
+    if not es_valida:
+        print(f"  [PIPELINE] ❌ Capa 2 (Clasificador) rechazó")
+        return {"valid": False, "error": mensaje, "detections": []}
 
     # ── Capa 3: YOLO detección de caries ──────────────────────────────────────
-    print(f"  [DEBUG] Iniciando inferencia con conf={CONFIDENCE}...")
+    print(f"  [PIPELINE] ✅ Todas las capas aprobadas — iniciando detección...")
     try:
         results    = model(img_cv, conf=CONFIDENCE, imgsz=800, verbose=False)
         total_real = len(results[0].boxes) if results else 0
-        print(f"  [DEBUG] Detecciones con conf={CONFIDENCE}: {total_real}")
+        print(f"  [PIPELINE] Detecciones encontradas: {total_real}")
     except Exception as e:
-        print(f"  [DEBUG] ERROR en inferencia: {type(e).__name__}: {e}")
+        print(f"  [PIPELINE] ERROR en inferencia: {type(e).__name__}: {e}")
         return {
             "valid": True,
             "error": f"Error interno durante la inferencia: {str(e)}",
@@ -279,7 +271,9 @@ def run_inference(image_data: bytes) -> dict:
                 "bbox":                [x1, y1, x2, y2]
             })
 
-    print(f"  [DEBUG] Total detecciones finales: {len(detections)}")
+    print(f"  [PIPELINE] Total detecciones finales: {len(detections)}")
+    print(f"{'─'*50}\n")
+
     return {
         "valid":      True,
         "error":      None,

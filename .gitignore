@@ -49,6 +49,7 @@ yolov8n.pt
 # Datasets
 api_ia_sonrie/dataset/raw/
 api_ia_sonrie/dataset/processed/
+api_ia_sonrie/dataset/processed_*/
 api_ia_sonrie/dataset/images/
 api_ia_sonrie/dataset/labels/
 api_ia_sonrie/dataset/class_distribution*.png
@@ -60,3 +61,15 @@ api_ia_sonrie/dataset/processed_v2_oversample/
 # Artefactos de entrenamiento y resultados
 api_ia_sonrie/models/
 backend/logs/
+
+# Dataset clasificador
+dataset_clasificador/
+
+# Nuevos datasets generados
+processed_v1_2_LIMPIO/
+processed_v1_5_dentex_only/
+processed_v1_6_full_aug/
+processed_*/
+
+# Carpetas locales de filtrado y preparación de imágenes
+periapical_filtrar/

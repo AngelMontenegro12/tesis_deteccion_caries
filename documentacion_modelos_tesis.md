@@ -5,7 +5,7 @@ Este documento registra las iteraciones, características y métricas de validac
 ---
 
 ## 1. Modelo v1 (Aproximación Inicial)
-- **Fecha de entrenamiento**: 19 de mayo de 2026 (Mañana)
+- **Fecha de entrenamiento**: 19 de Julio de 2026
 - **Arquitectura**: YOLOv8s
 - **Clases (4)**: `Caries`, `Deep Caries`, `Periapical Lesion`, `Impacted Tooth`
 - **Motivo de la iteración**: Primer intento de entrenamiento exploratorio en el que aún se consideraban dientes impactados entre los diagnósticos objetivo. El dataset tenía un desbalance fuerte.
@@ -21,7 +21,7 @@ Este documento registra las iteraciones, características y métricas de validac
 ---
 
 ## 2. Modelo v1.2 (Modelo de Producción - 3 Clases)
-- **Fecha de entrenamiento**: 19 de mayo de 2026 (Tarde)
+- **Fecha de entrenamiento**: 23 de Julio de 2026
 - **Arquitectura**: YOLOv8s
 - **Batch Size**: 4 (Optimizado para 4GB VRAM GPU)
 - **Clases (3)**: `Caries`, `Deep Caries`, `Periapical Lesion`
@@ -43,7 +43,7 @@ Este documento registra las iteraciones, características y métricas de validac
 ---
 
 ## 3. Modelo v2 (Balanceo por Oversampling - 3 Clases)
-- **Fecha de preparación**: 20 de mayo de 2026
+- **Fecha de preparación**: 28 de Julio de 2026
 - **Arquitectura**: YOLOv8s
 - **Estrategia**: Se tomaron las clases minoritarias (*Deep Caries* y *Periapical Lesion*) y se les aplicó clonación y data augmentation manual (brillo/contraste, ruido, flip horizontal) hasta igualar las 1963 instancias que tenía la clase mayoritaria (*Caries*).
 - **Impacto Total de Imágenes**: Subió de 596 a 2721 imágenes para entrenamiento.
@@ -70,7 +70,7 @@ Este documento registra las iteraciones, características y métricas de validac
 ---
 
 ## 4. Modelo v1.3 Mejorado (Hiperparámetros Optimizados para Radiografías)
-- **Fecha de entrenamiento**: 21 de mayo de 2026
+- **Fecha de entrenamiento**: 29 de Julio de 2026
 - **Arquitectura**: YOLOv8s
 - **Estrategia**: Se partió del dataset original de 3 clases (sin oversampling) aplicando ajustes drásticos en los hiperparámetros con un enfoque estrictamente clínico anatómico:
   - `imgsz=800` (mayor resolución para poder ver lesiones pequeñas).

@@ -21,6 +21,7 @@ const EvaluacionDetalle = () => {
   const [selectedHallazgoId, setSelectedHallazgoId] = useState(null);
   const [showBoxes, setShowBoxes] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
+  const [isolateSelection, setIsolateSelection] = useState(false);
 
   const safeData = data || {};
   const paciente = safeData.paciente || {};
@@ -311,6 +312,21 @@ const EvaluacionDetalle = () => {
                 >
                   {showLabels ? 'Ocultar etiquetas' : 'Mostrar etiquetas'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setIsolateSelection((value) => !value)}
+                  disabled={!showBoxes}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${
+                    !showBoxes
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : isolateSelection
+                        ? 'bg-amber-500 text-white border-amber-500'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-amber-300'
+                  }`}
+                  title="Muestra solo el hallazgo que selecciones"
+                >
+                  {isolateSelection ? 'Desactivar aislamiento' : 'Aislar selección'}
+                </button>
                 {activeRadiografiaResultado ? (
                   <span className="text-xs font-bold text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
                     {radiografiasResultados.length > 1 ? `Imagen ${safeActiveImageIndex + 1} de ${radiografiasResultados.length}` : 'Imagen única'}
@@ -351,6 +367,7 @@ const EvaluacionDetalle = () => {
                   onDetectionClick={(det) => setSelectedHallazgoId(det.id_deteccion ?? null)}
                   showBoxes={showBoxes}
                   showLabels={showLabels}
+                  isolateSelection={isolateSelection}
                 />
               ) : (
                 <div className="w-full h-64 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
