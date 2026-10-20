@@ -101,7 +101,7 @@ const Solicitudes = () => {
             </div>
             <input
               type="text"
-              placeholder="Buscar por nombre..."
+               placeholder="Buscar por nombre (Opcional)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"

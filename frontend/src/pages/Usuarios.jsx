@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
+import PhoneInput from '../components/PhoneInput';
+import { isValidName, isValidEmail, isValidPassword, phoneError } from '../utils/validation';
 
 const emptyForm = {
   nombres: '',
@@ -160,12 +162,14 @@ const Usuarios = () => {
   }, [odontologos, sortKey, sortDirection]);
 
   const openCreateModal = () => {
+    setError('');
     setEditingUser(null);
     setForm(emptyForm);
     setIsModalOpen(true);
   };
 
   const openEditModal = (odontologo) => {
+    setError('');
     setEditingUser(odontologo);
     setForm({
       nombres: odontologo.nombres || '',
@@ -197,8 +201,48 @@ const Usuarios = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setSaving(true);
     setError('');
+
+    if (!isValidName(form.nombres)) {
+      setError('Los nombres son requeridos (mínimo 2 caracteres).');
+      return;
+    }
+
+    if (!isValidName(form.apellidos)) {
+      setError('Los apellidos son requeridos (mínimo 2 caracteres).');
+      return;
+    }
+
+    if (!isValidEmail(form.correo)) {
+      setError('Ingrese un correo electrónico válido.');
+      return;
+    }
+
+    if (phoneError(form.telefono)) {
+      setError(phoneError(form.telefono));
+      return;
+    }
+
+    if (form.colegiatura.trim() && form.colegiatura.trim().length < 2) {
+      setError('La colegiatura debe tener al menos 2 caracteres.');
+      return;
+    }
+    if (form.especialidad.trim() && form.especialidad.trim().length < 2) {
+      setError('La especialidad debe tener al menos 2 caracteres.');
+      return;
+    }
+
+    if (!editingUser && !isValidPassword(form.contrasena)) {
+      setError('La contraseña es requerida (mínimo 6 caracteres).');
+      return;
+    }
+
+    if (editingUser && form.contrasena.trim() && !isValidPassword(form.contrasena)) {
+      setError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    setSaving(true);
 
     const payload = {
       nombres: form.nombres.trim(),
@@ -221,7 +265,9 @@ const Usuarios = () => {
 
       if (response.data?.status === 'success') {
         await fetchOdontologos();
-        closeModal();
+        setIsModalOpen(false);
+        setEditingUser(null);
+        setForm(emptyForm);
       } else {
         setError(response.data?.message || 'No se pudo guardar el odontólogo.');
       }
@@ -346,7 +392,7 @@ const Usuarios = () => {
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar por nombres, apellidos, correo, colegiatura o especialidad..."
+                 placeholder="Buscar por nombres, apellidos, correo, colegiatura o especialidad (Opcional)..."
                 className="block w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50/60 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-all shadow-sm text-sm font-medium"
               />
             </div>
@@ -567,9 +613,10 @@ const Usuarios = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {error && <p role="alert" className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-2">
-                  <span className="block text-sm font-semibold text-gray-700">Nombres</span>
+                  <span className="block text-sm font-semibold text-gray-700">Nombres <span className="text-red-500">*</span></span>
                   <input
                     type="text"
                     name="nombres"
@@ -581,7 +628,7 @@ const Usuarios = () => {
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="block text-sm font-semibold text-gray-700">Apellidos</span>
+                  <span className="block text-sm font-semibold text-gray-700">Apellidos <span className="text-red-500">*</span></span>
                   <input
                     type="text"
                     name="apellidos"
@@ -593,7 +640,7 @@ const Usuarios = () => {
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="block text-sm font-semibold text-gray-700">Correo</span>
+                  <span className="block text-sm font-semibold text-gray-700">Correo <span className="text-red-500">*</span></span>
                   <input
                     type="email"
                     name="correo"
@@ -605,7 +652,7 @@ const Usuarios = () => {
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="block text-sm font-semibold text-gray-700">Contraseña {editingUser && <span className="text-gray-400 font-medium">(opcional)</span>}</span>
+                  <span className="block text-sm font-semibold text-gray-700">Contraseña {editingUser ? <span className="text-gray-400 font-medium">(Opcional)</span> : <span className="text-red-500">*</span>}</span>
                   <input
                     type="password"
                     name="contrasena"
@@ -617,7 +664,7 @@ const Usuarios = () => {
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="block text-sm font-semibold text-gray-700">Colegiatura <span className="text-gray-400 font-medium">(opcional)</span></span>
+                  <span className="block text-sm font-semibold text-gray-700">Colegiatura <span className="text-gray-400 font-medium">(Opcional)</span></span>
                   <input
                     type="text"
                     name="colegiatura"
@@ -628,18 +675,16 @@ const Usuarios = () => {
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="block text-sm font-semibold text-gray-700">Teléfono</span>
-                  <input
-                    type="text"
+                  <span className="block text-sm font-semibold text-gray-700">Teléfono <span className="text-red-500">*</span></span>
+                  <PhoneInput
                     name="telefono"
                     value={form.telefono}
                     onChange={handleInputChange}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-all"
-                    placeholder="987 654 321"
                   />
                 </label>
                 <label className="space-y-2 md:col-span-2">
-                  <span className="block text-sm font-semibold text-gray-700">Especialidad</span>
+                  <span className="block text-sm font-semibold text-gray-700">Especialidad <span className="text-gray-400 font-medium">(Opcional)</span></span>
                   <input
                     type="text"
                     name="especialidad"
@@ -660,7 +705,7 @@ const Usuarios = () => {
                     onChange={handleInputChange}
                     className="w-4 h-4 rounded border-gray-300 text-dentBlue-900 focus:ring-dentBlue-900"
                   />
-                  Cuenta activa
+                   Cuenta activa (Opcional)
                 </label>
 
                 <div className="flex items-center gap-3 ml-auto">
@@ -709,7 +754,7 @@ const Usuarios = () => {
 
             <div className="p-6 space-y-6 overflow-y-auto">
               <div className="space-y-3">
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">1. Rol del usuario</h4>
+                 <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">1. Rol del usuario <span className="text-red-500">*</span></h4>
                 <p className="text-sm text-gray-500">Define el nivel de control sobre el sistema.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
@@ -755,7 +800,7 @@ const Usuarios = () => {
 
               <div className="space-y-3 pt-2 border-t border-gray-100">
                 <div className="flex flex-col gap-1">
-                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">2. Módulos accesibles</h4>
+                   <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">2. Módulos accesibles (Opcional)</h4>
                   <p className="text-sm text-gray-500">Selecciona qué apartados podrá ver este odontólogo en su menú.</p>
                   <div className="bg-purple-50 rounded-lg p-2.5 mt-1 border border-purple-100 flex items-start gap-2">
                     <Shield className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />

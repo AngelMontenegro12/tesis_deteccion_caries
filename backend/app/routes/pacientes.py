@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.models import Paciente, db
 from sqlalchemy import or_, func
 from datetime import datetime
+from app.utils.validation import patient_error
 
 pacientes_bp = Blueprint('pacientes', __name__, url_prefix='/api/pacientes')
 
@@ -54,7 +55,12 @@ def buscar_paciente():
 
 @pacientes_bp.route('', methods=['POST'])
 def crear_paciente():
-    data = request.json
+    data = request.get_json(silent=True) or {}
+    error = patient_error(data)
+    if error:
+        return jsonify({'error': error}), 400
+    if Paciente.query.filter_by(dni=data['dni']).first():
+        return jsonify({'error': 'Ya existe un paciente registrado con ese DNI'}), 409
     try:
         # Calcular la edad del paciente
         fecha_nac = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d')
@@ -98,11 +104,17 @@ def obtener_paciente(id_paciente):
 
 @pacientes_bp.route('/<int:id_paciente>', methods=['PUT'])
 def actualizar_paciente(id_paciente):
-    data = request.json
+    data = request.get_json(silent=True) or {}
     try:
         paciente = Paciente.query.get(id_paciente)
         if not paciente:
             return jsonify({"error": "Paciente no encontrado"}), 404
+
+        error = patient_error(data, paciente)
+        if error:
+            return jsonify({'error': error}), 400
+        if 'dni' in data and Paciente.query.filter(Paciente.dni == data['dni'], Paciente.id_paciente != id_paciente).first():
+            return jsonify({'error': 'Ya existe un paciente registrado con ese DNI'}), 409
 
         if 'fecha_nacimiento' in data:
             fecha_nac = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d')

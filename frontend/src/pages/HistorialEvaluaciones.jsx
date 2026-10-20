@@ -4,6 +4,7 @@ import {
   Filter, 
   ChevronLeft, 
   ChevronRight, 
+  ArrowRight,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
@@ -17,6 +18,14 @@ import {
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
+import { isValidDate, todayLocal } from '../utils/validation';
+
+const getPaginationItems = (current, total) => {
+  if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, 'end', total];
+  if (current >= total - 3) return [1, 'start', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, 'start', current - 1, current, current + 1, 'end', total];
+};
 
 const HistorialEvaluaciones = () => {
   const [evaluaciones, setEvaluaciones] = useState([]);
@@ -35,10 +44,45 @@ const HistorialEvaluaciones = () => {
   const [fechaFin, setFechaFin] = useState('');
   const [sortBy, setSortBy] = useState('fecha_evaluacion');
   const [sortDirection, setSortDirection] = useState('desc');
+  const [pageInput, setPageInput] = useState('');
+  const [pageInputError, setPageInputError] = useState('');
+  const dateError = ((fechaInicio && !isValidDate(fechaInicio)) || (fechaFin && !isValidDate(fechaFin)))
+    ? 'Seleccione fechas válidas desde 1900 hasta hoy.'
+    : (fechaInicio && fechaFin && fechaInicio > fechaFin)
+      ? 'La fecha inicial no puede ser posterior a la fecha final.' : '';
   
   const navigate = useNavigate();
 
+  useEffect(() => {
+    setPageInput('');
+    setPageInputError('');
+  }, [page, totalPages]);
+
+  const goToPage = (target) => {
+    if (loading || target < 1 || target > totalPages) return;
+    setPage(target);
+    setPageInput('');
+    setPageInputError('');
+  };
+
+  const handlePageJump = (event) => {
+    event.preventDefault();
+    const target = Number(pageInput);
+    if (!/^\d+$/.test(pageInput) || !Number.isSafeInteger(target) || target < 1 || target > totalPages) {
+      setPageInputError(`Ingresa una página del 1 al ${totalPages}.`);
+      return;
+    }
+    goToPage(target);
+  };
+
   const fetchEvaluaciones = async () => {
+    if (dateError) {
+      setEvaluaciones([]);
+      setTotalItems(0);
+      setTotalPages(1);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const response = await api.get(`/evaluaciones`, {
@@ -158,7 +202,7 @@ const HistorialEvaluaciones = () => {
               <input
                 type="text"
                 className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-dentBlue-900 focus:border-dentBlue-900 sm:text-sm transition-colors"
-                placeholder="Buscar por nombre, apellido o DNI..."
+                placeholder="Buscar por nombre, apellido o DNI (Opcional)..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -171,19 +215,25 @@ const HistorialEvaluaciones = () => {
             <div className="flex items-center space-x-2 w-full md:w-auto shrink-0 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2">
               <Calendar size={18} className="text-gray-400 shrink-0" />
               <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <input 
-                  type="date" 
-                  value={fechaInicio}
-                  onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }}
-                  className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 p-0"
-                />
+                <label className="flex flex-col text-[10px] text-gray-500">Desde (Opcional)
+                  <input
+                    type="date"
+                    min="1900-01-01" max={todayLocal()}
+                    value={fechaInicio}
+                    onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }}
+                    className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 p-0 text-sm text-gray-700"
+                  />
+                </label>
                 <span className="text-gray-400">-</span>
-                <input 
-                  type="date" 
-                  value={fechaFin}
-                  onChange={(e) => { setFechaFin(e.target.value); setPage(1); }}
-                  className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 p-0"
-                />
+                <label className="flex flex-col text-[10px] text-gray-500">Hasta (Opcional)
+                  <input
+                    type="date"
+                    min="1900-01-01" max={todayLocal()}
+                    value={fechaFin}
+                    onChange={(e) => { setFechaFin(e.target.value); setPage(1); }}
+                    className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 p-0 text-sm text-gray-700"
+                  />
+                </label>
               </div>
             </div>
             
@@ -235,7 +285,9 @@ const HistorialEvaluaciones = () => {
           </div>
         </div>
 
-        {/* Contenedor Principal (Tabla) */}
+        {dateError && <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">{dateError}</p>}
+
+         {/* Contenedor Principal (Tabla) */}
         <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
           
           {error && <div className="p-4 text-red-500 bg-red-50 text-sm">{error}</div>}
@@ -373,53 +425,94 @@ const HistorialEvaluaciones = () => {
             </table>
           </div>
 
-          {/* Footer de Paginación */}
-          <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between sm:px-6 shrink-0">
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Mostrando de <span className="font-semibold">{totalItems === 0 ? 0 : (page - 1) * perPage + 1}</span> a <span className="font-semibold">{Math.min(page * perPage, totalItems)}</span> de <span className="font-semibold">{totalItems}</span> resultados
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1 || loading}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="sr-only">Anterior</span>
-                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                  </button>
-                  
-                  {/* Botones de paginación numéricos simples */}
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i + 1)}
-                      disabled={loading}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
-                        page === i + 1
-                          ? 'z-10 bg-dentBlue-50 border-dentBlue-900 text-dentBlue-900'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
+           {/* Footer de Paginación */}
+           <div className="shrink-0 border-t border-gray-100 bg-white px-5 py-4 sm:px-6">
+             <div className="flex flex-col items-center gap-4 lg:flex-row lg:justify-between lg:gap-5">
+               <p className="text-center text-sm text-gray-500 lg:text-left">
+                 Mostrando <span className="font-semibold text-gray-800">{totalItems === 0 ? 0 : (page - 1) * perPage + 1}–{Math.min(page * perPage, totalItems)}</span> de <span className="font-semibold text-gray-800">{totalItems}</span> resultados
+               </p>
 
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages || totalPages === 0 || loading}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="sr-only">Siguiente</span>
-                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
+                {totalPages > 1 && (
+                  <div className="flex max-w-full flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-end lg:ml-auto">
+                   <nav className="flex max-w-full items-center gap-1 overflow-x-auto pb-1" aria-label="Páginas del historial">
+                     <button
+                       type="button"
+                       onClick={() => goToPage(page - 1)}
+                       disabled={page <= 1 || loading}
+                       aria-label="Página anterior"
+                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                     >
+                       <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                     </button>
+
+                     {getPaginationItems(page, totalPages).map((item) =>
+                       typeof item === 'number' ? (
+                         <button
+                           key={item}
+                           type="button"
+                           onClick={() => goToPage(item)}
+                           disabled={loading}
+                           aria-label={`Página ${item}`}
+                           aria-current={page === item ? 'page' : undefined}
+                           className={`flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg px-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
+                             page === item
+                               ? 'bg-dentBlue-900 text-white shadow-sm'
+                               : 'text-gray-600 hover:bg-dentBlue-50 hover:text-dentBlue-900'
+                           }`}
+                         >
+                           {item}
+                         </button>
+                       ) : (
+                         <span key={item} aria-hidden="true" className="flex h-9 w-6 shrink-0 items-center justify-center text-sm text-gray-400">…</span>
+                       )
+                     )}
+
+                     <button
+                       type="button"
+                       onClick={() => goToPage(page + 1)}
+                       disabled={page >= totalPages || loading}
+                       aria-label="Página siguiente"
+                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                     >
+                       <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                     </button>
+                   </nav>
+
+                   <form onSubmit={handlePageJump} className="flex flex-col items-center gap-1 lg:items-end">
+                     <div className="flex items-center gap-2">
+                       <label htmlFor="historial-page-jump" className="whitespace-nowrap text-xs font-medium text-gray-500">Ir a página</label>
+                       <input
+                         id="historial-page-jump"
+                         type="text"
+                         inputMode="numeric"
+                         autoComplete="off"
+                         value={pageInput}
+                         onChange={(event) => {
+                           if (/^\d*$/.test(event.target.value) && event.target.value.length <= String(totalPages).length) {
+                             setPageInput(event.target.value);
+                             setPageInputError('');
+                           }
+                         }}
+                         placeholder="#"
+                         aria-invalid={Boolean(pageInputError)}
+                         aria-describedby={pageInputError ? 'historial-page-error' : undefined}
+                         className={`h-9 w-12 rounded-lg border bg-gray-50 text-center text-sm font-medium text-gray-800 outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-dentBlue-900/10 ${pageInputError ? 'border-red-400' : 'border-gray-200 focus:border-dentBlue-900'}`}
+                       />
+                       <button
+                         type="submit"
+                         disabled={loading}
+                         aria-label="Ir a la página indicada"
+                         className="flex h-9 w-9 items-center justify-center rounded-lg bg-dentBlue-900 text-white transition-colors hover:bg-dentBlue-800 disabled:cursor-not-allowed disabled:opacity-40"
+                       >
+                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                       </button>
+                     </div>
+                     {pageInputError && <span id="historial-page-error" role="alert" className="text-xs text-red-600">{pageInputError}</span>}
+                   </form>
+                  </div>
+                )}
+             </div>
+           </div>
         </div>
       </div>
     </div>

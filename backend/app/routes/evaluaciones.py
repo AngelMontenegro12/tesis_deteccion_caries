@@ -5,6 +5,7 @@ import time
 from app.models import EvaluacionDiagnostica, Radiografia, DiagnosticoOdontologo, db
 from app.services.ia_service import procesar_radiografia_con_ia
 from datetime import datetime
+from app.utils.validation import valid_date
 
 evaluaciones_bp = Blueprint('evaluaciones', __name__, url_prefix='/api/evaluaciones')
 
@@ -24,6 +25,10 @@ def obtener_evaluaciones():
         tipo_visita = request.args.get('tipo_visita', '', type=str)
         fecha_inicio = request.args.get('fecha_inicio', '', type=str)
         fecha_fin = request.args.get('fecha_fin', '', type=str)
+        if (fecha_inicio and not valid_date(fecha_inicio)) or (fecha_fin and not valid_date(fecha_fin)):
+            return jsonify({'status': 'error', 'error': 'Las fechas deben estar entre 1900 y hoy'}), 400
+        if fecha_inicio and fecha_fin and fecha_inicio > fecha_fin:
+            return jsonify({'status': 'error', 'error': 'La fecha inicial no puede ser posterior a la fecha final'}), 400
         sort_by = request.args.get('sort_by', 'fecha_evaluacion', type=str)
         sort_dir = request.args.get('sort_dir', 'desc', type=str).lower()
         
@@ -119,7 +124,9 @@ def obtener_evaluaciones():
 
 @evaluaciones_bp.route('', methods=['POST'])
 def crear_evaluacion():
-    data = request.json
+    data = request.get_json(silent=True) or {}
+    if not str(data.get('tipo_visita') or '').strip() or not str(data.get('motivo_consulta') or '').strip():
+        return jsonify({'error': 'El tipo de visita y el motivo de consulta son requeridos'}), 400
     try:
         # TODO: En un sistema real el id_odontologo se saca de la sesión actual JWT/Login
         id_odontologo_harcoded = 1 
@@ -141,11 +148,14 @@ def crear_evaluacion():
 
 @evaluaciones_bp.route('/<int:id_evaluacion>', methods=['PUT'])
 def actualizar_evaluacion(id_evaluacion):
-    data = request.json
+    data = request.get_json(silent=True) or {}
     try:
         evaluacion = EvaluacionDiagnostica.query.get(id_evaluacion)
         if not evaluacion:
             return jsonify({"error": "Evaluación no encontrada"}), 404
+
+        if ('tipo_visita' in data and not str(data['tipo_visita'] or '').strip()) or ('motivo_consulta' in data and not str(data['motivo_consulta'] or '').strip()):
+            return jsonify({'error': 'El tipo de visita y el motivo de consulta son requeridos'}), 400
 
         if 'tipo_visita' in data: evaluacion.tipo_visita = data['tipo_visita']
         if 'motivo_consulta' in data: evaluacion.motivo_consulta = data['motivo_consulta']

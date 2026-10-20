@@ -49,8 +49,19 @@ const Layout = () => {
     }
   }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggingOut(true);
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
+      if (savedUser) {
+        await api.post('/auth/logout', {
+          token: savedUser.token,
+          id_odontologo: savedUser.id_odontologo
+        });
+      }
+    } catch (error) {
+      // El cierre de sesión local se realiza aunque falle el registro en el servidor
+    }
     setTimeout(() => {
       localStorage.removeItem('user');
       navigate('/login');

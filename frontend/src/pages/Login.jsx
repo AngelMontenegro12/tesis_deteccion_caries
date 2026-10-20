@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 // Importamos las imágenes desde la carpeta assets
 import bgLogin from '../assets/fondo_login.png';
 import logoEmpresa from '../assets/logo_sonrie.jpg';
+import { isValidEmail, isValidPassword } from '../utils/validation';
 
 const Login = () => {
   const [correo, setCorreo] = useState('');
@@ -46,6 +47,16 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorLogin('');
+
+    if (!isValidEmail(correo)) {
+      setErrorLogin('Ingrese un correo electrónico válido');
+      return;
+    }
+    if (!contrasena.trim()) {
+      setErrorLogin('Ingrese su contraseña');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -85,6 +96,12 @@ const Login = () => {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setForgotMessage({ type: '', text: '' });
+
+    if (!isValidEmail(forgotEmail)) {
+      setForgotMessage({ type: 'error', text: 'Ingrese un correo electrónico válido' });
+      return;
+    }
+
     setIsForgotLoading(true);
     try {
       const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
@@ -112,6 +129,10 @@ const Login = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    if (!isValidPassword(newPassword)) {
+      setForgotMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
+      return;
+    }
     if (newPassword !== confirmNewPassword) {
       setForgotMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
       return;
@@ -178,7 +199,7 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="flex flex-col space-y-5">
           <div className="flex flex-col relative group">
             <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1" htmlFor="correo">
-              Correo Electrónico
+              Correo Electrónico <span className="text-red-500">*</span>
             </label>
             <input 
               type="email" 
@@ -193,7 +214,7 @@ const Login = () => {
 
           <div className="flex flex-col relative group">
             <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1" htmlFor="contrasena">
-              Contraseña
+              Contraseña <span className="text-red-500">*</span>
             </label>
             <input 
               type="password" 
@@ -221,7 +242,7 @@ const Login = () => {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="mr-2 h-4 w-4 rounded border-gray-300 text-dentGreen-500 focus:ring-dentGreen-500 transition-colors" 
               />
-              Recordarme
+               Recordarme (Opcional)
             </label>
             <button 
               type="button" 
@@ -293,7 +314,7 @@ const Login = () => {
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div className="flex flex-col relative">
                     <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1">
-                      Correo Electrónico
+                       Correo Electrónico <span className="text-red-500">*</span>
                     </label>
                     <input 
                       type="email" 
@@ -325,7 +346,7 @@ const Login = () => {
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="flex flex-col relative">
                     <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1">
-                      Nueva Contraseña
+                       Nueva Contraseña <span className="text-red-500">*</span>
                     </label>
                     <input 
                       type="password" 
@@ -338,7 +359,7 @@ const Login = () => {
                   </div>
                   <div className="flex flex-col relative">
                     <label className="text-xs font-bold text-dentBlue-900 uppercase tracking-wider mb-1">
-                      Confirmar Contraseña
+                       Confirmar Contraseña <span className="text-red-500">*</span>
                     </label>
                     <input 
                       type="password" 

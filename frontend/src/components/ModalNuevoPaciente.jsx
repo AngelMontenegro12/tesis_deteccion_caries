@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Loader2, CreditCard, Calendar, Phone, MapPin, Mail, Users } from 'lucide-react';
+import PhoneInput from './PhoneInput';
+import { isValidName, isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
 
 const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
   const initialFormData = {
@@ -29,23 +31,11 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
 
   if (!isOpen) return null;
 
-  const calculateAge = (dateStr) => {
-    if (!dateStr) return null;
-    const today = new Date();
-    const birthDate = new Date(dateStr);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'dni' ? onlyDniDigits(value) : value
     }));
     
     // Limpiar error del campo
@@ -60,21 +50,25 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.nombres.trim()) errors.nombres = "Los nombres son requeridos";
-    if (!formData.apellidos.trim()) errors.apellidos = "Los apellidos son requeridos";
+    if (!isValidName(formData.nombres)) errors.nombres = "Los nombres son requeridos (mínimo 2 caracteres)";
+    if (!isValidName(formData.apellidos)) errors.apellidos = "Los apellidos son requeridos (mínimo 2 caracteres)";
     if (!formData.dni.trim()) {
       errors.dni = "El DNI es requerido";
-    } else if (formData.dni.length < 8) {
-      errors.dni = "El DNI debe tener al menos 8 dígitos";
+    } else if (!isValidDni(formData.dni)) {
+      errors.dni = "El DNI debe tener exactamente 8 dígitos";
     }
     if (!formData.fecha_nacimiento) errors.fecha_nacimiento = "Fecha de nacimiento requerida";
+    else if (!isValidDate(formData.fecha_nacimiento)) errors.fecha_nacimiento = "La fecha debe estar entre 1900 y hoy";
     if (!formData.genero) errors.genero = "El género es requerido";
+    if (phoneError(formData.telefono)) errors.telefono = phoneError(formData.telefono);
+    if (formData.correo.trim() && !isValidEmail(formData.correo)) errors.correo = "Ingrese un correo válido";
+    if (phoneError(formData.telefono_apoderado, 'El teléfono del apoderado', false)) errors.telefono_apoderado = phoneError(formData.telefono_apoderado, 'El teléfono del apoderado', false);
     
     // Validar menor de edad
     const age = calculateAge(formData.fecha_nacimiento);
-    if (age !== null && age < 18) {
+    if (isValidDate(formData.fecha_nacimiento) && age !== null && age < 18) {
       if (!formData.apoderado?.trim()) errors.apoderado = "Nombre del apoderado es requerido";
-      if (!formData.telefono_apoderado?.trim()) errors.telefono_apoderado = "Teléfono de apoderado requerido";
+      if (phoneError(formData.telefono_apoderado, 'El teléfono del apoderado')) errors.telefono_apoderado = phoneError(formData.telefono_apoderado, 'El teléfono del apoderado');
     }
 
     setFormErrors(errors);
@@ -170,7 +164,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><CreditCard className="w-3.5 h-3.5 mr-1" /> DNI <span className="text-red-500 ml-1">*</span></label>
                   <input 
-                    type="text" name="dni" maxLength="8" value={formData.dni} onChange={handleInputChange}
+                    type="text" name="dni" inputMode="numeric" maxLength="8" value={formData.dni} onChange={handleInputChange}
                     placeholder="8 dígitos"
                     className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.dni ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                   />
@@ -180,7 +174,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Calendar className="w-3.5 h-3.5 mr-1" /> Nacimiento <span className="text-red-500 ml-1">*</span></label>
                   <input 
                     type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleInputChange}
-                    max={new Date().toISOString().split("T")[0]}
+                    min="1900-01-01" max={todayLocal()}
                     className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.fecha_nacimiento ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-600`}
                   />
                   {formErrors.fecha_nacimiento && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.fecha_nacimiento}</p>}
@@ -200,6 +194,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
                     <option value="F">Femenino</option>
                     <option value="Otro">Otro</option>
                   </select>
+                  {formErrors.genero && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.genero}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Calendar className="w-3.5 h-3.5 mr-1" /> Edad</label>
@@ -212,16 +207,15 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
 
               {/* Teléfono & Dirección */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Teléfono</label>
-                <input 
-                  type="tel" name="telefono" maxLength="9" value={formData.telefono} onChange={handleInputChange}
-                  placeholder="Ej: 999888777"
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Teléfono <span className="text-red-500">*</span></label>
+                <PhoneInput
+                  name="telefono" value={formData.telefono} onChange={handleInputChange}
                   className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.telefono ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                 />
                 {formErrors.telefono && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.telefono}</p>}
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><MapPin className="w-3.5 h-3.5 mr-1" /> Dirección</label>
+                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><MapPin className="w-3.5 h-3.5 mr-1" /> Dirección (Opcional)</label>
                 <input 
                   type="text" name="direccion" value={formData.direccion} onChange={handleInputChange}
                   placeholder="Dirección del paciente"
@@ -231,7 +225,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
 
               {/* Correo */}
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Mail className="w-3.5 h-3.5 mr-1" /> Correo</label>
+                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Mail className="w-3.5 h-3.5 mr-1" /> Correo (Opcional)</label>
                 <input 
                   type="email" name="correo" value={formData.correo} onChange={handleInputChange}
                   placeholder="correo@ejemplo.com"
@@ -242,7 +236,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
 
               {/* Observaciones */}
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Observaciones Generales</label>
+                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Observaciones Generales (Opcional)</label>
                 <textarea 
                   name="observaciones_generales" value={formData.observaciones_generales} onChange={handleInputChange}
                   placeholder="Alergias, condiciones previas..."
@@ -274,9 +268,8 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Tel. Apoderado  <span className="text-red-500">*</span></label>
-                    <input 
-                      type="tel" name="telefono_apoderado" maxLength="9" value={formData.telefono_apoderado} onChange={handleInputChange}
-                      placeholder="Ej: 999888777"
+                    <PhoneInput
+                      name="telefono_apoderado" value={formData.telefono_apoderado} onChange={handleInputChange}
                       disabled={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18)}
                       tabIndex={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18) ? -1 : 0}
                       className={`w-full px-4 py-2.5 bg-white border ${formErrors.telefono_apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50`}

@@ -745,9 +745,9 @@ CREATE TABLE IF NOT EXISTS `odontologos` (
 
 -- Volcando datos para la tabla bd_detec_caries.odontologos: ~3 rows (aproximadamente)
 INSERT INTO `odontologos` (`id_odontologo`, `nombres`, `apellidos`, `correo`, `contrasena_hash`, `colegiatura`, `especialidad`, `telefono`, `foto_perfil`, `activo`, `token_recuperacion`, `token_expiracion`, `creado_en`, `actualizado_en`) VALUES
-	(1, 'Aldo', 'Montenegro Delgado', 'aldo.montenegro@sonrie.pe', '123456', 'COP-12345', 'Odontología General', '979123456', NULL, 1, NULL, NULL, '2026-04-07 14:01:35', '2026-04-09 13:50:56'),
-	(2, 'María', 'Quispe Salazar', 'maria.quispe@sonrie.pe', '123456', 'COP-23456', 'Ortodoncia', '945678901', NULL, 1, NULL, NULL, '2026-04-07 14:01:35', '2026-04-09 15:53:17'),
-	(3, 'Carlos', 'Fernández Llontop', 'carlos.fernandez@sonrie.pe', '123456', 'COP-34567', 'Odontopediatría', '912345678', NULL, 1, NULL, NULL, '2026-04-07 14:01:35', '2026-04-09 15:53:22');
+	(1, 'Aldo', 'Montenegro Delgado', 'aldo.montenegro@sonrie.pe', '$2b$12$RHBqAsw0HKp6gbq9.WiCX.HkEPtffiiXvmA9TWdnR2Nyh0X8X6.U6', 'COP-12345', 'Odontología General', '979123456', NULL, 1, NULL, NULL, '2026-04-07 14:01:35', '2026-04-09 13:50:56'),
+	(2, 'María', 'Quispe Salazar', 'maria.quispe@sonrie.pe', '$2b$12$PKyG46h0v23kWDgSq37sV.3SURW43cuM7KRwhfsYmKprNHleL5Nbi', 'COP-23456', 'Ortodoncia', '945678901', NULL, 1, NULL, NULL, '2026-04-07 14:01:35', '2026-04-09 15:53:17'),
+	(3, 'Carlos', 'Fernández Llontop', 'carlos.fernandez@sonrie.pe', '$2b$12$lZwNNadWew.PdRGj5bVbNOmWkklrBrRAdSfAhMW86KoufW47epXLq', 'COP-34567', 'Odontopediatría', '912345678', NULL, 1, NULL, NULL, '2026-04-07 14:01:35', '2026-04-09 15:53:22');
 
 -- Volcando estructura para tabla bd_detec_caries.pacientes
 CREATE TABLE IF NOT EXISTS `pacientes` (

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Edit2, Loader2 } from 'lucide-react';
+import PhoneInput from './PhoneInput';
+import { isValidName, isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
 
 const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -44,7 +46,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'dni' ? onlyDniDigits(value) : value
     }));
     
     // Limpiar error del campo
@@ -59,27 +61,25 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.nombres.trim()) errors.nombres = "Los nombres son requeridos";
-    if (!formData.apellidos.trim()) errors.apellidos = "Los apellidos son requeridos";
+    if (!isValidName(formData.nombres)) errors.nombres = "Los nombres son requeridos (mínimo 2 caracteres)";
+    if (!isValidName(formData.apellidos)) errors.apellidos = "Los apellidos son requeridos (mínimo 2 caracteres)";
     if (!formData.dni.trim()) {
       errors.dni = "El DNI es requerido";
-    } else if (formData.dni.length < 8) {
-      errors.dni = "El DNI debe tener al menos 8 dígitos";
+    } else if (!isValidDni(formData.dni)) {
+      errors.dni = "El DNI debe tener exactamente 8 dígitos";
     }
     if (!formData.fecha_nacimiento) errors.fecha_nacimiento = "Fecha de nacimiento requerida";
+    else if (!isValidDate(formData.fecha_nacimiento)) errors.fecha_nacimiento = "La fecha debe estar entre 1900 y hoy";
+    if (!formData.genero) errors.genero = "El género es requerido";
+    if (phoneError(formData.telefono)) errors.telefono = phoneError(formData.telefono);
+    if (formData.correo.trim() && !isValidEmail(formData.correo)) errors.correo = "Ingrese un correo válido";
+    if (phoneError(formData.telefono_apoderado, 'El teléfono del apoderado', false)) errors.telefono_apoderado = phoneError(formData.telefono_apoderado, 'El teléfono del apoderado', false);
     
-    // Validar menor de edad de forma simple (edad en años vs 18)
-    const today = new Date();
-    const birthDate = new Date(formData.fecha_nacimiento);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
+    const age = calculateAge(formData.fecha_nacimiento);
     
-    if (age < 18) {
+    if (isValidDate(formData.fecha_nacimiento) && age < 18) {
       if (!formData.apoderado?.trim()) errors.apoderado = "Nombre del apoderado es requerido para menores";
-      if (!formData.telefono_apoderado?.trim()) errors.telefono_apoderado = "Teléfono de apoderado requerido";
+      if (phoneError(formData.telefono_apoderado, 'El teléfono del apoderado')) errors.telefono_apoderado = phoneError(formData.telefono_apoderado, 'El teléfono del apoderado');
     }
 
     setFormErrors(errors);
@@ -176,7 +176,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
             <div>
               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">DNI / Documento <span className="text-red-500">*</span></label>
               <input 
-                type="text" name="dni" maxLength="15" value={formData.dni} onChange={handleInputChange}
+                type="text" name="dni" inputMode="numeric" maxLength="8" value={formData.dni} onChange={handleInputChange}
                 className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.dni ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
               />
               {formErrors.dni && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.dni}</p>}
@@ -184,7 +184,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
 
             {/* Género */}
             <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Género</label>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Género <span className="text-red-500">*</span></label>
               <select 
                 name="genero" value={formData.genero} onChange={handleInputChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700 appearance-none"
@@ -193,6 +193,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
                 <option value="F">Femenino</option>
                 <option value="Otro">Otro</option>
               </select>
+              {formErrors.genero && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.genero}</p>}
             </div>
 
             {/* Fecha Nacimiento */}
@@ -200,6 +201,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Fecha Nacimiento <span className="text-red-500">*</span></label>
               <input 
                 type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleInputChange}
+                min="1900-01-01" max={todayLocal()}
                 className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.fecha_nacimiento ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
               />
               {formErrors.fecha_nacimiento && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.fecha_nacimiento}</p>}
@@ -207,25 +209,27 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
 
             {/* Teléfono */}
             <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Teléfono Personal</label>
-              <input 
-                type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange}
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Teléfono Personal <span className="text-red-500">*</span></label>
+              <PhoneInput
+                name="telefono" value={formData.telefono} onChange={handleInputChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
               />
+              {formErrors.telefono && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.telefono}</p>}
             </div>
 
             {/* Correo */}
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Correo Electrónico</label>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Correo Electrónico (Opcional)</label>
               <input 
                 type="email" name="correo" value={formData.correo} onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
+                className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.correo ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
               />
+              {formErrors.correo && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.correo}</p>}
             </div>
 
             {/* Dirección */}
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Dirección Completa</label>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Dirección Completa (Opcional)</label>
               <input 
                 type="text" name="direccion" value={formData.direccion} onChange={handleInputChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-colors text-sm font-medium text-gray-700"
@@ -234,7 +238,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
 
             {/* Observaciones */}
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Observaciones Generales</label>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Observaciones Generales (Opcional)</label>
               <textarea 
                 name="observaciones_generales" value={formData.observaciones_generales} onChange={handleInputChange}
                 rows="2"
@@ -243,15 +247,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
             </div>
 
             {/* Datos de Apoderado (Condicional) */}
-            {(() => {
-              const today = new Date();
-              const birthDate = new Date(formData.fecha_nacimiento);
-              let age = formData.fecha_nacimiento ? today.getFullYear() - birthDate.getFullYear() : 18;
-              if (formData.fecha_nacimiento && (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()))) {
-                age--;
-              }
-              return age;
-            })() < 18 && (
+            {calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18 && (
               <div className="md:col-span-2 p-5 bg-blue-50/40 border border-blue-100 rounded-2xl">
                 <h3 className="text-sm font-bold text-dentBlue-900 mb-4 flex items-center">Datos del Apoderado Legal</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -265,8 +261,8 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Tel. Apoderado <span className="text-red-500">*</span></label>
-                    <input 
-                      type="tel" name="telefono_apoderado" value={formData.telefono_apoderado} onChange={handleInputChange}
+                    <PhoneInput
+                      name="telefono_apoderado" value={formData.telefono_apoderado} onChange={handleInputChange}
                       className={`w-full px-4 py-2.5 bg-white border ${formErrors.telefono_apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                     />
                     {formErrors.telefono_apoderado && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.telefono_apoderado}</p>}

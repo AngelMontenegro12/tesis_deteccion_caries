@@ -257,3 +257,50 @@ class SolicitudPassword(db.Model):
             'tipo_solicitud': 'Restablecer Contraseña',
             'correo': self.odontologo.correo if self.odontologo else None
         }
+
+
+class HistorialAcceso(db.Model):
+    __tablename__ = 'historial_accesos'
+
+    id_acceso = db.Column(db.Integer, primary_key=True)
+    id_odontologo = db.Column(INTEGER(unsigned=True), db.ForeignKey('odontologos.id_odontologo'), nullable=False)
+    tipo_evento = db.Column(db.Enum('login', 'logout', 'login_fallido', 'recuperacion_pass'), nullable=False)
+    ip_acceso = db.Column(db.String(45))
+    descripcion = db.Column(db.String(300))
+    creado_en = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    odontologo = db.relationship('Odontologo', foreign_keys=[id_odontologo])
+
+    def to_dict(self):
+        return {
+            'id_acceso': self.id_acceso,
+            'id_odontologo': self.id_odontologo,
+            'tipo_evento': self.tipo_evento,
+            'ip_acceso': self.ip_acceso,
+            'descripcion': self.descripcion,
+            'creado_en': str(self.creado_en),
+            'odontologo_nombre': f"{self.odontologo.nombres} {self.odontologo.apellidos}" if self.odontologo else None
+        }
+
+
+class Sesion(db.Model):
+    __tablename__ = 'sesiones'
+
+    id_sesion = db.Column(db.Integer, primary_key=True)
+    id_odontologo = db.Column(INTEGER(unsigned=True), db.ForeignKey('odontologos.id_odontologo'), nullable=False)
+    token_sesion = db.Column(db.String(255), nullable=False, unique=True)
+    ip_acceso = db.Column(db.String(45))
+    dispositivo = db.Column(db.String(200))
+    expira_en = db.Column(db.DateTime, nullable=False)
+    creado_en = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    def to_dict(self):
+        return {
+            'id_sesion': self.id_sesion,
+            'id_odontologo': self.id_odontologo,
+            'token_sesion': self.token_sesion,
+            'ip_acceso': self.ip_acceso,
+            'dispositivo': self.dispositivo,
+            'expira_en': str(self.expira_en),
+            'creado_en': str(self.creado_en)
+        }

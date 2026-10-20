@@ -326,7 +326,7 @@ const ReporteIndividual = () => {
           <input
             type="text"
             className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-dentBlue-500/20 focus:border-dentBlue-500 transition-all font-medium text-gray-700"
-            placeholder="Ej. Juan Pérez o 72458901"
+             placeholder="Ej. Juan Pérez o 72458901 (Opcional)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -502,7 +502,7 @@ const ReporteIndividual = () => {
                   {reportData.comparativa.opciones && reportData.comparativa.opciones.length > 1 && (
                     <div className="mb-4 px-2">
                       <label className="block text-[11px] font-bold uppercase tracking-[0.1em] text-gray-500 mb-1.5">
-                        Seleccionar radiografía anterior ("Antes"):
+                         Seleccionar radiografía anterior ("Antes") (Opcional):
                       </label>
                       <select
                         value={selectedAntesIdx}

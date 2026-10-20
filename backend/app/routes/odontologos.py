@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import or_, func
 from app.models import Odontologo, db
-import bcrypt
+from app.utils.security import hash_password, verify_password
+from app.utils.validation import valid_email, valid_phone
 import os
 from werkzeug.utils import secure_filename
 odontologos_bp = Blueprint('odontologos', __name__, url_prefix='/api/odontologos')
@@ -65,18 +66,29 @@ def obtener_odontologo(id_odontologo):
 def crear_odontologo():
     data = request.get_json(silent=True) or {}
 
-    requeridos = ['nombres', 'apellidos', 'correo', 'contrasena']
-    faltantes = [campo for campo in requeridos if not data.get(campo)]
+    requeridos = ['nombres', 'apellidos', 'correo', 'contrasena', 'telefono']
+    faltantes = [campo for campo in requeridos if not str(data.get(campo) or '').strip()]
     if faltantes:
         return jsonify({'status': 'error', 'message': f'Faltan campos requeridos: {", ".join(faltantes)}'}), 400
+
+    if any(len(str(data.get(field) or '').strip()) < 2 for field in ('nombres', 'apellidos')):
+        return jsonify({'status': 'error', 'message': 'Los nombres y apellidos deben tener al menos 2 caracteres'}), 400
+    if not valid_email(data['correo']):
+        return jsonify({'status': 'error', 'message': 'Ingrese un correo electrónico válido'}), 400
+    if not valid_phone(data['telefono']):
+        return jsonify({'status': 'error', 'message': 'El teléfono debe tener 9 dígitos y empezar en 9'}), 400
+    if len(str(data['contrasena']).strip()) < 6:
+        return jsonify({'status': 'error', 'message': 'La contraseña debe tener al menos 6 caracteres'}), 400
+    for field, label in (('colegiatura', 'La colegiatura'), ('especialidad', 'La especialidad')):
+        if data.get(field) and len(str(data[field]).strip()) < 2:
+            return jsonify({'status': 'error', 'message': f'{label} debe tener al menos 2 caracteres'}), 400
 
     correo = data['correo'].strip().lower()
     existente = Odontologo.query.filter_by(correo=correo).first()
     if existente:
         return jsonify({'status': 'error', 'message': 'Ya existe un odontólogo con ese correo'}), 409
 
-    contrasena = data['contrasena'].encode('utf-8')
-    hash_contrasena = bcrypt.hashpw(contrasena, bcrypt.gensalt()).decode('utf-8')
+    hash_contrasena = hash_password(data['contrasena'])
 
     odontologo = Odontologo(
         nombres=data['nombres'].strip(),
@@ -104,6 +116,18 @@ def actualizar_odontologo(id_odontologo):
     odontologo = Odontologo.query.get(id_odontologo)
     if not odontologo:
         return jsonify({'status': 'error', 'message': 'Odontólogo no encontrado'}), 404
+
+    if any(field in data and len(str(data[field] or '').strip()) < 2 for field in ('nombres', 'apellidos')):
+        return jsonify({'status': 'error', 'message': 'Los nombres y apellidos deben tener al menos 2 caracteres'}), 400
+    if 'correo' in data and not valid_email(data['correo']):
+        return jsonify({'status': 'error', 'message': 'Ingrese un correo electrónico válido'}), 400
+    if 'telefono' in data and not valid_phone(data['telefono']):
+        return jsonify({'status': 'error', 'message': 'El teléfono debe tener 9 dígitos y empezar en 9'}), 400
+    if data.get('contrasena') and len(str(data['contrasena']).strip()) < 6:
+        return jsonify({'status': 'error', 'message': 'La contraseña debe tener al menos 6 caracteres'}), 400
+    for field, label in (('colegiatura', 'La colegiatura'), ('especialidad', 'La especialidad')):
+        if data.get(field) and len(str(data[field]).strip()) < 2:
+            return jsonify({'status': 'error', 'message': f'{label} debe tener al menos 2 caracteres'}), 400
 
     correo = data.get('correo')
     if correo:
@@ -160,7 +184,7 @@ def actualizar_odontologo(id_odontologo):
     if 'activo' in data:
         odontologo.activo = _normalizar_booleano(data.get('activo'), odontologo.activo)
     if data.get('contrasena'):
-        odontologo.contrasena_hash = data['contrasena']
+        odontologo.contrasena_hash = hash_password(data['contrasena'])
     try:
         db.session.commit()
         return jsonify({'status': 'success', 'message': mensaje_exito, 'data': odontologo.to_dict() | {'activo': odontologo.activo}}), 200
@@ -202,11 +226,16 @@ def cambiar_password(id_odontologo):
 
     if not actual or not nueva:
         return jsonify({'status': 'error', 'message': 'Debe proporcionar la contraseña actual y la nueva'}), 400
+    if len(str(nueva).strip()) < 6:
+        return jsonify({'status': 'error', 'message': 'La nueva contraseña debe tener al menos 6 caracteres'}), 400
 
-    if actual != odontologo.contrasena_hash:
+    if not verify_password(actual, odontologo.contrasena_hash):
         return jsonify({'status': 'error', 'message': 'La contraseña actual es incorrecta'}), 401
 
-    odontologo.contrasena_hash = nueva
+    if verify_password(nueva, odontologo.contrasena_hash):
+        return jsonify({'status': 'error', 'message': 'La nueva contraseña debe ser diferente de la contraseña actual'}), 400
+
+    odontologo.contrasena_hash = hash_password(nueva)
 
     try:
         db.session.commit()

@@ -218,7 +218,7 @@ const Pendientes = () => {
                   setSearch(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Buscar por paciente, DNI o motivo..."
+                 placeholder="Buscar por paciente, DNI o motivo (Opcional)..."
                 className="block w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50/60 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-all shadow-sm text-sm font-medium"
               />
             </div>

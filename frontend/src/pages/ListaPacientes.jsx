@@ -1,11 +1,34 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Loader2, ChevronLeft, ChevronRight, CheckCircle, LayoutGrid, Table as TableIcon, List, Columns, ArrowUpDown, ChevronUp, ChevronDown, UserPlus } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Loader2, ChevronLeft, ChevronRight, ArrowRight, CheckCircle, LayoutGrid, Table as TableIcon, List, Columns, ArrowUpDown, ChevronUp, ChevronDown, UserPlus } from 'lucide-react';
 import PatientCard from '../components/PatientCard';
 import PatientSlideOver from '../components/PatientSlideOver';
 import ModalEditarPaciente from '../components/ModalEditarPaciente';
 import ModalNuevoPaciente from '../components/ModalNuevoPaciente';
 import ModalFinalizacion from '../components/ModalFinalizacion';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
+
+const KANBAN_COLUMNS = ['Nuevos', 'Diagnóstico Pendiente', 'En Tratamiento', 'En Control'];
+const KANBAN_ITEMS_PER_PAGE = 6;
+
+const getKanbanColumn = (patient) => {
+  if (!patient.ultima_atencion) return 'Nuevos';
+  if (patient.evaluacion_pendiente) return 'Diagnóstico Pendiente';
+  // Mantener la clasificación actual cuando no existe un estado de tratamiento.
+  return patient.id_paciente % 2 === 0 ? 'En Control' : 'En Tratamiento';
+};
+
+const getPaginationItems = (current, total, compact = false) => {
+  const visibleLimit = compact ? 5 : 7;
+  if (total <= visibleLimit) return Array.from({ length: total }, (_, index) => index + 1);
+  if (compact) {
+    if (current <= 3) return [1, 2, 3, 'end', total];
+    if (current >= total - 2) return [1, 'start', total - 2, total - 1, total];
+    return [1, 'start', current, 'end', total];
+  }
+  if (current <= 4) return [1, 2, 3, 4, 5, 'end', total];
+  if (current >= total - 3) return [1, 'start', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, 'start', current - 1, current, current + 1, 'end', total];
+};
 
 const ListaPacientes = () => {
   const [patients, setPatients] = useState([]);
@@ -27,6 +50,10 @@ const ListaPacientes = () => {
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+  const [kanbanPages, setKanbanPages] = useState(() => Object.fromEntries(KANBAN_COLUMNS.map(col => [col, 1])));
+  const [pageInput, setPageInput] = useState('');
+  const [pageInputError, setPageInputError] = useState('');
+  const kanbanScrollRefs = useRef({});
   
   // Slide Over State
   const [isSlideOpen, setIsSlideOpen] = useState(false);
@@ -127,6 +154,12 @@ const ListaPacientes = () => {
   // Resetear página al filtrar
   useEffect(() => {
     setCurrentPage(1);
+    setKanbanPages(Object.fromEntries(KANBAN_COLUMNS.map(col => [col, 1])));
+    setPageInput('');
+    setPageInputError('');
+    Object.values(kanbanScrollRefs.current).forEach(element => {
+      if (element) element.scrollTop = 0;
+    });
   }, [searchTerm, activeFilter, viewMode]);
 
   // Lógica de Ordenamiento (Sorting)
@@ -168,16 +201,61 @@ const ListaPacientes = () => {
 
   // Lógica de Paginación
   const totalPages = Math.ceil(sortedPatients.length / itemsPerPage);
+  const visiblePage = Math.min(currentPage, Math.max(1, totalPages));
   const currentPatients = sortedPatients.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    (visiblePage - 1) * itemsPerPage,
+    visiblePage * itemsPerPage
   );
 
-  const getKanbanColumn = (p) => {
-    if (!p.ultima_atencion) return 'Nuevos';
-    if (p.evaluacion_pendiente) return 'Diagnóstico Pendiente';
-    // Lógica mock si no hay estado_tratamiento real en los datos (par/impar para que haya vista)
-    return p.id_paciente % 2 === 0 ? 'En Control' : 'En Tratamiento';
+  const kanbanColumns = useMemo(() => {
+    const columns = Object.fromEntries(KANBAN_COLUMNS.map(col => [col, []]));
+    sortedPatients.forEach(patient => columns[getKanbanColumn(patient)].push(patient));
+    return columns;
+  }, [sortedPatients]);
+
+  useEffect(() => {
+    setCurrentPage(previous => Math.min(previous, Math.max(1, totalPages)));
+    setPageInput('');
+    setPageInputError('');
+  }, [totalPages]);
+
+  useEffect(() => {
+    setKanbanPages(previous => {
+      const next = { ...previous };
+      let changed = false;
+      KANBAN_COLUMNS.forEach(col => {
+        const lastPage = Math.max(1, Math.ceil(kanbanColumns[col].length / KANBAN_ITEMS_PER_PAGE));
+        if (next[col] > lastPage) {
+          next[col] = lastPage;
+          changed = true;
+        }
+      });
+      return changed ? next : previous;
+    });
+  }, [kanbanColumns]);
+
+  const goToPage = (target) => {
+    if (target < 1 || target > totalPages) return;
+    setCurrentPage(target);
+    setPageInput('');
+    setPageInputError('');
+  };
+
+  const handlePageJump = (event) => {
+    event.preventDefault();
+    const target = Number(pageInput);
+    if (!/^\d+$/.test(pageInput) || !Number.isSafeInteger(target) || target < 1 || target > totalPages) {
+      setPageInputError(`Ingresa una página del 1 al ${totalPages}.`);
+      return;
+    }
+    goToPage(target);
+  };
+
+  const goToKanbanPage = (column, target) => {
+    const lastPage = Math.ceil(kanbanColumns[column].length / KANBAN_ITEMS_PER_PAGE);
+    if (target < 1 || target > lastPage) return;
+    if (kanbanScrollRefs.current[column]) kanbanScrollRefs.current[column].scrollTop = 0;
+    setKanbanPages(previous => ({ ...previous, [column]: target }));
   };
 
   const handleCardClick = (patient) => {
@@ -292,7 +370,7 @@ const ListaPacientes = () => {
               <input
                 type="text"
                 className="block w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl leading-5 bg-gray-50/50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-all shadow-sm text-sm font-medium"
-                placeholder="Buscar por nombres, apellidos o DNI..."
+                 placeholder="Buscar por nombres, apellidos o DNI (Opcional)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -548,8 +626,13 @@ const ListaPacientes = () => {
 
             {viewMode === 'kanban' && (
               <div className="flex gap-5 overflow-x-auto pb-4 h-full min-h-[540px] snap-x shrink-0">
-                {['Nuevos', 'Diagnóstico Pendiente', 'En Tratamiento', 'En Control'].map(col => (
-                  <div key={col} className="flex-1 min-w-[290px] w-72 rounded-[1.5rem] border border-gray-200 bg-white/90 backdrop-blur-md shadow-[0_8px_30px_rgba(15,23,42,0.04)] flex flex-col snap-center overflow-hidden">
+                {KANBAN_COLUMNS.map(col => {
+                  const columnPatients = kanbanColumns[col];
+                  const columnPages = Math.ceil(columnPatients.length / KANBAN_ITEMS_PER_PAGE);
+                  const columnPage = Math.min(kanbanPages[col] || 1, Math.max(1, columnPages));
+                  const visiblePatients = columnPatients.slice((columnPage - 1) * KANBAN_ITEMS_PER_PAGE, columnPage * KANBAN_ITEMS_PER_PAGE);
+                  return (
+                    <div key={col} className="flex-1 min-w-[290px] w-72 rounded-[1.5rem] border border-gray-200 bg-white/90 backdrop-blur-md shadow-[0_8px_30px_rgba(15,23,42,0.04)] flex flex-col snap-center overflow-hidden">
                     <div className="border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/70 px-4 py-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -557,12 +640,12 @@ const ListaPacientes = () => {
                           <h3 className="mt-1 text-sm font-extrabold text-dentBlue-900">{col}</h3>
                         </div>
                         <span className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-bold text-gray-600 shadow-sm">
-                          {currentPatients.filter(p => getKanbanColumn(p) === col).length}
+                          {columnPatients.length}
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-3 flex-1 overflow-y-auto p-4">
-                      {currentPatients.filter(p => getKanbanColumn(p) === col).map(patient => (
+                    <div ref={element => { kanbanScrollRefs.current[col] = element; }} className="flex flex-col gap-3 flex-1 overflow-y-auto p-4">
+                      {visiblePatients.map(patient => (
                         <div key={patient.id_paciente} onClick={() => handleCardClick(patient)} className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all duration-300 hover:border-dentBlue-900/20 hover:bg-dentBlue-50/20 hover:shadow-[0_0_0_1px_rgba(15,59,76,0.08),0_14px_30px_rgba(15,23,42,0.06)] cursor-pointer">
                           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-dentBlue-900/0 via-white/0 to-dentGreen-500/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:from-dentBlue-900/[0.06] group-hover:via-white/0 group-hover:to-dentGreen-500/[0.08]" />
                           {patient.evaluacion_pendiente && (
@@ -593,31 +676,133 @@ const ListaPacientes = () => {
                         </div>
                       ))}
                     </div>
-                  </div>
-                ))}
+                    {columnPages > 1 && (
+                      <div className="shrink-0 border-t border-gray-100 bg-gray-50/70 px-3 py-3">
+                        <p className="mb-2 text-center text-[11px] text-gray-500">
+                          Mostrando <span className="font-semibold text-gray-700">{(columnPage - 1) * KANBAN_ITEMS_PER_PAGE + 1}–{Math.min(columnPage * KANBAN_ITEMS_PER_PAGE, columnPatients.length)}</span> de <span className="font-semibold text-gray-700">{columnPatients.length}</span>
+                        </p>
+                        <nav className="flex items-center justify-center gap-1" aria-label={`Páginas de ${col}`}>
+                          <button
+                            type="button"
+                            onClick={() => goToKanbanPage(col, columnPage - 1)}
+                            disabled={columnPage === 1}
+                            aria-label={`Página anterior de ${col}`}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                          {getPaginationItems(columnPage, columnPages, true).map(item =>
+                            typeof item === 'number' ? (
+                              <button
+                                key={item}
+                                type="button"
+                                onClick={() => goToKanbanPage(col, item)}
+                                aria-label={`Página ${item} de ${col}`}
+                                aria-current={columnPage === item ? 'page' : undefined}
+                                className={`flex h-8 min-w-[30px] shrink-0 items-center justify-center rounded-lg px-1 text-xs font-semibold transition-colors ${columnPage === item ? 'bg-dentBlue-900 text-white shadow-sm' : 'text-gray-600 hover:bg-dentBlue-50 hover:text-dentBlue-900'}`}
+                              >
+                                {item}
+                              </button>
+                            ) : (
+                              <span key={item} aria-hidden="true" className="flex h-8 w-3 shrink-0 items-center justify-center text-xs text-gray-400">…</span>
+                            )
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => goToKanbanPage(col, columnPage + 1)}
+                            disabled={columnPage === columnPages}
+                            aria-label={`Página siguiente de ${col}`}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </nav>
+                      </div>
+                    )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            {/* Controles de Paginación */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center mt-10 mb-4 gap-4 shrink-0">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full text-gray-500 hover:text-dentBlue-900 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <div className="text-sm font-bold text-gray-700 bg-white/90 backdrop-blur-sm border border-gray-200 px-5 py-2.5 rounded-2xl shadow-sm">
-                  Página {currentPage} de {totalPages}
+            {/* Paginación compartida de cuadrícula, tabla y lista */}
+            {viewMode !== 'kanban' && (
+              <div className="shrink-0 rounded-2xl border border-gray-200 bg-white/95 px-5 py-4 shadow-sm sm:px-6">
+                <div className="flex flex-col items-center gap-4 lg:flex-row lg:justify-between lg:gap-5">
+                  <p className="text-center text-sm text-gray-500 lg:text-left">
+                    Mostrando <span className="font-semibold text-gray-800">{(visiblePage - 1) * itemsPerPage + 1}–{Math.min(visiblePage * itemsPerPage, sortedPatients.length)}</span> de <span className="font-semibold text-gray-800">{sortedPatients.length}</span> pacientes
+                  </p>
+                  {totalPages > 1 && (
+                    <div className="flex max-w-full flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-end lg:ml-auto">
+                      <nav className="flex max-w-full items-center gap-1 overflow-x-auto pb-1" aria-label="Páginas de pacientes">
+                        <button
+                          type="button"
+                          onClick={() => goToPage(visiblePage - 1)}
+                          disabled={visiblePage <= 1}
+                          aria-label="Página anterior"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        {getPaginationItems(visiblePage, totalPages).map(item =>
+                          typeof item === 'number' ? (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => goToPage(item)}
+                              aria-label={`Página ${item}`}
+                              aria-current={visiblePage === item ? 'page' : undefined}
+                              className={`flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg px-2 text-sm font-semibold transition-colors ${visiblePage === item ? 'bg-dentBlue-900 text-white shadow-sm' : 'text-gray-600 hover:bg-dentBlue-50 hover:text-dentBlue-900'}`}
+                            >
+                              {item}
+                            </button>
+                          ) : (
+                            <span key={item} aria-hidden="true" className="flex h-9 w-6 shrink-0 items-center justify-center text-sm text-gray-400">…</span>
+                          )
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => goToPage(visiblePage + 1)}
+                          disabled={visiblePage >= totalPages}
+                          aria-label="Página siguiente"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </nav>
+                      <form onSubmit={handlePageJump} className="flex flex-col items-center gap-1 lg:items-end">
+                        <div className="flex items-center gap-2">
+                          <label htmlFor="pacientes-page-jump" className="whitespace-nowrap text-xs font-medium text-gray-500">Ir a página</label>
+                          <input
+                            id="pacientes-page-jump"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            value={pageInput}
+                            onChange={(event) => {
+                              if (/^\d*$/.test(event.target.value) && event.target.value.length <= String(totalPages).length) {
+                                setPageInput(event.target.value);
+                                setPageInputError('');
+                              }
+                            }}
+                            placeholder="#"
+                            aria-invalid={Boolean(pageInputError)}
+                            aria-describedby={pageInputError ? 'pacientes-page-error' : undefined}
+                            className={`h-9 w-12 rounded-lg border bg-gray-50 text-center text-sm font-medium text-gray-800 outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-dentBlue-900/10 ${pageInputError ? 'border-red-400' : 'border-gray-200 focus:border-dentBlue-900'}`}
+                          />
+                          <button
+                            type="submit"
+                            aria-label="Ir a la página indicada"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg bg-dentBlue-900 text-white transition-colors hover:bg-dentBlue-800"
+                          >
+                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </div>
+                        {pageInputError && <span id="pacientes-page-error" role="alert" className="text-xs text-red-600">{pageInputError}</span>}
+                      </form>
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="p-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full text-gray-500 hover:text-dentBlue-900 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
               </div>
             )}
           </>

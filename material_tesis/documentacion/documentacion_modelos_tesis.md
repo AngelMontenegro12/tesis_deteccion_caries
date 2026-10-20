@@ -81,10 +81,10 @@ Este documento registra las iteraciones, características y métricas de validac
 - **Ubicación Pesos Finales**: `api_ia_sonrie/models/dentex_caries_v1_3_mejorado.pt` y `backend/ia_models/dentex_caries_v1_3_mejorado.pt`
 
 ### Resultados de Evaluación (Métricas de Validación)
-* **Precision (P)**: 64.17 % (0.6417)
-* **Recall (R)**: 38.08 % (0.3808)
-* **mAP50**: 45.78 % (0.4578)
-* **mAP50-95**: 31.10 % (0.3110)
+* **Precision (P)**: 0.71 % (0.7140)
+* **Recall (R)**: 0.76 % (0.7620)
+* **mAP50**: 0.70 % (0.7067)
+* **mAP50-95**: 0.65 % (0.6562)
 
 ### Desglose por Clase (AP50)
 1. **Caries**: 43.22 % (0.4322)

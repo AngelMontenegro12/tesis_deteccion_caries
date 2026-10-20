@@ -1,14 +1,85 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, User, Users, Calendar, Activity, AlertCircle, FileCheck, Phone, Mail, MapPin, Edit2 } from 'lucide-react';
+import { X, User, Users, Calendar, Activity, AlertCircle, FileCheck, Phone, Mail, MapPin, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { isValidDate, todayLocal } from '../utils/validation';
+
+const HISTORY_PER_PAGE = 5;
+const COMMON_VISITS = ['Primera vez', 'Control rutina', 'Urgencia', 'Seguimiento'];
+
+const getPaginationItems = (current, total) => {
+  if (total <= 5) return Array.from({ length: total }, (_, index) => index + 1);
+  if (current <= 3) return [1, 2, 3, 'end', total];
+  if (current >= total - 2) return [1, 'start', total - 2, total - 1, total];
+  return [1, 'start', current, 'end', total];
+};
 
 const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
   const navigate = useNavigate();
+  const [fechaExacta, setFechaExacta] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  const [tipoVisita, setTipoVisita] = useState('');
+  const [page, setPage] = useState(1);
+  const scrollContainerRef = useRef(null);
+  const historyRef = useRef(null);
+
+  // La lista ya pertenece exclusivamente al paciente seleccionado y llega ordenada por fecha.
+  const evaluaciones = useMemo(() => patient?.evaluaciones || [], [patient?.evaluaciones]);
+  const tiposDisponibles = useMemo(() => {
+    const tipos = new Set(evaluaciones.map(evaluacion => evaluacion.tipo_visita).filter(Boolean));
+    return [...COMMON_VISITS.filter(tipo => tipos.has(tipo)), ...[...tipos].filter(tipo => !COMMON_VISITS.includes(tipo)).sort()];
+  }, [evaluaciones]);
+
+  const dateError = ([fechaExacta, fechaDesde, fechaHasta].some(value => value && !isValidDate(value)))
+    ? 'Selecciona fechas válidas entre 1900 y hoy.'
+    : (fechaDesde && fechaHasta && fechaDesde > fechaHasta)
+      ? 'La fecha inicial no puede ser posterior a la fecha final.' : '';
+
+  const evaluacionesFiltradas = useMemo(() => {
+    if (dateError) return [];
+    return evaluaciones.filter(evaluacion => {
+      const fecha = String(evaluacion.fecha_evaluacion || '').slice(0, 10);
+      return (!tipoVisita || evaluacion.tipo_visita === tipoVisita) &&
+        (!fechaExacta || fecha === fechaExacta) &&
+        (!fechaDesde || fecha >= fechaDesde) &&
+        (!fechaHasta || fecha <= fechaHasta);
+    });
+  }, [evaluaciones, fechaExacta, fechaDesde, fechaHasta, tipoVisita, dateError]);
+
+  const totalPages = Math.ceil(evaluacionesFiltradas.length / HISTORY_PER_PAGE);
+  const visiblePage = Math.min(page, Math.max(1, totalPages));
+  const evaluacionesVisibles = evaluacionesFiltradas.slice((visiblePage - 1) * HISTORY_PER_PAGE, visiblePage * HISTORY_PER_PAGE);
+
+  useEffect(() => {
+    setFechaExacta('');
+    setFechaDesde('');
+    setFechaHasta('');
+    setTipoVisita('');
+    setPage(1);
+  }, [patient?.id_paciente, isOpen]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [fechaExacta, fechaDesde, fechaHasta, tipoVisita]);
+
+  useEffect(() => {
+    setPage(current => Math.min(current, Math.max(1, totalPages)));
+  }, [totalPages]);
+
+  const goToPage = target => {
+    if (target < 1 || target > totalPages) return;
+    setPage(target);
+    const container = scrollContainerRef.current;
+    const section = historyRef.current;
+    if (container && section) {
+      container.scrollTo({
+        top: container.scrollTop + section.getBoundingClientRect().top - container.getBoundingClientRect().top,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   if (!isOpen || !patient) return null;
-
-  // Filtrar si hay una evaluación en progreso o terminada
-  const evaluaciones = patient.evaluaciones || [];
 
   // Función para edad calculada al vuelo
   const getAge = (dateStr) => {
@@ -31,7 +102,7 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
 
       {/* Slide-over Panel Lateral */}
       <div 
-        className={`relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out z-10 
+        className={`relative w-full max-w-xl h-full bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out z-10 
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Cabecera del Panel (Cerrar) */}
@@ -58,7 +129,7 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {/* SECCIÓN SUPERIOR: Datos del Paciente */}
           <div className="p-8 bg-white border-b border-gray-100">
             <div className="flex items-center justify-between">
@@ -112,11 +183,76 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
           </div>
 
           {/* SECCIÓN INFERIOR: Historial Clínico (Línea de Tiempo) */}
-          <div className="p-8 bg-gray-50/50 flex-1 min-h-0">
+          <div ref={historyRef} className="p-8 bg-gray-50/50 flex-1 min-h-0">
             <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-6 flex items-center">
               <Activity className="w-4 h-4 mr-2 text-dentBlue-900" />
               Historial de Diagnósticos
             </h3>
+
+            {evaluaciones.length > 0 && (
+              <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Filtrar historial (Opcional)</span>
+                  {(fechaExacta || fechaDesde || fechaHasta || tipoVisita) && (
+                    <button
+                      type="button"
+                      onClick={() => { setFechaExacta(''); setFechaDesde(''); setFechaHasta(''); setTipoVisita(''); }}
+                      className="text-xs font-semibold text-dentBlue-900 hover:text-dentBlue-700"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="min-w-0 text-xs font-semibold text-gray-600">
+                    Fecha exacta
+                    <input
+                      type="date"
+                      min="1900-01-01" max={todayLocal()}
+                      value={fechaExacta}
+                      onChange={event => {
+                        setFechaExacta(event.target.value);
+                        setFechaDesde('');
+                        setFechaHasta('');
+                      }}
+                      className="mt-1.5 w-full min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-sm font-medium text-gray-700 outline-none transition-colors focus:border-dentBlue-900 focus:bg-white focus:ring-2 focus:ring-dentBlue-900/10"
+                    />
+                  </label>
+                  <label className="min-w-0 text-xs font-semibold text-gray-600">
+                    Tipo de visita
+                    <select
+                      value={tipoVisita}
+                      onChange={event => setTipoVisita(event.target.value)}
+                      className="mt-1.5 w-full min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-sm font-medium text-gray-700 outline-none transition-colors focus:border-dentBlue-900 focus:bg-white focus:ring-2 focus:ring-dentBlue-900/10"
+                    >
+                      <option value="">Todas las visitas</option>
+                      {tiposDisponibles.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
+                    </select>
+                  </label>
+                  <label className="min-w-0 text-xs font-semibold text-gray-600">
+                    Desde
+                    <input
+                      type="date"
+                      min="1900-01-01" max={todayLocal()}
+                      value={fechaDesde}
+                      onChange={event => { setFechaDesde(event.target.value); setFechaExacta(''); }}
+                      className="mt-1.5 w-full min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-sm font-medium text-gray-700 outline-none transition-colors focus:border-dentBlue-900 focus:bg-white focus:ring-2 focus:ring-dentBlue-900/10"
+                    />
+                  </label>
+                  <label className="min-w-0 text-xs font-semibold text-gray-600">
+                    Hasta
+                    <input
+                      type="date"
+                      min="1900-01-01" max={todayLocal()}
+                      value={fechaHasta}
+                      onChange={event => { setFechaHasta(event.target.value); setFechaExacta(''); }}
+                      className="mt-1.5 w-full min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-sm font-medium text-gray-700 outline-none transition-colors focus:border-dentBlue-900 focus:bg-white focus:ring-2 focus:ring-dentBlue-900/10"
+                    />
+                  </label>
+                </div>
+                {dateError && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{dateError}</p>}
+              </div>
+            )}
 
             {evaluaciones.length === 0 ? (
               <div className="text-center py-10 bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -124,9 +260,16 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
                 <p className="text-sm font-bold text-gray-500">Sin historial clínico previo.</p>
                 <p className="text-xs text-gray-400 mt-1">Aún no se ha realizado ningún diagnóstico para este paciente.</p>
               </div>
+            ) : evaluacionesFiltradas.length === 0 ? (
+              <div className="rounded-2xl border border-gray-100 bg-white px-5 py-10 text-center shadow-sm">
+                <AlertCircle className="mx-auto mb-3 h-8 w-8 text-gray-300" />
+                <p className="text-sm font-semibold text-gray-600">
+                  {dateError ? 'Corrige las fechas para consultar el historial.' : 'No hay diagnósticos con estos filtros.'}
+                </p>
+              </div>
             ) : (
               <div className="relative pl-4 space-y-8 before:absolute before:inset-y-0 before:left-5 before:w-px before:bg-gray-200 before:z-0">
-                {evaluaciones.map((evaluacion, idx) => {
+                {evaluacionesVisibles.map(evaluacion => {
                   const isCompletada = evaluacion.estado === 'completada';
                     
                     // Parse date safely (replace space with T for valid ISO parsing)
@@ -191,6 +334,52 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {evaluacionesFiltradas.length > 0 && (
+              <div className="mt-6 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
+                <p className="text-center text-xs text-gray-500">
+                  Mostrando <span className="font-semibold text-gray-800">{(visiblePage - 1) * HISTORY_PER_PAGE + 1}–{Math.min(visiblePage * HISTORY_PER_PAGE, evaluacionesFiltradas.length)}</span> de <span className="font-semibold text-gray-800">{evaluacionesFiltradas.length}</span> diagnósticos
+                </p>
+                {totalPages > 1 && (
+                  <nav className="mt-3 flex items-center justify-center gap-1" aria-label="Páginas del historial del paciente">
+                    <button
+                      type="button"
+                      onClick={() => goToPage(visiblePage - 1)}
+                      disabled={visiblePage <= 1}
+                      aria-label="Página anterior"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    {getPaginationItems(visiblePage, totalPages).map(item =>
+                      typeof item === 'number' ? (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => goToPage(item)}
+                          aria-label={`Página ${item}`}
+                          aria-current={visiblePage === item ? 'page' : undefined}
+                          className={`flex h-8 min-w-[30px] shrink-0 items-center justify-center rounded-lg px-1 text-xs font-semibold transition-colors ${visiblePage === item ? 'bg-dentBlue-900 text-white shadow-sm' : 'text-gray-600 hover:bg-dentBlue-50 hover:text-dentBlue-900'}`}
+                        >
+                          {item}
+                        </button>
+                      ) : (
+                        <span key={item} aria-hidden="true" className="flex h-8 w-3 shrink-0 items-center justify-center text-xs text-gray-400">…</span>
+                      )
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => goToPage(visiblePage + 1)}
+                      disabled={visiblePage >= totalPages}
+                      aria-label="Página siguiente"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-dentBlue-900/30 hover:bg-dentBlue-50 hover:text-dentBlue-900 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </nav>
+                )}
               </div>
             )}
           </div>

@@ -4,7 +4,25 @@ import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 import api from '../services/api';
 import ModalFinalizacion from '../components/ModalFinalizacion';
+import PhoneInput from '../components/PhoneInput';
+import { isValidPhone, isValidPassword, isNotEmpty, phoneError } from '../utils/validation';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
+
+const readOnlyFieldClassName = 'w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-600 font-medium cursor-default focus:outline-none';
+
+const getPasswordStrength = (password) => {
+  const value = password.trim();
+  if (!value) return null;
+
+  const characterGroups = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9\s]/]
+    .filter(group => group.test(value)).length;
+  const score = Number(value.length >= 8) + Number(value.length >= 12) +
+    Number(characterGroups >= 2) + Number(characterGroups >= 3);
+
+  if (value.length < 6 || score <= 1) return { label: 'Baja', level: 1, color: 'bg-red-400', text: 'text-red-600' };
+  if (score <= 3) return { label: 'Media', level: 2, color: 'bg-amber-400', text: 'text-amber-700' };
+  return { label: 'Alta', level: 3, color: 'bg-green-500', text: 'text-green-700' };
+};
 
 const Perfil = () => {
   const [user, setUser] = useState(null);
@@ -59,29 +77,14 @@ const Perfil = () => {
   }, []);
 
   const handleChange = (e) => {
-    let { name, value } = e.target;
-
-    // Validaciones en tiempo real (en el propio input)
-    if (name === 'nombres' || name === 'apellidos' || name === 'especialidad') {
-      value = value.replace(/[0-9]/g, ''); // Eliminar números al instante
-    } else if (name === 'telefono') {
-      value = value.replace(/[^0-9]/g, ''); // Solo permitir números
-      if (value.length > 9) {
-        value = value.slice(0, 9); // Limitar a 9 dígitos
-      }
-    }
-
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    if (e.target.name !== 'telefono') return;
+    const telefono = e.target.value.replace(/\D/g, '').slice(0, 9);
+    setFormData(current => ({ ...current, telefono }));
   };
 
   const handlePassChange = (e) => {
-    setPassData({
-      ...passData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setPassData(current => ({ ...current, [name]: value }));
   };
 
   const showMessage = (msg, isError = false) => {
@@ -106,56 +109,40 @@ const Perfil = () => {
   };
 
   const validateForm = () => {
-    const phoneRegex = /^[0-9]{9}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(formData.correo)) {
-      showMessage('Ingrese un correo electrónico válido (ej. usuario@dominio.com).', true);
+    if (!isValidPhone(formData.telefono)) {
+      showMessage(phoneError(formData.telefono), true);
       return false;
     }
-    if (formData.telefono && !phoneRegex.test(formData.telefono)) {
-      showMessage('El teléfono debe contener exactamente 9 dígitos numéricos.', true);
-      return false;
-    }
-    
     return true;
   };
 
-  const hasChanges = user ? (
-    formData.nombres !== (user.nombres || '') ||
-    formData.apellidos !== (user.apellidos || '') ||
-    formData.correo !== (user.correo || '') ||
-    formData.telefono !== (user.telefono || '') ||
-    formData.colegiatura !== (user.colegiatura || '') ||
-    formData.especialidad !== (user.especialidad || '')
-  ) : false;
+  const hasChanges = user ? formData.telefono !== (user.telefono || '') : false;
 
-  const isEmailInvalid = formData.correo.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo);
-  const isPhoneInvalid = formData.telefono.length > 0 && formData.telefono.length < 9;
-  const isNombresInvalid = formData.nombres.length > 0 && formData.nombres.trim().length < 2;
-  const isApellidosInvalid = formData.apellidos.length > 0 && formData.apellidos.trim().length < 2;
-  const isColegiaturaInvalid = formData.colegiatura.length > 0 && formData.colegiatura.trim().length < 2;
-  const isEspecialidadInvalid = formData.especialidad.length > 0 && formData.especialidad.trim().length < 2;
+  const isPhoneInvalid = !isValidPhone(formData.telefono);
 
-  const isFormInvalid = isEmailInvalid || isPhoneInvalid || isNombresInvalid || isApellidosInvalid || isColegiaturaInvalid || isEspecialidadInvalid || formData.nombres.trim().length < 2 || formData.apellidos.trim().length < 2 || formData.correo.trim().length < 2;
-
-  const isSecurityValid = 
-    passData.contrasena_actual.length > 0 && 
-    passData.nueva_contrasena.length > 0 && 
-    passData.nueva_contrasena === passData.confirmar_contrasena;
+  const passwordStrength = getPasswordStrength(passData.nueva_contrasena);
+  const isPasswordTooShort = passData.nueva_contrasena.length > 0 && !isValidPassword(passData.nueva_contrasena);
+  const isSamePassword = isNotEmpty(passData.contrasena_actual) &&
+    isValidPassword(passData.nueva_contrasena) &&
+    passData.contrasena_actual === passData.nueva_contrasena;
+  const isConfirmationMismatch = passData.confirmar_contrasena.length > 0 &&
+    passData.nueva_contrasena !== passData.confirmar_contrasena;
+  const isConfirmationValid = isValidPassword(passData.nueva_contrasena) &&
+    passData.confirmar_contrasena.length > 0 && !isConfirmationMismatch;
+  const isSecurityValid = isNotEmpty(passData.contrasena_actual) && isConfirmationValid && !isSamePassword;
 
   const handleSubmitGeneral = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoadingGeneral(true);
     try {
-      const response = await api.put(`/odontologos/${user.id_odontologo}`, formData);
+      const response = await api.put(`/odontologos/${user.id_odontologo}`, { telefono: formData.telefono });
       if (response.data?.status === 'success') {
         const updatedUser = response.data.data;
         const newUser = { ...user, ...updatedUser };
         localStorage.setItem('user', JSON.stringify(newUser));
         setUser(newUser);
-        showMessage('Información actualizada correctamente.');
+        showMessage('Número de teléfono actualizado correctamente.');
       } else {
         showMessage(response.data?.message || 'Error al actualizar el perfil', true);
       }
@@ -168,14 +155,27 @@ const Perfil = () => {
 
   const handleSubmitSecurity = async (e) => {
     e.preventDefault();
-    setLoadingPass(true);
-
-    if (passData.nueva_contrasena !== passData.confirmar_contrasena) {
-      showMessage('Las contraseñas nuevas no coinciden', true);
-      setLoadingPass(false);
+    if (!isNotEmpty(passData.contrasena_actual)) {
+      showMessage('Ingresa tu contraseña actual', true);
       return;
     }
 
+    if (!isValidPassword(passData.nueva_contrasena)) {
+      showMessage('La nueva contraseña debe tener al menos 6 caracteres', true);
+      return;
+    }
+
+    if (isSamePassword) {
+      showMessage('La nueva contraseña debe ser diferente de la contraseña actual', true);
+      return;
+    }
+
+    if (!isConfirmationValid) {
+      showMessage('Las contraseñas no coinciden', true);
+      return;
+    }
+
+    setLoadingPass(true);
     try {
       const response = await api.put(`/odontologos/${user.id_odontologo}/password`, {
         contrasena_actual: passData.contrasena_actual,
@@ -252,7 +252,7 @@ const Perfil = () => {
 
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Perfil</h1>
-              <p className="text-sm text-gray-500">Visualiza y edita todos los detalles de tu perfil aquí.</p>
+               <p className="text-sm text-gray-500">Consulta tus datos y actualiza tu foto, teléfono o contraseña.</p>
             </div>
           </div>
         </div>
@@ -302,7 +302,8 @@ const Perfil = () => {
                   <input type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={onFileChange} />
                 </label>
                 
-                <h2 className="text-2xl font-bold text-gray-900 leading-tight">{user.nombres}</h2>
+                 <span className="text-xs text-gray-500">Foto de perfil (Opcional)</span>
+                 <h2 className="text-2xl font-bold text-gray-900 leading-tight">{user.nombres}</h2>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">{user.apellidos}</h2>
                 
                 <div className="flex items-center gap-2 mt-2 px-4 py-1.5 bg-green-50 rounded-full">
@@ -323,31 +324,53 @@ const Perfil = () => {
                   
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-gray-700">Contraseña Actual</label>
+                      <label htmlFor="contrasena-actual" className="text-sm font-semibold text-gray-700">Contraseña Actual <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                           <Lock className="h-5 w-5 text-gray-400" />
                         </div>
-                        <input type="password" name="contrasena_actual" value={passData.contrasena_actual} onChange={handlePassChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-dentBlue-500 focus:border-dentBlue-500 transition-all font-medium" placeholder="••••••••" required />
+                        <input id="contrasena-actual" type="password" name="contrasena_actual" value={passData.contrasena_actual} onChange={handlePassChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-dentBlue-500 focus:border-dentBlue-500 transition-all font-medium" placeholder="••••••••" required />
                       </div>
+                      {!isNotEmpty(passData.contrasena_actual) && (passData.nueva_contrasena || passData.confirmar_contrasena) && (
+                        <p className="text-xs font-medium text-amber-700">Ingresa tu contraseña actual para actualizarla.</p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-gray-700">Nueva Contraseña</label>
+                      <label htmlFor="nueva-contrasena" className="text-sm font-semibold text-gray-700">Nueva Contraseña <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                           <KeyRound className="h-5 w-5 text-gray-400" />
                         </div>
-                        <input type="password" name="nueva_contrasena" value={passData.nueva_contrasena} onChange={handlePassChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-dentBlue-500 focus:border-dentBlue-500 transition-all font-medium" placeholder="••••••••" required />
+                        <input id="nueva-contrasena" type="password" name="nueva_contrasena" value={passData.nueva_contrasena} onChange={handlePassChange} aria-invalid={isPasswordTooShort || isSamePassword} aria-describedby="nueva-contrasena-ayuda" className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isPasswordTooShort || isSamePassword ? 'border-red-400 focus:ring-red-200 focus:border-red-400' : 'border-gray-200 focus:ring-dentBlue-500 focus:border-dentBlue-500'}`} placeholder="••••••••" required />
                       </div>
+                      <p id="nueva-contrasena-ayuda" className={`text-xs font-medium ${isPasswordTooShort || isSamePassword ? 'text-red-600' : 'text-gray-500'}`}>
+                        {isPasswordTooShort ? 'La nueva contraseña es muy corta: mínimo 6 caracteres.' : isSamePassword ? 'La nueva contraseña debe ser diferente de la actual.' : 'Mínimo 6 caracteres.'}
+                      </p>
+                      {passwordStrength && (
+                        <div className="space-y-2 pt-1">
+                          <p className="text-xs font-medium text-gray-500">Dificultad: <span className={`font-bold ${passwordStrength.text}`}>{passwordStrength.label}</span></p>
+                          <div className="flex gap-1.5" aria-hidden="true">
+                            {[1, 2, 3].map(level => (
+                              <span key={level} className={`h-1.5 flex-1 rounded-full ${level <= passwordStrength.level ? passwordStrength.color : 'bg-gray-200'}`} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-gray-700">Confirmar Contraseña</label>
+                      <label htmlFor="confirmar-contrasena" className="text-sm font-semibold text-gray-700">Confirmar Contraseña <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                           <KeyRound className="h-5 w-5 text-gray-400" />
                         </div>
-                        <input type="password" name="confirmar_contrasena" value={passData.confirmar_contrasena} onChange={handlePassChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-dentBlue-500 focus:border-dentBlue-500 transition-all font-medium" placeholder="••••••••" required />
+                        <input id="confirmar-contrasena" type="password" name="confirmar_contrasena" value={passData.confirmar_contrasena} onChange={handlePassChange} aria-invalid={isConfirmationMismatch} aria-describedby={isConfirmationMismatch || isConfirmationValid || (isValidPassword(passData.nueva_contrasena) && !passData.confirmar_contrasena) ? 'confirmacion-ayuda' : undefined} className={`w-full pl-10 pr-11 py-2.5 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isConfirmationMismatch ? 'border-red-400 focus:ring-red-200 focus:border-red-400' : isConfirmationValid ? 'border-green-400 focus:ring-green-200 focus:border-green-400' : 'border-gray-200 focus:ring-dentBlue-500 focus:border-dentBlue-500'}`} placeholder="••••••••" required />
+                        {isConfirmationValid && <CheckCircle2 className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-green-600" aria-hidden="true" />}
                       </div>
+                      {(isConfirmationMismatch || isConfirmationValid || (isValidPassword(passData.nueva_contrasena) && !passData.confirmar_contrasena)) && (
+                        <p id="confirmacion-ayuda" role={isConfirmationMismatch ? 'alert' : 'status'} className={`text-xs font-medium ${isConfirmationMismatch ? 'text-red-600' : isConfirmationValid ? 'text-green-700' : 'text-gray-500'}`}>
+                          {isConfirmationMismatch ? 'Las contraseñas no coinciden.' : isConfirmationValid ? 'Las contraseñas coinciden.' : 'Confirma la nueva contraseña para continuar.'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -364,6 +387,9 @@ const Perfil = () => {
             <div className="lg:col-span-8">
               <form onSubmit={handleSubmitGeneral} className="bg-white rounded-3xl shadow-sm border border-gray-100 h-full flex flex-col">
                 <div className="p-8 sm:p-10 flex-1">
+                  <p className="mb-8 text-xs leading-relaxed text-gray-500">
+                    Para modificar otros datos de tu perfil, contacta al administrador mediante el módulo Soporte / Ayuda.
+                  </p>
                   
                   {/* Sección: Información Personal */}
                   <div className="mb-10">
@@ -375,31 +401,28 @@ const Perfil = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-sm font-semibold text-gray-700">Nombres</label>
-                          {isNombresInvalid && <span className="text-xs text-red-500 font-medium">Mín. 2 letras</span>}
+                           <label className="text-sm font-semibold text-gray-700">Nombres <span className="text-red-500">*</span></label>
                         </div>
-                        <input type="text" name="nombres" value={formData.nombres} onChange={handleChange} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isNombresInvalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900'}`} required />
+                         <input type="text" name="nombres" value={formData.nombres} readOnly className={readOnlyFieldClassName} />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-sm font-semibold text-gray-700">Apellidos</label>
-                          {isApellidosInvalid && <span className="text-xs text-red-500 font-medium">Mín. 2 letras</span>}
+                           <label className="text-sm font-semibold text-gray-700">Apellidos <span className="text-red-500">*</span></label>
                         </div>
-                        <input type="text" name="apellidos" value={formData.apellidos} onChange={handleChange} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isApellidosInvalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900'}`} required />
+                         <input type="text" name="apellidos" value={formData.apellidos} readOnly className={readOnlyFieldClassName} />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-sm font-semibold text-gray-700">Correo Electrónico</label>
-                          {isEmailInvalid && <span className="text-xs text-red-500 font-medium">Correo inválido</span>}
+                           <label className="text-sm font-semibold text-gray-700">Correo Electrónico <span className="text-red-500">*</span></label>
                         </div>
-                        <input type="email" name="correo" value={formData.correo} onChange={handleChange} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isEmailInvalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900'}`} required />
+                         <input type="email" name="correo" value={formData.correo} readOnly className={readOnlyFieldClassName} />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-sm font-semibold text-gray-700">Teléfono</label>
-                          {isPhoneInvalid && <span className="text-xs text-red-500 font-medium">Faltan dígitos (9 req.)</span>}
+                           <label className="text-sm font-semibold text-gray-700">Teléfono <span className="text-red-500">*</span></label>
+                           {isPhoneInvalid && <span className="text-xs text-red-500 font-medium">9 dígitos, empieza en 9</span>}
                         </div>
-                        <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isPhoneInvalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900'}`} />
+                        <PhoneInput name="telefono" value={formData.telefono} onChange={handleChange} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isPhoneInvalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900'}`} />
                       </div>
                     </div>
                   </div>
@@ -414,17 +437,15 @@ const Perfil = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-sm font-semibold text-gray-700">Número de Colegiatura</label>
-                          {isColegiaturaInvalid && <span className="text-xs text-red-500 font-medium">Mín. 2 caracteres</span>}
+                           <label className="text-sm font-semibold text-gray-700">Número de Colegiatura (Opcional)</label>
                         </div>
-                        <input type="text" name="colegiatura" value={formData.colegiatura} onChange={handleChange} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isColegiaturaInvalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900'}`} placeholder="Ej. COP 12345" />
+                         <input type="text" name="colegiatura" value={formData.colegiatura} readOnly className={readOnlyFieldClassName} placeholder="Ej. COP 12345" />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-sm font-semibold text-gray-700">Especialidad</label>
-                          {isEspecialidadInvalid && <span className="text-xs text-red-500 font-medium">Mín. 2 letras</span>}
+                           <label className="text-sm font-semibold text-gray-700">Especialidad (Opcional)</label>
                         </div>
-                        <input type="text" name="especialidad" value={formData.especialidad} onChange={handleChange} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 transition-all font-medium ${isEspecialidadInvalid ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900'}`} placeholder="Ej. Ortodoncia, Odontopediatría..." />
+                         <input type="text" name="especialidad" value={formData.especialidad} readOnly className={readOnlyFieldClassName} placeholder="Ej. Ortodoncia, Odontopediatría..." />
                       </div>
                     </div>
                   </div>
@@ -433,9 +454,9 @@ const Perfil = () => {
                 
                 {/* Footer del Formulario Derecho */}
                 <div className="p-6 sm:p-8 bg-gray-50/50 border-t border-gray-100 flex items-center justify-end">
-                  <button type="submit" disabled={loadingGeneral || !hasChanges || isFormInvalid} className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-dentBlue-900 text-white font-bold rounded-xl hover:bg-dentBlue-800 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg">
+                  <button type="submit" disabled={loadingGeneral || !hasChanges || isPhoneInvalid} className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-dentBlue-900 text-white font-bold rounded-xl hover:bg-dentBlue-800 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg">
                     {loadingGeneral ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    Guardar Cambios
+                     Guardar teléfono
                   </button>
                 </div>
               </form>

@@ -37,6 +37,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import BoundingBoxViewer from '../components/BoundingBoxViewer';
+import PhoneInput from '../components/PhoneInput';
+import { isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 import dienteImg from '../assets/diente.png';
 import ModalConfirmacion from '../components/ModalConfirmacion';
@@ -103,6 +105,7 @@ const EvaluacionClinica = () => {
   }));  
   // Estado para errores de validacion
   const [formErrors, setFormErrors] = useState({});
+  const [patientSaveError, setPatientSaveError] = useState('');
 
   // Estado para el Contexto Clínico (Paso 2)
   const [contextoClinico, setContextoClinico] = useState(() => getInitialState('eval_contextoClinico', {
@@ -881,52 +884,60 @@ const EvaluacionClinica = () => {
 
   const validateField = (name, value) => {
     let error = '';
+    value = String(value ?? '');
     const lettersOnlyRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-    const numbersOnlyRegex = /^[0-9]+$/;
 
     switch (name) {
       case 'nombres':
+        if (!value.trim()) {
+          error = 'Los nombres son requeridos';
+        } else if (!lettersOnlyRegex.test(value)) {
+          error = 'Solo se permiten letras';
+        } else if (value.trim().length < 2) {
+          error = 'Mínimo 2 caracteres';
+        }
+        break;
       case 'apellidos':
-        if (value.trim() && !lettersOnlyRegex.test(value)) {
+        if (!value.trim()) {
+          error = 'Los apellidos son requeridos';
+        } else if (!lettersOnlyRegex.test(value)) {
+          error = 'Solo se permiten letras';
+        } else if (value.trim().length < 2) {
+          error = 'Mínimo 2 caracteres';
+        }
+        break;
+      case 'apoderado': {
+        const ageApoderado = calculateAge(formData.fecha_nacimiento);
+        const eraMenor = ageApoderado !== null && ageApoderado < 18;
+        if (eraMenor && !value.trim()) {
+          error = 'El nombre del apoderado es requerido';
+        } else if (value.trim() && !lettersOnlyRegex.test(value)) {
           error = 'Solo se permiten letras';
         }
         break;
-      case 'apoderado':
-        if (value.trim() && !lettersOnlyRegex.test(value)) {
-          error = 'Solo se permiten letras';
-        }
-        break;
+      }
       case 'dni':
-        if (value && (!numbersOnlyRegex.test(value) || value.length !== 8)) {
-          error = value.length < 8 && numbersOnlyRegex.test(value) ? 'Debe tener 8 dígitos' : 'Solo 8 números permitidos';
-        }
+        if (!value) error = 'El DNI es requerido';
+        else if (!isValidDni(value)) error = 'El DNI debe tener exactamente 8 dígitos';
         break;
       case 'telefono':
-      case 'telefono_apoderado':
-        if (value && (!numbersOnlyRegex.test(value) || value.length !== 9)) {
-          error = value.length < 9 && numbersOnlyRegex.test(value) ? 'Debe tener 9 dígitos' : 'Solo 9 números permitidos';
-        }
+        error = phoneError(value);
         break;
+      case 'telefono_apoderado': {
+        const ageTelefono = calculateAge(formData.fecha_nacimiento);
+        const esMenor = ageTelefono !== null && ageTelefono < 18;
+        error = phoneError(value, 'El teléfono del apoderado', esMenor);
+        break;
+      }
       case 'fecha_nacimiento':
-        if (value) {
-          const selectedDate = new Date(value);
-          const today = new Date();
-          // Reset time to compare only dates
-          today.setHours(0,0,0,0);
-          selectedDate.setHours(0,0,0,0);
-          // Allow today, but not future
-          if (selectedDate > today) {
-            error = 'La fecha no puede ser en el futuro';
-          }
-        }
+        if (!value) error = 'Fecha de nacimiento requerida';
+        else if (!isValidDate(value)) error = 'La fecha debe estar entre 1900 y hoy';
+        break;
+      case 'genero':
+        if (!value) error = 'El género es requerido';
         break;
       case 'correo':
-        if (value.trim()) {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(value)) {
-            error = 'Ingrese un correo electrónico válido';
-          }
-        }
+        if (value.trim() && !isValidEmail(value)) error = 'Ingrese un correo electrónico válido';
         break;
       default:
         break;
@@ -938,13 +949,8 @@ const EvaluacionClinica = () => {
     const { name, value } = e.target;
     
     // Auto validación en tiempo real (evitar escribir ciertas cosas)
-    let newValue = value;
-    const numbersOnlyRegex = /^[0-9]+$/;
-    if (name === 'dni' || name === 'telefono' || name === 'telefono_apoderado') {
-      if (value && !numbersOnlyRegex.test(value)) {
-        return; // No actualizar el estado si no son numeros
-      }
-    }
+    const newValue = name === 'dni' ? onlyDniDigits(value) : value;
+    setPatientSaveError('');
     
     setFormData({
       ...formData,
@@ -1003,6 +1009,8 @@ const EvaluacionClinica = () => {
 
   const handleNext = async () => {
     if (currentStep === 1 && patientMode === 'create') {
+      if (getIsNextDisabled()) return;
+      setPatientSaveError('');
       setIsSubmitting(true);
       try {
         const isEditing = !!formData.id_paciente;
@@ -1041,13 +1049,13 @@ const EvaluacionClinica = () => {
           }, 4000);
         } else {
           setIsSubmitting(false);
-          console.error('Error al registrar paciente');
-          alert('Hubo un error al registrar el paciente, compruebe los datos.');
+          const responseError = await response.json().catch(() => ({}));
+          setPatientSaveError(responseError.error || 'No se pudo guardar el paciente, compruebe los datos.');
         }
       } catch (error) {
         setIsSubmitting(false);
         console.error('Error in request:', error);
-        alert('Hubo un error de red al intentar registrar el paciente.');
+          setPatientSaveError('Hubo un error de red al intentar registrar el paciente.');
       }
     } else if (currentStep === 2) {
       setIsSubmitting(true);
@@ -1195,7 +1203,7 @@ const EvaluacionClinica = () => {
     if (currentStep === 1) {
       if (patientMode === 'search') return !selectedPatient;
       if (patientMode === 'create') {
-        const basicData = formData.nombres && formData.apellidos && formData.dni.length === 8 && formData.fecha_nacimiento && formData.genero;
+        const basicData = formData.nombres?.trim() && formData.apellidos?.trim() && isValidDni(formData.dni) && isValidDate(formData.fecha_nacimiento) && formData.genero && !phoneError(formData.telefono);
         if (!basicData) return true;
 
         // Comprobar errores
@@ -1206,7 +1214,7 @@ const EvaluacionClinica = () => {
         }
         const isMinor = calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18;
         if (isMinor) {
-           return !(formData.apoderado && formData.telefono_apoderado && formData.telefono_apoderado.length === 9);
+           return !(formData.apoderado?.trim() && !phoneError(formData.telefono_apoderado, 'El teléfono del apoderado'));
         }
         return false;
       }
@@ -1228,18 +1236,6 @@ const EvaluacionClinica = () => {
     }
     
     return false;
-  };
-
-  const calculateAge = (dobString) => {
-    if (!dobString) return null;
-    const birthDate = new Date(dobString);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-    }
-    return age;
   };
 
   useEffect(() => {
@@ -1618,7 +1614,7 @@ const EvaluacionClinica = () => {
                               </div>
                               <input 
                                 type="text" 
-                                placeholder="Ingrese DNI o Nombre del paciente..." 
+                                 placeholder="Ingrese DNI o Nombre del paciente (Opcional)..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-all text-sm font-medium shadow-sm text-gray-700"
@@ -1828,6 +1824,7 @@ const EvaluacionClinica = () => {
                     {/* Mode: Create Patient */}
                     {patientMode === 'create' && (
                       <div className="animate-fade-in px-4 md:px-12 lg:px-16">
+                        {patientSaveError && <p role="alert" className="mb-5 rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700">{patientSaveError}</p>}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
                           
                           {/* Nombres */}
@@ -1857,7 +1854,7 @@ const EvaluacionClinica = () => {
                             <div>
                               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><CreditCard className="w-3.5 h-3.5 mr-1" /> DNI <span className="text-red-500 ml-1">*</span></label>
                               <input 
-                                type="text" name="dni" maxLength="8" value={formData.dni} onChange={handleInputChange}
+                                type="text" name="dni" inputMode="numeric" maxLength="8" value={formData.dni} onChange={handleInputChange}
                                 placeholder="8 dígitos"
                                 className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.dni ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                               />
@@ -1867,7 +1864,7 @@ const EvaluacionClinica = () => {
                               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Calendar className="w-3.5 h-3.5 mr-1" /> Nacimiento <span className="text-red-500 ml-1">*</span></label>
                               <input 
                                 type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleInputChange}
-                                max={new Date().toISOString().split("T")[0]}
+                                min="1900-01-01" max={todayLocal()}
                                 className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.fecha_nacimiento ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-600`}
                               />
                               {formErrors.fecha_nacimiento && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.fecha_nacimiento}</p>}
@@ -1887,6 +1884,7 @@ const EvaluacionClinica = () => {
                                 <option value="F">Femenino</option>
                                 <option value="Otro">Otro</option>
                               </select>
+                              {formErrors.genero && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.genero}</p>}
                             </div>
                             <div>
                               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Calendar className="w-3.5 h-3.5 mr-1" /> Edad</label>
@@ -1899,16 +1897,15 @@ const EvaluacionClinica = () => {
 
                           {/* Teléfono & Dirección */}
                           <div>
-                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Teléfono</label>
-                            <input 
-                              type="tel" name="telefono" maxLength="9" value={formData.telefono} onChange={handleInputChange}
-                              placeholder="Ej: 999888777"
+                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Teléfono <span className="text-red-500 ml-1">*</span></label>
+                            <PhoneInput
+                              name="telefono" value={formData.telefono} onChange={handleInputChange}
                               className={`w-full px-4 py-3 bg-gray-50 border ${formErrors.telefono ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-xl focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700`}
                             />
                             {formErrors.telefono && <p className="text-red-500 text-xs font-medium mt-1.5 ml-1">{formErrors.telefono}</p>}
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><MapPin className="w-3.5 h-3.5 mr-1" /> Dirección</label>
+                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><MapPin className="w-3.5 h-3.5 mr-1" /> Dirección (Opcional)</label>
                             <input 
                               type="text" name="direccion" value={formData.direccion} onChange={handleInputChange}
                               placeholder="Dirección del paciente"
@@ -1918,7 +1915,7 @@ const EvaluacionClinica = () => {
 
                           {/* Correo */}
                           <div className="md:col-span-2">
-                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Mail className="w-3.5 h-3.5 mr-1" /> Correo</label>
+                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Mail className="w-3.5 h-3.5 mr-1" /> Correo (Opcional)</label>
                             <input 
                               type="email" name="correo" value={formData.correo} onChange={handleInputChange}
                               placeholder="correo@ejemplo.com"
@@ -1929,7 +1926,7 @@ const EvaluacionClinica = () => {
 
                           {/* Observaciones */}
                           <div className="md:col-span-2">
-                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Observaciones Generales</label>
+                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Observaciones Generales (Opcional)</label>
                             <textarea 
                               name="observaciones_generales" value={formData.observaciones_generales} onChange={handleInputChange}
                               placeholder="Alergias, condiciones previas..."
@@ -1961,9 +1958,8 @@ const EvaluacionClinica = () => {
                               </div>
                               <div>
                                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><Phone className="w-3.5 h-3.5 mr-1" /> Tel. Apoderado  <span className="text-red-500">*</span></label>
-                                <input 
-                                  type="tel" name="telefono_apoderado" maxLength="9" value={formData.telefono_apoderado} onChange={handleInputChange}
-                                  placeholder="Ej: 999888777"
+                                <PhoneInput
+                                  name="telefono_apoderado" value={formData.telefono_apoderado} onChange={handleInputChange}
                                   disabled={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18)}
                                   tabIndex={!(calculateAge(formData.fecha_nacimiento) !== null && calculateAge(formData.fecha_nacimiento) < 18) ? -1 : 0}
                                   className={`w-full px-4 py-2.5 bg-white border ${formErrors.telefono_apoderado ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-gray-200 focus:border-dentBlue-900 focus:ring-dentBlue-900/20'} rounded-lg focus:outline-none focus:ring-2 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50`}
@@ -2030,7 +2026,7 @@ const EvaluacionClinica = () => {
                     <div>
                       <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center justify-between">
                         <span>Observaciones Clínicas Previas</span>
-                        <span className="text-gray-400 font-medium text-[10px] bg-gray-100 px-2 py-0.5 rounded-md">OPCIONAL</span>
+                         <span className="text-gray-400 font-medium text-[10px] bg-gray-100 px-2 py-0.5 rounded-md">(Opcional)</span>
                       </label>
                       <textarea
                         name="observaciones"
@@ -2558,7 +2554,7 @@ const EvaluacionClinica = () => {
 
                           <div className="space-y-2 mb-6">
                             <label className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                              Diagnóstico Final
+                              Diagnóstico Final (Opcional)
                             </label>
                             <textarea
                               value={finalDiagnosis}
