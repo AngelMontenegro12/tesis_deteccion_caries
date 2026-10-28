@@ -10,8 +10,10 @@ import Usuarios from './pages/Usuarios';
 import Solicitudes from './pages/Solicitudes';
 import Pendientes from './pages/Pendientes';
 import Reportes from './pages/Reportes';
-import EnConstruccion from './pages/EnConstruccion';
 import Perfil from './pages/Perfil';
+import Preferencias from './pages/Preferencias';
+import Ayuda from './pages/Ayuda';
+import MensajesSoporte from './pages/MensajesSoporte';
 
 function App() {
   return (
@@ -30,8 +32,9 @@ function App() {
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/solicitudes" element={<Solicitudes />} />
           <Route path="/perfil" element={<Perfil />} />
-          <Route path="/configuracion" element={<EnConstruccion title="Configuración" description="La configuración general del sistema todavía está en desarrollo." />} />
-          <Route path="/ayuda" element={<EnConstruccion title="Soporte / Ayuda" description="El centro de soporte y ayuda estará disponible pronto." />} />
+          <Route path="/configuracion" element={<Preferencias />} />
+          <Route path="/ayuda" element={<Ayuda />} />
+          <Route path="/soporte-mensajes" element={<MensajesSoporte />} />
           <Route path="/pendientes" element={<Pendientes />} />
           <Route path="/reportes" element={<Reportes />} />
         </Route>

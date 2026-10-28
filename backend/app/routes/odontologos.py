@@ -7,6 +7,8 @@ import os
 from werkzeug.utils import secure_filename
 odontologos_bp = Blueprint('odontologos', __name__, url_prefix='/api/odontologos')
 
+ROLES_VALIDOS = {'odontologo', 'admin', 'superadmin'}
+
 
 def _normalizar_booleano(valor, default=True):
     if valor is None:
@@ -152,17 +154,31 @@ def actualizar_odontologo(id_odontologo):
     
     if 'rol' in data:
         nuevo_rol = (data.get('rol') or 'odontologo').strip()
+        if nuevo_rol not in ROLES_VALIDOS:
+            return jsonify({'status': 'error', 'message': 'El rol indicado no es válido'}), 400
+
         id_solicitante = data.get('id_solicitante')
-        
+        solicitante = None
+        if str(id_solicitante or '').isdigit():
+            solicitante = Odontologo.query.get(int(id_solicitante))
+
+        es_admin_principal = bool(solicitante and (solicitante.id_odontologo == 1 or solicitante.rol == 'superadmin'))
+
+        if nuevo_rol == 'superadmin' and not es_admin_principal:
+            return jsonify({'status': 'error', 'message': 'Solo el administrador principal puede asignar el rol de superadministrador'}), 403
+
         # Si un admin normal intenta cambiar el rol de alguien (ascender o descender), se crea una solicitud
-        if nuevo_rol != odontologo.rol and id_solicitante and int(id_solicitante) != 1:
+        if nuevo_rol != odontologo.rol and not es_admin_principal:
+            if not solicitante:
+                return jsonify({'status': 'error', 'message': 'No se pudo identificar al usuario que realiza el cambio'}), 403
+
             from app.models import SolicitudRol
             # Verificar si ya hay una solicitud pendiente
             solicitud_existente = SolicitudRol.query.filter_by(
                 id_odontologo_objetivo=id_odontologo,
                 estado='pendiente'
             ).first()
-            
+
             if solicitud_existente:
                 return jsonify({
                     'status': 'warning',
@@ -170,7 +186,7 @@ def actualizar_odontologo(id_odontologo):
                 }), 200
 
             nueva_solicitud = SolicitudRol(
-                id_solicitante=int(id_solicitante),
+                id_solicitante=solicitante.id_odontologo,
                 id_odontologo_objetivo=id_odontologo,
                 estado='pendiente'
             )

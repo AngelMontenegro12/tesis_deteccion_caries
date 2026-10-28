@@ -1,8 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
+from io import BytesIO
 import os
+import re
 import time
-from app.models import EvaluacionDiagnostica, Radiografia, DiagnosticoOdontologo, db
+import unicodedata
+from app.models import EvaluacionDiagnostica, Radiografia, DiagnosticoOdontologo, Paciente, Odontologo, ResultadosDeteccion, DeteccionesCaries, db
 from app.services.ia_service import procesar_radiografia_con_ia
 from datetime import datetime
 from app.utils.validation import valid_date
@@ -170,9 +173,17 @@ def actualizar_evaluacion(id_evaluacion):
 @evaluaciones_bp.route('/<int:id_evaluacion>/completar', methods=['PUT', 'POST'])
 def completar_evaluacion(id_evaluacion):
     try:
-        evaluacion = EvaluacionDiagnostica.query.get(id_evaluacion)
+        evaluacion = db.session.get(EvaluacionDiagnostica, id_evaluacion)
         if not evaluacion:
             return jsonify({"error": "Evaluación no encontrada"}), 404
+
+        # Una repetición de la solicitud no debe crear diagnósticos duplicados.
+        if evaluacion.estado == 'completada':
+            existente = DiagnosticoOdontologo.query.filter_by(id_evaluacion=id_evaluacion).order_by(
+                DiagnosticoOdontologo.fecha_diagnostico.desc(), DiagnosticoOdontologo.id_diagnostico.desc()
+            ).first()
+            if existente:
+                return jsonify({'message': 'La evaluación ya estaba finalizada', 'diagnostico': existente.to_dict()}), 200
         
         data = request.json or {}
         diagnostico_texto = data.get('finalDiagnosis', '').strip()
@@ -209,6 +220,62 @@ def completar_evaluacion(id_evaluacion):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@evaluaciones_bp.route('/<int:id_evaluacion>/pdf', methods=['GET'])
+def descargar_diagnostico_pdf(id_evaluacion):
+    evaluacion = db.session.get(EvaluacionDiagnostica, id_evaluacion)
+    if not evaluacion:
+        return jsonify({'error': 'Evaluación no encontrada'}), 404
+    if evaluacion.estado != 'completada':
+        return jsonify({'error': 'Finaliza el diagnóstico antes de descargar su PDF'}), 409
+
+    diagnostico = DiagnosticoOdontologo.query.filter_by(id_evaluacion=id_evaluacion).order_by(
+        DiagnosticoOdontologo.fecha_diagnostico.desc(), DiagnosticoOdontologo.id_diagnostico.desc()
+    ).first()
+    if not diagnostico:
+        return jsonify({'error': 'No hay un diagnóstico final guardado para esta evaluación'}), 404
+
+    paciente = db.session.get(Paciente, evaluacion.id_paciente)
+    if not paciente:
+        return jsonify({'error': 'Paciente no encontrado'}), 404
+
+    odontologo = db.session.get(Odontologo, diagnostico.id_odontologo)
+    radiografias = Radiografia.query.filter_by(id_evaluacion=id_evaluacion).order_by(Radiografia.id_radiografia).all()
+    imagenes = []
+    if radiografias:
+        resultados = ResultadosDeteccion.query.filter(
+            ResultadosDeteccion.id_radiografia.in_([r.id_radiografia for r in radiografias])
+        ).order_by(ResultadosDeteccion.id_resultado.desc()).all()
+        ultimo_resultado = {}
+        for resultado in resultados:
+            ultimo_resultado.setdefault(resultado.id_radiografia, resultado.id_resultado)
+        hallazgos = {}
+        if ultimo_resultado:
+            for hallazgo in DeteccionesCaries.query.filter(
+                DeteccionesCaries.id_resultado.in_(list(ultimo_resultado.values()))
+            ).order_by(DeteccionesCaries.id_deteccion).all():
+                hallazgos.setdefault(hallazgo.id_resultado, []).append(hallazgo)
+        imagenes = [(r, hallazgos.get(ultimo_resultado.get(r.id_radiografia), [])) for r in radiografias]
+
+    try:
+        from app.services.diagnostico_pdf import generar_pdf_diagnostico
+        pdf = generar_pdf_diagnostico(evaluacion, paciente, odontologo, diagnostico, imagenes)
+    except ModuleNotFoundError as error:
+        current_app.logger.exception('Dependencia ausente al generar PDF de evaluación %s', id_evaluacion)
+        if error.name == 'pymupdf':
+            return jsonify({'error': 'La generación del PDF no está disponible: falta instalar PyMuPDF en el Python que ejecuta el backend'}), 503
+        return jsonify({'error': 'No se pudo generar el PDF de este diagnóstico'}), 500
+    except Exception:
+        current_app.logger.exception('Error generando PDF de evaluación %s', id_evaluacion)
+        return jsonify({'error': 'No se pudo generar el PDF de este diagnóstico'}), 500
+
+    nombre_completo = f'{paciente.nombres or ""}{paciente.apellidos or ""}'
+    nombre_archivo = re.sub(r'[^A-Za-z0-9]', '', unicodedata.normalize('NFKD', nombre_completo)) or 'Paciente'
+    return send_file(
+        BytesIO(pdf), mimetype='application/pdf', as_attachment=True,
+        download_name=f'diagnostico_{nombre_archivo}.pdf'
+    )
 
 @evaluaciones_bp.route('/pendientes/paciente/<int:id_paciente>', methods=['GET'])
 def obtener_evaluacion_pendiente(id_paciente):

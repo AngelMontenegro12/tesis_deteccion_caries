@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import BoundingBoxViewer from '../components/BoundingBoxViewer';
 import api from '../services/api';
+import { downloadDiagnosticoPdf } from '../utils/downloadDiagnosticoPdf';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 import dienteImg from '../assets/diente.png';
 // This file will render the details of an evaluation
@@ -18,6 +19,8 @@ const EvaluacionDetalle = () => {
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [error, setError] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState('');
   const [selectedHallazgoId, setSelectedHallazgoId] = useState(null);
   const [showBoxes, setShowBoxes] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
@@ -29,6 +32,19 @@ const EvaluacionDetalle = () => {
   const radiografias = Array.isArray(safeData.radiografias) ? safeData.radiografias : [];
   const detecciones_caries = Array.isArray(safeData.detecciones_caries) ? safeData.detecciones_caries : [];
   const diagnostico = safeData.diagnostico || null;
+
+  const handleDownloadPdf = async () => {
+    if (downloadingPdf || evaluacion.estado !== 'completada' || !diagnostico) return;
+    setPdfError('');
+    setDownloadingPdf(true);
+    try {
+      await downloadDiagnosticoPdf(id);
+    } catch (downloadError) {
+      setPdfError(downloadError.message || 'No se pudo descargar el PDF.');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const isMinor = !!paciente && Number(paciente.edad) < 18;
   const initials = paciente.nombres && paciente.apellidos
@@ -425,18 +441,27 @@ const EvaluacionDetalle = () => {
           </div>
 
           {/* Barra de Acciones Flotante (Reubicada) */}
-          <div className="flex flex-col sm:flex-row gap-4 mt-2">
-            <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-800 text-white rounded-2xl shadow-sm hover:bg-slate-900 hover:-translate-y-0.5 transition-all font-bold">
-              <Download className="w-5 h-5" />
-              Descargar Expediente
-            </button>
-            <button 
-              onClick={() => navigate('/pacientes')} 
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-gray-700 border border-gray-200 rounded-2xl shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-all font-bold"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Volver a Pacientes
-            </button>
+          <div className="mt-2">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf || evaluacion.estado !== 'completada' || !diagnostico}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-800 text-white rounded-2xl shadow-sm hover:bg-slate-900 hover:-translate-y-0.5 transition-all font-bold disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Download className="w-5 h-5" />
+                {downloadingPdf ? 'Preparando PDF...' : 'Descargar Expediente'}
+              </button>
+              <button
+                onClick={() => navigate('/pacientes')}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-gray-700 border border-gray-200 rounded-2xl shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-all font-bold"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                Volver a Pacientes
+              </button>
+            </div>
+            {pdfError && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{pdfError}</p>}
+            {(evaluacion.estado !== 'completada' || !diagnostico) && <p className="mt-2 text-xs text-gray-500">La descarga estará disponible al finalizar este diagnóstico.</p>}
           </div>
         </div>
 

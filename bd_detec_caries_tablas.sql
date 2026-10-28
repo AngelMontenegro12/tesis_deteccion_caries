@@ -120,6 +120,8 @@ CREATE TABLE IF NOT EXISTS `odontologos` (
   `telefono` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `foto_perfil` varchar(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Ruta o URL de la foto de perfil',
   `activo` tinyint(1) NOT NULL DEFAULT '1' COMMENT '1=activo, 0=inactivo',
+  `rol` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'odontologo',
+  `permisos` json DEFAULT NULL,
   `token_recuperacion` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Token para restablecer contraseña',
   `token_expiracion` datetime DEFAULT NULL,
   `creado_en` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -240,6 +242,23 @@ CREATE TABLE IF NOT EXISTS `tipo_radiografia` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Catálogo de tipos de radiografías dentales';
 
 -- La exportación de datos fue deseleccionada.
+
+-- Volcando estructura para tabla bd_detec_caries.mensajes_soporte
+CREATE TABLE IF NOT EXISTS `mensajes_soporte` (
+  `id_mensaje` int unsigned NOT NULL AUTO_INCREMENT,
+  `id_odontologo` int unsigned NOT NULL,
+  `tipo` enum('error','consulta','sugerencia') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'consulta',
+  `asunto` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `pagina_origen` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `respuesta` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `respondido_en` datetime DEFAULT NULL,
+  `creado_en` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `actualizado_en` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_mensaje`),
+  KEY `id_odontologo` (`id_odontologo`),
+  CONSTRAINT `mensajes_soporte_ibfk_1` FOREIGN KEY (`id_odontologo`) REFERENCES `odontologos` (`id_odontologo`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mensajes de soporte enviados por los usuarios';
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

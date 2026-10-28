@@ -16,7 +16,7 @@ const Solicitudes = () => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   }, []);
-  const isSuperadmin = loggedUser?.id_odontologo === 1;
+  const isSuperadmin = loggedUser?.id_odontologo === 1 || loggedUser?.rol === 'superadmin';
 
   const fetchSolicitudes = async () => {
     try {
@@ -66,7 +66,7 @@ const Solicitudes = () => {
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Restringido</h2>
         <p className="text-gray-500 text-center max-w-md">
-          Esta área es exclusiva para el Administrador Principal.
+          Esta área es exclusiva para el Administrador Principal o un Superadministrador.
         </p>
       </div>
     );

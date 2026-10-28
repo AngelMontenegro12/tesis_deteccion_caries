@@ -174,6 +174,20 @@ El backend obtiene la conexión desde `DATABASE_URL`. La variable
 Cuando los servicios estén en servidores distintos, sustituye `127.0.0.1` por
 el nombre DNS o la IP privada del servidor de IA.
 
+### PDF de diagnóstico
+
+El endpoint `GET /api/evaluaciones/<id>/pdf` descarga un expediente únicamente
+si la evaluación tiene un diagnóstico final guardado. Utiliza
+`backend/app/templates/reportes/diagnostico_referencia.pdf` como fondo para
+todas las páginas y agrega los datos clínicos, radiografías y hallazgos.
+`diagnostico.docx` es el archivo editable de la clínica: si cambias su diseño,
+vuelve a exportarlo con el nombre `diagnostico_referencia.pdf` en la misma
+carpeta. Ambos archivos deben estar disponibles en el servidor. La generación
+usa PyMuPDF, incluido en `backend/requirements.txt`.
+Instala las dependencias con el mismo intérprete que inicia Flask; si usas
+`.venv`, ejecuta `.venv\Scripts\python.exe -m pip install -r backend\requirements.txt`
+desde la raíz del proyecto antes de iniciar el backend.
+
 ## 6. Configuración del microservicio de IA
 
 El archivo `api_ia_sonrie/run.py` inicia FastAPI con Uvicorn. Crea o actualiza

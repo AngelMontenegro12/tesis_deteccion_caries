@@ -15,11 +15,14 @@ import {
   ChevronDown,
   UserCog,
   Shield,
-  User
+  User,
+  SlidersHorizontal,
+  MessageSquare
 } from 'lucide-react';
+import { getPreferences } from '../utils/preferences';
 
 const Layout = () => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(() => getPreferences().sidebarOpen);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -27,6 +30,7 @@ const Layout = () => {
   const location = useLocation();
 
   const [pendingSolicitudes, setPendingSolicitudes] = useState(0);
+  const [pendingSupport, setPendingSupport] = useState(0);
 
   useEffect(() => {
     // Verificamos si existe usuario guardado en localStorage
@@ -35,19 +39,41 @@ const Layout = () => {
       // Si no hay usuario logueado, redirigir al login
       navigate('/login');
     } else {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-      
-      if (parsedUser.id_odontologo === 1) {
-        api.get('/solicitudes').then(res => {
-          if (res.data && res.data.data) {
-            const pending = res.data.data.filter(s => s.estado === 'pendiente').length;
-            setPendingSolicitudes(pending);
-          }
-        }).catch(() => {});
-      }
+      setUser(JSON.parse(savedUser));
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const handlePreferencesChanged = (event) => {
+      if (typeof event.detail?.sidebarOpen === 'boolean') {
+        setIsOpen(event.detail.sidebarOpen);
+      }
+    };
+
+    window.addEventListener('preferences:changed', handlePreferencesChanged);
+    return () => window.removeEventListener('preferences:changed', handlePreferencesChanged);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.id_odontologo === 1 || user.rol === 'superadmin') {
+      api.get('/solicitudes').then(res => {
+        if (res.data && res.data.data) {
+          const pending = res.data.data.filter(s => s.estado === 'pendiente').length;
+          setPendingSolicitudes(pending);
+        }
+      }).catch(() => {});
+    }
+
+    if (user.rol === 'superadmin') {
+      api.get('/soporte/mensajes/sin-responder/count').then(res => {
+        if (res.data && typeof res.data.total === 'number') {
+          setPendingSupport(res.data.total);
+        }
+      }).catch(() => {});
+    }
+  }, [user, location.pathname]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -68,7 +94,8 @@ const Layout = () => {
     }, 1500);
   };
 
-  const isAdmin = user?.rol === 'admin' || user?.id_odontologo === 1;
+  const isAdmin = user?.rol === 'admin' || user?.rol === 'superadmin' || user?.id_odontologo === 1;
+  const canManageSolicitudes = user?.id_odontologo === 1 || user?.rol === 'superadmin';
 
   const baseMainMenuItems = [
     { icon: Home, label: 'Inicio', path: '/dashboard' },
@@ -92,9 +119,11 @@ const Layout = () => {
       isOpen: isConfigOpen,
       toggleOpen: () => setIsConfigOpen(!isConfigOpen),
       subItems: [
+        { icon: SlidersHorizontal, label: 'Preferencias', path: '/configuracion' },
         { icon: User, label: 'Mi Perfil', path: '/perfil' },
         ...(isAdmin ? [{ icon: Users, label: 'Odontólogos', path: '/usuarios' }] : []),
-        ...(user?.id_odontologo === 1 ? [{ icon: UserCog, label: 'Solicitudes', path: '/solicitudes', badge: pendingSolicitudes > 0 ? pendingSolicitudes : null }] : [])
+        ...(canManageSolicitudes ? [{ icon: UserCog, label: 'Solicitudes', path: '/solicitudes', badge: pendingSolicitudes > 0 ? pendingSolicitudes : null }] : []),
+        ...(user?.rol === 'superadmin' ? [{ icon: MessageSquare, label: 'Msg soporte', path: '/soporte-mensajes', badge: pendingSupport > 0 ? pendingSupport : null }] : [])
       ]
     },
     { icon: HelpCircle, label: 'Soporte / Ayuda', path: '/ayuda' },
@@ -112,6 +141,10 @@ const Layout = () => {
 
   // Función para verificar si la ruta actual está permitida
   const isRouteAllowed = () => {
+    if (location.pathname.startsWith('/soporte-mensajes')) {
+      return user?.rol === 'superadmin';
+    }
+
     if (isAdmin) return true;
 
     // Rutas protegidas por el array de permisos
@@ -209,7 +242,7 @@ const Layout = () => {
                           item.toggleOpen();
                         }}
                         title={!isOpen ? item.label : ""}
-                        className={`w-full group flex items-center justify-between ${isOpen ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900`}
+                        className={`w-full group flex items-center ${isOpen ? 'justify-between px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900`}
                       >
                         <div className="flex items-center">
                           <item.icon className={`${isOpen ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors text-gray-400 group-hover:text-dentBlue-900`} />

@@ -62,8 +62,8 @@ const Usuarios = () => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   }, []);
-  const isLoggedAdmin = loggedUser?.rol === 'admin';
-  const isSuperadmin = loggedUser?.id_odontologo === 1;
+  const isLoggedAdmin = loggedUser?.rol === 'admin' || loggedUser?.rol === 'superadmin';
+  const isSuperadmin = loggedUser?.id_odontologo === 1 || loggedUser?.rol === 'superadmin';
   const hasAccess = isLoggedAdmin || isSuperadmin;
 
   if (!hasAccess) {
@@ -527,11 +527,13 @@ const Usuarios = () => {
                         <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
                           odontologo.id_odontologo === 1
                             ? 'bg-purple-100 text-purple-800 border-purple-300 shadow-sm ring-1 ring-purple-500/20'
+                            : odontologo.rol === 'superadmin'
+                            ? 'bg-indigo-100 text-indigo-800 border-indigo-300 shadow-sm ring-1 ring-indigo-500/20'
                             : odontologo.rol === 'admin'
                             ? 'bg-purple-50 text-purple-700 border-purple-100'
                             : 'bg-slate-50 text-slate-700 border-slate-200'
                         }`}>
-                          {odontologo.id_odontologo === 1 ? 'Admin Principal' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
+                          {odontologo.id_odontologo === 1 ? 'Admin Principal' : odontologo.rol === 'superadmin' ? 'Superadministrador' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
                         </span>
                       </td>
                       <td className="px-5 py-4 align-top">
@@ -793,6 +795,26 @@ const Usuarios = () => {
                       className="hidden"
                       checked={permisosRol === 'admin'}
                       onChange={() => setPermisosRol('admin')}
+                    />
+                  </label>
+                  <label className={`flex flex-col p-4 rounded-xl border transition-all ${
+                    permisosRol === 'superadmin'
+                      ? 'border-indigo-500 bg-indigo-50/50 shadow-sm ring-1 ring-indigo-500'
+                      : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-gray-50'
+                  } ${!isSuperadmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Shield className={`w-4 h-4 ${permisosRol === 'superadmin' ? 'text-indigo-700' : 'text-gray-400'}`} />
+                      <span className={`font-bold ${permisosRol === 'superadmin' ? 'text-indigo-900' : 'text-gray-700'}`}>Superadministrador</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Acceso total y bandeja de soporte.</p>
+                    <input
+                      type="radio"
+                      name="rol"
+                      value="superadmin"
+                      className="hidden"
+                      disabled={!isSuperadmin}
+                      checked={permisosRol === 'superadmin'}
+                      onChange={() => isSuperadmin && setPermisosRol('superadmin')}
                     />
                   </label>
                 </div>

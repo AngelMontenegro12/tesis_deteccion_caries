@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import BoundingBoxViewer from '../components/BoundingBoxViewer';
 import PhoneInput from '../components/PhoneInput';
+import { downloadDiagnosticoPdf } from '../utils/downloadDiagnosticoPdf';
 import { isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
 import dienteImg from '../assets/diente.png';
@@ -136,8 +137,21 @@ const EvaluacionClinica = () => {
   const [modalInvalidImage, setModalInvalidImage] = useState({ isOpen: false, message: '' });
   const [finalDiagnosis, setFinalDiagnosis] = useState(() => getInitialState('eval_finalDiagnosis', ''));
   const [isFinishing, setIsFinishing] = useState(false);
+  const [isSavingFinish, setIsSavingFinish] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [finishDownloaded, setFinishDownloaded] = useState(false);
+  const [finishMessage, setFinishMessage] = useState('');
+  const [finishError, setFinishError] = useState('');
   const [finishProgress, setFinishProgress] = useState(0);
+  const finishingRef = useRef(false);
+  const finishTimerRef = useRef(null);
+  const finishRedirectRef = useRef(null);
   const [detalleResultados, setDetalleResultados] = useState({ radiografias: [], detecciones: [] });
+
+  useEffect(() => () => {
+    clearInterval(finishTimerRef.current);
+    clearTimeout(finishRedirectRef.current);
+  }, []);
 
   const isUsablePreviewSrc = (src) => Boolean(src && !src.startsWith('blob:'));
   const createEmptyRadiografia = () => ({ id: Date.now(), file: null, preview: null, previewPersisted: null, tipo: '1' });
@@ -303,7 +317,68 @@ const EvaluacionClinica = () => {
     setAnalysisTime(0);
     setActiveResultIndex(0);
     setFinalDiagnosis('');
+    setIsCompleted(false);
+    setFinishError('');
+    finishingRef.current = false;
     setModalRestart(false);
+  };
+
+  const handleFinishDiagnosis = async (downloadPdf = false) => {
+    if (finishingRef.current || !evaluacionId) return;
+    finishingRef.current = true;
+    setFinishError('');
+    setIsSavingFinish(true);
+    let saved = isCompleted;
+
+    try {
+      if (!saved) {
+        const response = await fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/completar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            finalDiagnosis,
+            plan_tratamiento: 'Plan de tratamiento estándar derivado de la evaluación',
+            confirma_ia: true,
+            observaciones: contextoClinico.observaciones || ''
+          })
+        });
+        if (!response.ok) {
+          const details = await response.json().catch(() => ({}));
+          throw new Error(details.error || 'No se pudo finalizar el diagnóstico.');
+        }
+        saved = true;
+        setIsCompleted(true);
+        clearSessionStorageState(true);
+      }
+
+      if (downloadPdf) await downloadDiagnosticoPdf(evaluacionId);
+
+      setFinishDownloaded(downloadPdf);
+      setFinishMessage(downloadPdf
+        ? 'Tu diagnóstico se guardó y el PDF comenzó a descargarse. También estará disponible en Historial de Diagnósticos.'
+        : 'Tu diagnóstico se guardó. Puedes descargar el PDF desde Historial de Diagnósticos, al abrir su expediente.');
+      setFinishProgress(0);
+      setIsFinishing(true);
+      let progress = 0;
+      finishTimerRef.current = setInterval(() => {
+        progress += 1;
+        setFinishProgress(progress);
+        if (progress >= 100) {
+          clearInterval(finishTimerRef.current);
+          finishRedirectRef.current = setTimeout(() => {
+            setIsFinishing(false);
+            navigate('/dashboard');
+          }, 300);
+        }
+      }, downloadPdf ? 25 : 45);
+    } catch (error) {
+      setFinishError(saved
+        ? `El diagnóstico quedó guardado, pero el PDF no se descargó: ${error.message}. Puedes intentarlo de nuevo o descargarlo desde Historial de Diagnósticos.`
+        : error.message || 'No se pudo finalizar el diagnóstico.');
+      finishingRef.current = false;
+    } finally {
+      setIsSavingFinish(false);
+    }
   };
 
   const handleContextoChange = (e) => {
@@ -2559,6 +2634,7 @@ const EvaluacionClinica = () => {
                             <textarea
                               value={finalDiagnosis}
                               onChange={(e) => setFinalDiagnosis(e.target.value)}
+                              readOnly={isCompleted}
                               placeholder="Ej. Paciente presenta caries en pieza 46. Se requiere restauración con resina compuesta..."
                               className="w-full min-h-[120px] p-4 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-dentBlue-900/20 focus:border-dentBlue-900 transition-all resize-y shadow-sm"
                             ></textarea>
@@ -2569,55 +2645,24 @@ const EvaluacionClinica = () => {
 
                       {/* Botones de Finalización en el Panel */}
                       <div className="p-4 border-t border-gray-200 bg-white shrink-0 flex flex-col gap-3">
+                        {finishError && (
+                          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                            {finishError}
+                            {isCompleted && (
+                              <button type="button" onClick={() => navigate('/historial')} className="mt-2 block font-bold text-dentBlue-900 underline underline-offset-2">
+                                Ir al historial
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <button
-                          onClick={async () => { 
-                            try {
-                              if (evaluacionId) {
-                                // Llamamos al endpoint para completar la evaluación
-                                await fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/completar`, {
-                                  method: 'PUT',
-                                  headers: {
-                                    'Content-Type': 'application/json'
-                                  },
-                                  body: JSON.stringify({ 
-                                    finalDiagnosis,
-                                    plan_tratamiento: 'Plan de tratamiento estandar derivado de la evaluación',
-                                    confirma_ia: true,
-                                    observaciones: contextoClinico.observaciones || ''
-                                  })
-                                });
-                              }
-                              
-                              console.log("Guardando en BD:", { finalDiagnosis, evaluacionId });
-                                clearSessionStorageState(true);
-                              // Mostrar Modal de Finalización con barra de progreso
-                              setIsFinishing(true);
-                              
-                              let progress = 0;
-                              const timer = setInterval(() => {
-                                progress += 1; // 1% cada 20ms = 2s exactos
-                                setFinishProgress(progress);
-                                if (progress >= 100) {
-                                  clearInterval(timer);
-                                  setTimeout(() => {
-                                    setIsFinishing(false);
-                                    navigate('/dashboard');
-                                  }, 300); // Cierra rápido después de completar (300ms)
-                                }
-                              }, 20); // 20ms * 100 iteraciones = 2 segundos exactos
-
-                          } catch (error) {
-                            console.error('Error al finalizar diagnóstico:', error);
-                            alert('Ocurrió un error al finalizar el diagnóstico.');
-                            setIsFinishing(false);
-                          }
-                        }}
-                        disabled={isFinishing}
-                        className={`w-full flex items-center justify-center px-6 py-3 rounded-xl font-bold text-white transition-all ${
-                          isFinishing ? 'bg-slate-400 cursor-not-allowed' : 'bg-dentBlue-900 hover:bg-dentBlue-800 shadow-md hover:shadow-lg'
-                        }`}
-                      >
-                        {isFinishing ? (
+                          onClick={() => handleFinishDiagnosis(false)}
+                          disabled={isSavingFinish || isFinishing || !evaluacionId}
+                          className={`w-full flex items-center justify-center px-6 py-3 rounded-xl font-bold text-white transition-all ${
+                            (isSavingFinish || isFinishing) ? 'bg-slate-400 cursor-not-allowed' : 'bg-dentBlue-900 hover:bg-dentBlue-800 shadow-md hover:shadow-lg'
+                          }`}
+                        >
+                          {isSavingFinish || isFinishing ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                             Finalizando diagnóstico...
@@ -2630,8 +2675,10 @@ const EvaluacionClinica = () => {
                         )}
                       </button>
                       <button
-                          onClick={() => { alert('Prueba xd'); }}
-                          className="w-full flex items-center justify-center px-6 py-3 rounded-xl font-bold text-dentBlue-900 bg-white border-2 border-dentBlue-900 hover:bg-dentBlue-50 transition-all"
+                          type="button"
+                          onClick={() => handleFinishDiagnosis(true)}
+                          disabled={isSavingFinish || isFinishing || !evaluacionId}
+                          className="w-full flex items-center justify-center px-6 py-3 rounded-xl font-bold text-dentBlue-900 bg-white border-2 border-dentBlue-900 hover:bg-dentBlue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FileImage className="w-5 h-5 mr-2" />
                           Exportar PDF
@@ -2705,7 +2752,12 @@ const EvaluacionClinica = () => {
       />
 
       {/* Modal de Finalización Sweep/Linear (Componente Reutilizable) */}
-      <ModalFinalizacion isOpen={isFinishing} progress={finishProgress} />
+       <ModalFinalizacion
+         isOpen={isFinishing}
+         progress={finishProgress}
+         title={finishDownloaded ? '¡Informe descargado!' : '¡Diagnóstico guardado!'}
+         message={finishMessage}
+       />
 
       {/* Lightbox / Modal para Previsualizar Imagen Pantalla Completa */}
       {previewModal.isOpen && (

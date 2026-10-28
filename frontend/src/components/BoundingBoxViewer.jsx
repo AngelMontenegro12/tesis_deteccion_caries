@@ -100,16 +100,6 @@ const BoundingBoxViewer = ({
     setPan({ x: 0, y: 0 });
   };
 
-  const handleWheel = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const delta = event.deltaY < 0 ? 0.12 : -0.12;
-    setScale((currentScale) => clampScale(Number((currentScale + delta).toFixed(2))));
-    if (scale <= 1.05 && delta < 0) {
-      setPan({ x: 0, y: 0 });
-    }
-  };
-
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
@@ -266,7 +256,6 @@ const BoundingBoxViewer = ({
       <div
         ref={viewportRef}
         className={`relative w-full h-full min-h-[400px] flex items-center justify-center ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-        onWheelCapture={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={stopDragging}

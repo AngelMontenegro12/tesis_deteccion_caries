@@ -174,3 +174,10 @@
 
 ---
 
+## Evaluación: img_120820265.png
+- **Número de caries detectadas:** 1
+- **Detalles de cada carie:**
+  1. Tipo: Caries Incipiente | Coordenadas (x1, y1, x2, y2): [1729, 788, 1979, 1106]
+
+---
+

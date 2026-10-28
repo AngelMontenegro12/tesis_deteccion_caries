@@ -304,3 +304,38 @@ class Sesion(db.Model):
             'expira_en': str(self.expira_en),
             'creado_en': str(self.creado_en)
         }
+
+
+class MensajeSoporte(db.Model):
+    __tablename__ = 'mensajes_soporte'
+
+    id_mensaje = db.Column(db.Integer, primary_key=True)
+    id_odontologo = db.Column(INTEGER(unsigned=True), db.ForeignKey('odontologos.id_odontologo', ondelete='CASCADE'), nullable=False)
+    tipo = db.Column(db.Enum('error', 'consulta', 'sugerencia'), nullable=False, default='consulta')
+    asunto = db.Column(db.String(150), nullable=False)
+    descripcion = db.Column(db.Text, nullable=False)
+    pagina_origen = db.Column(db.String(255))
+    respuesta = db.Column(db.Text)
+    respondido_en = db.Column(db.DateTime)
+    creado_en = db.Column(db.DateTime, default=db.func.current_timestamp())
+    actualizado_en = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    odontologo = db.relationship('Odontologo', foreign_keys=[id_odontologo])
+
+    def to_dict(self):
+        return {
+            'id_mensaje': self.id_mensaje,
+            'codigo': f'SOP-{self.id_mensaje:06d}',
+            'id_odontologo': self.id_odontologo,
+            'usuario_nombre': f"{self.odontologo.nombres} {self.odontologo.apellidos}" if self.odontologo else None,
+            'usuario_correo': self.odontologo.correo if self.odontologo else None,
+            'tipo': self.tipo,
+            'asunto': self.asunto,
+            'descripcion': self.descripcion,
+            'pagina_origen': self.pagina_origen,
+            'respuesta': self.respuesta,
+            'respondido': self.respuesta is not None,
+            'respondido_en': self.respondido_en.isoformat() if self.respondido_en else None,
+            'creado_en': self.creado_en.isoformat() if self.creado_en else None,
+            'actualizado_en': self.actualizado_en.isoformat() if self.actualizado_en else None
+        }

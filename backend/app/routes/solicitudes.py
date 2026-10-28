@@ -1,10 +1,20 @@
 from flask import Blueprint, jsonify
 from app.models import SolicitudRol, SolicitudPassword, Odontologo, db
+from app.utils.auth import get_authenticated_user
 
 solicitudes_bp = Blueprint('solicitudes', __name__, url_prefix='/api/solicitudes')
 
+
+def _puede_gestionar_solicitudes():
+    usuario = get_authenticated_user()
+    return bool(usuario and (usuario.id_odontologo == 1 or usuario.rol == 'superadmin'))
+
+
 @solicitudes_bp.route('', methods=['GET'])
 def listar_solicitudes():
+    if not _puede_gestionar_solicitudes():
+        return jsonify({'status': 'error', 'message': 'Esta sección es exclusiva del administrador principal.'}), 403
+
     try:
         sol_roles = SolicitudRol.query.all()
         sol_passwords = SolicitudPassword.query.all()
@@ -24,6 +34,9 @@ def listar_solicitudes():
 
 @solicitudes_bp.route('/<id_solicitud>/aprobar', methods=['POST'])
 def aprobar_solicitud(id_solicitud):
+    if not _puede_gestionar_solicitudes():
+        return jsonify({'status': 'error', 'message': 'Esta sección es exclusiva del administrador principal.'}), 403
+
     try:
         if str(id_solicitud).startswith('pwd_'):
             real_id = int(str(id_solicitud).replace('pwd_', ''))
@@ -59,6 +72,9 @@ def aprobar_solicitud(id_solicitud):
 
 @solicitudes_bp.route('/<id_solicitud>/rechazar', methods=['POST'])
 def rechazar_solicitud(id_solicitud):
+    if not _puede_gestionar_solicitudes():
+        return jsonify({'status': 'error', 'message': 'Esta sección es exclusiva del administrador principal.'}), 403
+
     try:
         if str(id_solicitud).startswith('pwd_'):
             real_id = int(str(id_solicitud).replace('pwd_', ''))

@@ -10,7 +10,7 @@ db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    CORS(app, expose_headers=['Content-Disposition'])
     
     # Configuración de base de datos
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
@@ -26,6 +26,7 @@ def create_app():
     from app.routes.dashboard import dashboard_bp
     from app.routes.reportes import reportes_bp
     from app.routes.solicitudes import solicitudes_bp
+    from app.routes.soporte import soporte_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(odontologos_bp)
     app.register_blueprint(pacientes_bp)
@@ -33,6 +34,7 @@ def create_app():
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(reportes_bp)
     app.register_blueprint(solicitudes_bp)
+    app.register_blueprint(soporte_bp)
     
     # Servir imágenes estáticas procesadas o subidas
     @app.route('/uploads/<path:filename>')
