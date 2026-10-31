@@ -166,21 +166,21 @@ const Login = () => {
 
   return (
     <div 
-      className="min-h-screen relative flex items-center justify-center bg-dentBlue-900 bg-cover bg-center"
+      className="min-h-screen relative flex items-center justify-center bg-dentBlue-900 bg-cover bg-center max-lg:items-start max-lg:py-6"
       style={{
         backgroundImage: `url(${bgLogin})`
       }}
     >
       {/* Contenedor (Card) Central (flotando encima del fondo sin ningún filtro) */}
-      <div className="relative z-20 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden w-full max-w-md mx-4 p-10 flex flex-col justify-center border border-white/20">
+      <div className="relative z-20 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden w-full max-w-md mx-4 p-10 max-lg:p-6 max-sm:p-5 flex flex-col justify-center border border-white/20">
         
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-8 max-lg:mb-6">
           {/* Logo de la empresa */}
           <div className="bg-white p-2 rounded-2xl shadow-sm mb-5">
             <img 
               src={logoEmpresa} 
               alt="Logo Sonrisa" 
-              className="w-32 h-auto rounded-xl object-contain"
+              className="w-32 max-lg:w-28 h-auto rounded-xl object-contain"
               onError={(e) => {
                 e.target.onerror = null; 
                 e.target.src = 'https://via.placeholder.com/150?text=Logo';
@@ -234,7 +234,7 @@ const Login = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-between text-sm py-1">
+          <div className="flex items-center justify-between text-sm py-1 max-lg:flex-col max-lg:items-start max-lg:gap-2">
             <label className="flex items-center text-gray-600 cursor-pointer hover:text-dentBlue-900 transition-colors">
               <input 
                 type="checkbox" 
@@ -280,7 +280,7 @@ const Login = () => {
           </button>
         </form>
         
-        <div className="mt-10 text-center text-xs font-medium text-gray-400">
+        <div className="mt-10 max-lg:mt-6 text-center text-xs font-medium text-gray-400">
           <p>© {new Date().getFullYear()} Sistema Odontológico. Todos los derechos reservados.</p>
         </div>
 
@@ -289,8 +289,8 @@ const Login = () => {
       {/* MODAL OLVIDE MI CONTRASEÑA */}
       {showForgotModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up relative">
-            <div className="p-8 pb-10">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up relative max-lg:max-h-[90dvh] max-lg:overflow-y-auto">
+            <div className="p-8 pb-10 max-lg:p-5 max-lg:pb-7">
               <h3 className="text-2xl font-extrabold text-dentBlue-900 mb-2">
                 {forgotStep === 1 ? 'Recuperar Contraseña' : 'Nueva Contraseña'}
               </h3>

@@ -135,13 +135,13 @@ const Pendientes = () => {
 
   return (
     <div
-      className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed"
+      className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed max-lg:bg-scroll"
       style={{ backgroundImage: `url(${bgDashboard})` }}
     >
-      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 shrink-0 z-10 sticky top-0">
+      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 shrink-0 z-10 sticky top-0">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Diagnósticos pendientes</h1>
+            <h1 className="text-2xl max-lg:text-xl font-bold text-dentBlue-900 tracking-tight">Diagnósticos pendientes</h1>
             <p className="text-sm text-gray-500 mt-1">
               Revisa las evaluaciones que siguen en espera y entra a cada caso para continuar el trabajo clínico.
             </p>
@@ -150,7 +150,7 @@ const Pendientes = () => {
           <button
             type="button"
             onClick={fetchPendientes}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all max-lg:w-full"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Actualizar cola
@@ -158,9 +158,9 @@ const Pendientes = () => {
         </div>
       </header>
 
-      <div className="relative flex-1 overflow-auto p-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+      <div className="relative flex-1 overflow-auto p-8 max-lg:p-4 space-y-6 max-lg:space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 max-lg:gap-3">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Pendientes</p>
               <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
@@ -171,7 +171,7 @@ const Pendientes = () => {
             <p className="text-sm text-gray-500 mt-2">Casos aún sin finalizar.</p>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Con radiografías</p>
               <div className="w-10 h-10 rounded-xl bg-dentBlue-50 flex items-center justify-center text-dentBlue-900">
@@ -182,7 +182,7 @@ const Pendientes = () => {
             <p className="text-sm text-gray-500 mt-2">Evaluaciones con imágenes cargadas.</p>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Urgencias</p>
               <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
@@ -193,7 +193,7 @@ const Pendientes = () => {
             <p className="text-sm text-gray-500 mt-2">Casos marcados como urgentes.</p>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Controles</p>
               <div className="w-10 h-10 rounded-xl bg-dentGreen-50 flex items-center justify-center text-dentGreen-600">
@@ -205,7 +205,7 @@ const Pendientes = () => {
           </div>
         </div>
 
-        <section className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 p-5 space-y-4">
+        <section className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 p-5 max-lg:p-4 space-y-4">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div className="relative w-full xl:max-w-xl">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -257,7 +257,7 @@ const Pendientes = () => {
         )}
 
         <section className="bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-5 max-lg:px-4 py-4 max-lg:py-3 max-lg:flex-col max-lg:items-start max-lg:gap-1 border-b border-gray-100">
             <div>
               <h2 className="text-base font-bold text-dentBlue-900">Cola de trabajo</h2>
               <p className="text-sm text-gray-500">Todos los casos pendientes disponibles para revisión.</p>
@@ -281,7 +281,7 @@ const Pendientes = () => {
               <p className="mt-1">La cola está vacía por ahora.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-lg:hidden">
               <table className="min-w-full divide-y divide-gray-100">
                 <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
                   <tr>
@@ -386,9 +386,80 @@ const Pendientes = () => {
               </table>
             </div>
           )}
+
+          {/* Vista de tarjetas para móvil (la tabla se mantiene intacta en escritorio) */}
+          {!loading && evaluaciones.length > 0 && (
+            <div className="lg:hidden divide-y divide-gray-100">
+              {evaluaciones.map((evaluacion) => {
+                const paciente = evaluacion?.paciente || {};
+                const nombreCompleto = getPatientFullName(evaluacion);
+                const initials = getPatientInitials(evaluacion);
+
+                return (
+                  <div key={evaluacion.id_evaluacion} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-dentBlue-900 text-white flex items-center justify-center shadow-sm shrink-0 font-bold text-sm">
+                        {initials || 'DS'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900 break-words">{nombreCompleto || 'Paciente sin nombre'}</p>
+                        <p className="text-sm text-gray-500 break-words">DNI: {paciente.dni || 'No registrado'}</p>
+
+                        <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                          <CalendarDays className="w-4 h-4 text-gray-400 shrink-0" />
+                          <span>{formatDate(evaluacion.fecha_evaluacion)}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-amber-700 font-medium">
+                          <Clock3 className="w-4 h-4 text-amber-500 shrink-0" />
+                          En espera de revisión
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border ${
+                            evaluacion.tipo_visita === 'Urgencia'
+                              ? 'bg-red-50 text-red-700 border-red-100'
+                              : 'bg-dentBlue-50 text-dentBlue-900 border-dentBlue-100'
+                          }`}>
+                            {evaluacion.tipo_visita || 'Sin tipo'}
+                          </span>
+                          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border bg-gray-50 text-gray-700 border-gray-200">
+                            <FileImage className="w-3.5 h-3.5" />
+                            {Number(evaluacion.radiografias_count || 0)}
+                          </span>
+                        </div>
+
+                        <p className="mt-2 text-xs text-gray-500 line-clamp-2">
+                          {evaluacion.motivo_consulta || 'Sin motivo de consulta registrado'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/evaluacion/${evaluacion.id_evaluacion}`)}
+                        className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:border-dentBlue-900/30 hover:text-dentBlue-900 hover:bg-dentBlue-50 transition-all text-sm font-semibold"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Ver detalle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/nueva-evaluacion', { state: { resume: true, id_paciente: paciente.id_paciente, id_evaluacion: evaluacion.id_evaluacion } })}
+                        className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-dentBlue-900 text-white hover:bg-dentBlue-800 shadow-sm transition-all text-sm font-semibold"
+                      >
+                        <Activity className="w-4 h-4" />
+                        Continuar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
-        <div className="flex items-center justify-between gap-4 flex-wrap bg-white/90 backdrop-blur-md border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
+        <div className="flex items-center justify-between gap-4 flex-wrap bg-white/90 backdrop-blur-md border border-gray-200 rounded-2xl px-5 max-lg:px-4 py-4 max-lg:py-3 shadow-sm">
           <div className="text-sm text-gray-500">
             Página <span className="font-semibold text-dentBlue-900">{page}</span> de <span className="font-semibold text-dentBlue-900">{totalPages}</span>
           </div>

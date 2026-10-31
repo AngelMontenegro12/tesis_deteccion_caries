@@ -214,8 +214,8 @@ const BoundingBoxViewer = ({
   };
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-slate-100 shadow-inner w-full border border-gray-100 min-h-[400px] group">
-      <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-3 p-3 pointer-events-none">
+    <div className="relative rounded-xl overflow-hidden bg-slate-100 shadow-inner w-full border border-gray-100 min-h-[400px] max-sm:min-h-[280px] group">
+      <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between max-lg:flex-wrap max-lg:items-start max-lg:justify-start gap-3 max-lg:gap-2 p-3 pointer-events-none">
         {title ? (
           <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gray-200 text-xs font-bold text-slate-700 shadow-sm pointer-events-auto">
             {title}
@@ -226,7 +226,7 @@ const BoundingBoxViewer = ({
           <button
             type="button"
             onClick={zoomOut}
-            className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 text-xs font-bold text-gray-700 shadow-sm hover:bg-white"
+            className="px-3 max-lg:px-3.5 py-1.5 max-lg:py-2 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 text-xs font-bold text-gray-700 shadow-sm hover:bg-white"
             title="Alejar"
           >
             -
@@ -237,7 +237,7 @@ const BoundingBoxViewer = ({
           <button
             type="button"
             onClick={zoomIn}
-            className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 text-xs font-bold text-gray-700 shadow-sm hover:bg-white"
+            className="px-3 max-lg:px-3.5 py-1.5 max-lg:py-2 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 text-xs font-bold text-gray-700 shadow-sm hover:bg-white"
             title="Acercar"
           >
             +
@@ -245,7 +245,7 @@ const BoundingBoxViewer = ({
           <button
             type="button"
             onClick={resetView}
-            className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 text-xs font-bold text-gray-700 shadow-sm hover:bg-white"
+            className="px-3 max-lg:px-3.5 py-1.5 max-lg:py-2 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 text-xs font-bold text-gray-700 shadow-sm hover:bg-white"
             title="Restablecer"
           >
             1:1
@@ -255,7 +255,7 @@ const BoundingBoxViewer = ({
 
       <div
         ref={viewportRef}
-        className={`relative w-full h-full min-h-[400px] flex items-center justify-center ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`relative w-full h-full min-h-[400px] max-sm:min-h-[280px] flex items-center justify-center ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={stopDragging}

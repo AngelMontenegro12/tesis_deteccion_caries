@@ -1511,8 +1511,8 @@ const EvaluacionClinica = () => {
 
       {/* Flash Message / Snackbar */}
       {isSuccess && (
-        <div className="fixed top-8 right-8 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-white border border-gray-100 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden min-w-[320px] flex flex-col">
+        <div className="fixed top-8 right-8 max-lg:left-4 max-lg:right-4 max-lg:top-4 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-white border border-gray-100 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden min-w-[320px] max-lg:min-w-0 max-lg:w-full flex flex-col">
             <div className="px-5 py-3.5 flex items-center gap-3.5">
               <div className="flex-shrink-0 w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-emerald-500" />
@@ -1542,10 +1542,10 @@ const EvaluacionClinica = () => {
       )}
 
       {/* Topbar */}
-      <header className="px-8 py-6 bg-white/90 backdrop-blur-sm border-b border-gray-100 flex items-center justify-between shrink-0 z-10 sticky top-0">
+      <header className="px-8 py-6 max-lg:px-4 max-lg:py-4 bg-white/90 backdrop-blur-sm border-b border-gray-100 flex items-center justify-between max-lg:flex-col max-lg:items-start max-lg:gap-3 shrink-0 z-10 sticky top-0">
         <div>
-          <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight flex items-center">
-            <Stethoscope className="w-8 h-8 mr-3 text-dentGreen-500" />
+          <h1 className="text-2xl max-lg:text-xl font-bold text-dentBlue-900 tracking-tight flex items-center max-lg:leading-tight">
+            <Stethoscope className="w-8 h-8 max-lg:w-6 max-lg:h-6 mr-3 max-lg:mr-2 text-dentGreen-500" />
             Nuevo Diagnóstico Clínico
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -1553,7 +1553,7 @@ const EvaluacionClinica = () => {
           </p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 max-lg:w-full max-lg:flex-wrap max-lg:gap-2">
           {/* Info del Paciente seleccionado */}
           {selectedPatient && currentStep > 1 && (
             <div className="hidden md:flex flex-col items-end border-r border-gray-200 pr-5 py-1">
@@ -1581,13 +1581,13 @@ const EvaluacionClinica = () => {
 
       {/* Main Content */}
       <div 
-        className="flex-1 overflow-auto p-8 bg-cover bg-center bg-no-repeat bg-fixed"
+        className="flex-1 overflow-auto p-8 max-lg:p-4 bg-cover bg-center bg-no-repeat bg-fixed max-lg:bg-scroll"
         style={{ backgroundImage: `url(${bgDashboard})` }}
       >
-        <div className={currentStep === 5 ? 'w-full max-w-[98%] 2xl:max-w-[1600px] mx-auto' : 'max-w-[90%] 2xl:max-w-7xl mx-auto'}>
+        <div className={currentStep === 5 ? 'w-full max-w-[98%] 2xl:max-w-[1600px] mx-auto' : 'max-w-[90%] max-lg:max-w-full 2xl:max-w-7xl mx-auto'}>
           
           {/* Progress Bar */}
-          <div className="mb-14 px-4 max-w-5xl mx-auto">
+          <div className="mb-14 max-lg:mb-6 px-4 max-lg:px-0 max-w-5xl mx-auto">
             <div className="flex items-center justify-between relative">
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 z-0 rounded-full"></div>
               
@@ -1612,7 +1612,7 @@ const EvaluacionClinica = () => {
                       {isCompleted ? <CheckCircle className="w-5 h-5" /> : step.id}
                     </div>
                     <span 
-                      className={`absolute top-12 whitespace-nowrap text-sm font-semibold transition-colors duration-300
+                      className={`absolute top-12 whitespace-nowrap text-sm font-semibold transition-colors duration-300 max-sm:hidden
                       ${isActive ? 'text-dentBlue-900' : isCompleted ? 'text-dentGreen-500' : 'text-gray-400'}`}
                     >
                       {step.title}
@@ -1623,7 +1623,7 @@ const EvaluacionClinica = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col min-h-[500px]">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col min-h-[500px] max-lg:min-h-[400px]">
             
             {/* Contenido Dinámico de los Pasos (Ocupa el espacio flexible) */}
             <div className="flex-1">
@@ -1631,12 +1631,12 @@ const EvaluacionClinica = () => {
               {/* Paso 1: Identificación del Paciente */}
               {currentStep === 1 && (
                 <div className="animate-fade-in-up">
-                  <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                  <div className="p-6 max-lg:p-4 border-b border-gray-100 bg-gray-50/50">
                     <h2 className="text-xl font-bold text-dentBlue-900">Identificación del Paciente</h2>
                     <p className="text-sm text-gray-500 mt-1">Busque un paciente existente o registre uno nuevo para comenzar el diagnóstico.</p>
                   </div>
                   
-                  <div className="p-8">
+                  <div className="p-8 max-lg:p-5">
                     {/* Tabs: Buscar vs Nuevo */}
                     <div className="flex p-1 bg-gray-100 rounded-xl mb-10 w-fit mx-auto border border-gray-200/60 shadow-inner">
                       <button 
@@ -1775,7 +1775,7 @@ const EvaluacionClinica = () => {
                               </button>
                             </div>
                             
-                            <div className="p-8 opacity-90">
+                            <div className="p-8 max-lg:p-5 opacity-90">
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
                                 
                                 {/* Nombres */}
@@ -1797,7 +1797,7 @@ const EvaluacionClinica = () => {
                                 </div>
 
                                 {/* DNI & Edad (o Fecha Nacimiento dependiendo de lo que devuelva el back) */}
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
                                   <div>
                                     <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><CreditCard className="w-3.5 h-3.5 mr-1" /> DNI</label>
                                     <input 
@@ -1815,7 +1815,7 @@ const EvaluacionClinica = () => {
                                 </div>
 
                                 {/* Género & Fecha de Nacimiento */}
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
                                   <div>
                                     <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Género</label>
                                     <input 
@@ -1925,7 +1925,7 @@ const EvaluacionClinica = () => {
                           </div>
 
                           {/* DNI & Fecha Nacimiento */}
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
                             <div>
                               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><CreditCard className="w-3.5 h-3.5 mr-1" /> DNI <span className="text-red-500 ml-1">*</span></label>
                               <input 
@@ -1947,7 +1947,7 @@ const EvaluacionClinica = () => {
                           </div>
 
                           {/* Género & Edad (Calculada) */}
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
                             <div>
                               <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Género <span className="text-red-500">*</span></label>
                               <select 
@@ -2054,7 +2054,7 @@ const EvaluacionClinica = () => {
               {/* Paso 2: Contexto Clínico */}
               {currentStep === 2 && (
                 <div className="animate-fade-in-up">
-                  <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                  <div className="p-6 max-lg:p-4 border-b border-gray-100 bg-gray-50/50">
                     <h2 className="text-xl font-bold text-dentBlue-900 flex items-center">
                       <Stethoscope className="w-5 h-5 mr-2 text-dentGreen-500" /> 
                       Contexto Clínico
@@ -2062,7 +2062,7 @@ const EvaluacionClinica = () => {
                     <p className="text-sm text-gray-500 mt-1">Registre el motivo de consulta, tipo de visita y las observaciones preliminares del paciente.</p>
                   </div>
                   
-                  <div className="p-8 px-4 md:px-12 lg:px-16 space-y-8">
+                  <div className="p-8 max-lg:py-5 px-4 md:px-12 lg:px-16 space-y-8">
                     
                     {/* Tipo de Visita (Botones tipo Píldora) */}
                     <div>
@@ -2127,7 +2127,7 @@ const EvaluacionClinica = () => {
                       </div>
                     </div>
                   )}
-                  <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                  <div className="p-6 max-lg:p-4 border-b border-gray-100 bg-gray-50/50">
                     <h2 className="text-xl font-bold text-dentBlue-900 flex items-center">
                       <Stethoscope className="w-5 h-5 mr-2 text-dentGreen-500" /> 
                       Carga de Radiografías
@@ -2135,7 +2135,7 @@ const EvaluacionClinica = () => {
                     <p className="text-sm text-gray-500 mt-1">Seleccione y suba las imágenes radiográficas necesarias para que la Inteligencia Artificial analice las lesiones.</p>
                   </div>
                   
-                  <div className={`p-8 px-4 md:px-12 lg:px-16 ${isStep3Locked ? 'pointer-events-none select-none opacity-70' : ''}`} aria-busy={isStep3Locked}>
+                  <div className={`p-8 max-lg:py-5 px-4 md:px-12 lg:px-16 ${isStep3Locked ? 'pointer-events-none select-none opacity-70' : ''}`} aria-busy={isStep3Locked}>
                     <div className="space-y-6">
                       {radiografias.map((rad, index) => (
                         <div key={rad.id} className={`p-5 rounded-2xl border transition-all duration-300 relative bg-white ${rad.file ? 'border-dentGreen-200 ring-1 ring-dentGreen-50' : 'border-gray-200'}`}>
@@ -2276,10 +2276,10 @@ const EvaluacionClinica = () => {
 
               {/* Paso 4: Detección IA */}
               {currentStep === 4 && (
-                <div className="p-8 md:p-12 animate-fade-in-up h-full flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16">
+                <div className="p-8 max-lg:p-4 md:p-12 animate-fade-in-up h-full flex flex-col lg:flex-row items-center justify-center gap-8 max-lg:gap-5 lg:gap-16">
                   
                   {/* Left Column: Acción principal */}
-                  <div className="bg-white/80 p-10 rounded-3xl border border-gray-100 shadow-xl max-w-lg w-full text-center relative overflow-hidden">
+                  <div className="bg-white/80 p-10 max-lg:p-6 rounded-3xl border border-gray-100 shadow-xl max-w-lg w-full text-center relative overflow-hidden">
                     {/* Decoración sutil de fondo */}
                     <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-dentGreen-50 rounded-full opacity-50 blur-2xl"></div>
                     <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-dentBlue-50 rounded-full opacity-50 blur-2xl"></div>
@@ -2289,7 +2289,7 @@ const EvaluacionClinica = () => {
                         <Sparkles className="w-12 h-12" />
                       </div>
                       
-                      <h3 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-tight">
+                      <h3 className="text-3xl max-lg:text-2xl font-extrabold text-gray-800 mb-4 tracking-tight">
                         Asistente Diagnóstico
                       </h3>
                       
@@ -2299,13 +2299,13 @@ const EvaluacionClinica = () => {
                       
                       <button 
                         onClick={startAnalysis}
-                        className="w-full flex items-center justify-center px-8 py-4 bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 text-white rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl hover:shadow-dentGreen-500/20 hover:-translate-y-1 transition-all duration-300"
+                        className="w-full flex items-center justify-center px-8 max-lg:px-4 py-4 bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 text-white rounded-2xl font-bold text-xl max-lg:text-lg shadow-lg hover:shadow-xl hover:shadow-dentGreen-500/20 hover:-translate-y-1 transition-all duration-300"
                       >
                         <Play className="w-6 h-6 mr-3 fill-current" />
                         Iniciar Detección
                       </button>
                       
-                      <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-8 text-sm text-gray-400 font-medium">
+                      <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col max-lg:items-center max-lg:gap-3 sm:flex-row items-center justify-center gap-8 text-sm text-gray-400 font-medium">
                         <div className="flex items-center"><ScanLine className="w-4 h-4 mr-2 text-dentBlue-900/50"/> Análisis Radiografía</div>
                         <div className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-dentGreen-500/50"/> Alta Precisión</div>
                       </div>
@@ -2314,7 +2314,7 @@ const EvaluacionClinica = () => {
 
                   {/* Right Column: Previsualización tipo Lista (dentro de tarjeta) */}
                   {radiografias.some(r => hasRadiografiaPreview(r)) && (
-                    <div className="bg-white/80 p-8 rounded-3xl border border-gray-100 shadow-xl w-full max-w-md flex flex-col max-h-[500px] relative overflow-hidden">
+                    <div className="bg-white/80 p-8 max-lg:p-5 rounded-3xl border border-gray-100 shadow-xl w-full max-w-md flex flex-col max-h-[500px] relative overflow-hidden">
                       <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
                         <h4 className="text-lg font-extrabold text-gray-800 tracking-tight flex items-center">
                           <div className="w-2.5 h-2.5 rounded-full bg-dentGreen-500 mr-3 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
@@ -2340,7 +2340,7 @@ const EvaluacionClinica = () => {
                             </div>
 
                             {/* Información del archivo */}
-                            <div className="flex-1 min-w-0 flex items-center justify-between ml-1">
+                            <div className="flex-1 min-w-0 flex items-center justify-between max-lg:flex-col max-lg:items-start max-lg:gap-2 ml-1">
                               
                               {/* Tipo de Radiografía (Izquierda) */}
                               <div className="flex-shrink-0 flex items-center">
@@ -2350,7 +2350,7 @@ const EvaluacionClinica = () => {
                               </div>
 
                               {/* Metadatos (Derecha) */}
-                              <div className="flex flex-col items-end text-right overflow-hidden ml-3">
+                              <div className="flex flex-col items-end max-lg:items-start max-lg:text-left text-right overflow-hidden ml-3 max-lg:ml-0">
                                 <p className="text-sm font-bold text-gray-700 truncate w-full max-w-[120px]" title={rad.file?.name}>
                                   {rad.file?.name || `img_bd_${idx+1}.jpg`}
                                 </p>
@@ -2375,17 +2375,17 @@ const EvaluacionClinica = () => {
               {currentStep === 5 && (
                 <div className="flex flex-col h-full w-full animate-fade-in-up bg-gray-50">
                   {/* Contenedor Principal Dividido */}
-                  <div className="grid flex-1 overflow-hidden min-h-[600px] gap-4 lg:gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(460px,1.05fr)]">
+                  <div className="grid flex-1 overflow-hidden min-h-[600px] max-lg:min-h-0 gap-4 lg:gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(460px,1.05fr)]">
                     
                     {/* VISOR PRINCIPAL (Izquierda - 60%) */}
                     <div className="flex min-w-0 flex-col border-r border-gray-200 bg-black/5 relative">
-                      <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-10 shrink-0 gap-3">
+                      <div className="h-14 max-lg:h-auto bg-white border-b border-gray-200 flex items-center justify-between max-lg:flex-col max-lg:items-start max-lg:gap-2 px-4 py-2 z-10 shrink-0">
                         <span className="text-xs font-bold bg-white text-dentBlue-900 border border-gray-200 px-3 py-1.5 rounded-lg flex items-center shadow-sm">
                           <Activity className="w-4 h-4 mr-2 text-dentBlue-900" />
                           Radiografía {safeActiveResultIndex + 1}
                         </span>
 
-                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <div className="flex items-center gap-2 flex-wrap justify-end max-lg:justify-start max-lg:gap-1.5">
                           <button
                             type="button"
                             onClick={() => setShowBoxes((value) => !value)}
@@ -2693,11 +2693,11 @@ const EvaluacionClinica = () => {
 
             {/* Bottom Actions (Botones de Atrás y Siguiente pegados abajo) */}
             {currentStep < 5 && (
-              <div className="px-8 py-5 bg-white border-t border-gray-100 flex items-center justify-between mt-auto">
+              <div className="px-8 max-lg:px-4 py-5 max-lg:py-3 bg-white border-t border-gray-100 flex items-center justify-between max-lg:flex-col-reverse max-lg:items-stretch max-lg:gap-2 mt-auto">
                 <button
                   onClick={handlePrev}
                   disabled={currentStep === 1 || isAnalyzing}
-                  className={`flex items-center px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${
+                  className={`flex items-center max-lg:justify-center px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${
                     (currentStep === 1 || isAnalyzing)
                       ? 'text-gray-400 cursor-not-allowed opacity-50'
                       : 'text-gray-600 hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm'
@@ -2710,7 +2710,7 @@ const EvaluacionClinica = () => {
                   <button
                     onClick={handleNext}
                     disabled={getIsNextDisabled() || isSubmitting}
-                    className={`flex items-center justify-center px-8 py-3 rounded-lg font-bold text-sm shadow-md transition-all duration-300 ml-auto ${
+                    className={`flex items-center justify-center px-8 max-lg:px-4 py-3 rounded-lg font-bold text-sm shadow-md transition-all duration-300 ml-auto max-lg:ml-0 max-lg:w-full ${
                       (getIsNextDisabled() || isSubmitting)
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                         : 'bg-dentBlue-900 hover:bg-dentBlue-800 text-white hover:shadow-lg'
@@ -2794,9 +2794,9 @@ const EvaluacionClinica = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"></div>
           
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl relative z-10 overflow-hidden transform transition-all scale-100 opacity-100 flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl relative z-10 overflow-hidden transform transition-all scale-100 opacity-100 flex flex-col max-h-[90vh] max-lg:max-h-[92dvh]">
             {/* Header del Modal */}
-            <div className="p-8 border-b border-gray-100 bg-gradient-to-b from-blue-50/50 to-white flex flex-col items-center text-center">
+            <div className="p-8 max-lg:p-5 border-b border-gray-100 bg-gradient-to-b from-blue-50/50 to-white flex flex-col items-center text-center">
               
 {/* Animación del Diente Escaneado o Check de Completado */}
                 <div className="relative w-20 h-20 mb-4 mx-auto flex items-center justify-center">
@@ -2817,7 +2817,7 @@ const EvaluacionClinica = () => {
                   )}
                 </div>
 
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                <h2 className="text-2xl max-lg:text-xl font-black text-gray-900 tracking-tight">
                   {analysisItems.length > 0 && analysisItems.every(i => i.status === 'completed') 
                     ? "Procesamiento Completado" 
                     : "Procesando Radiografías"}
@@ -2830,7 +2830,7 @@ const EvaluacionClinica = () => {
               </div>
 
               {/* Listado de Radiografías en proceso */}
-              <div className="p-8 overflow-y-auto bg-gray-50/30 flex-1">
+              <div className="p-8 max-lg:p-4 overflow-y-auto bg-gray-50/30 flex-1">
                 <div className="space-y-4">
                   {analysisItems.map((item, idx) => (
                     <div key={idx} className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center gap-4 transition-all duration-300">
@@ -2886,7 +2886,7 @@ const EvaluacionClinica = () => {
             </div>
 
             {/* Footer Status Cronometro / Botón de Acción */}
-            <div className="p-6 bg-white border-t border-gray-100 flex items-center justify-between">
+            <div className="p-6 max-lg:p-4 bg-white border-t border-gray-100 flex items-center justify-between">
               
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tiempo transcurrido</span>

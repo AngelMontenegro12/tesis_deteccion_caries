@@ -126,11 +126,11 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] max-lg:max-h-[92dvh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50 shrink-0">
-          <h2 className="text-xl font-extrabold text-dentBlue-900 flex items-center">
+        <div className="flex items-center justify-between p-6 max-lg:p-4 border-b border-gray-100 bg-gray-50 shrink-0">
+          <h2 className="text-xl max-lg:text-lg font-extrabold text-dentBlue-900 flex items-center">
             <Edit2 className="w-6 h-6 mr-3 text-dentGreen-500" />
             Editar Paciente
           </h2>
@@ -143,7 +143,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
         </div>
 
         {/* Content (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white">
+        <div className="flex-1 overflow-y-auto p-6 max-lg:p-4 bg-white">
           {formErrors.general && (
              <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm border border-red-100 font-medium">
                {formErrors.general}
@@ -274,7 +274,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
         </div>
 
         {/* Footer (Actions) */}
-        <div className="flex items-center justify-end p-6 border-t border-gray-100 bg-gray-50 flex-shrink-0 gap-3">
+        <div className="flex items-center justify-end p-6 max-lg:p-4 max-lg:flex-col-reverse max-lg:items-stretch border-t border-gray-100 bg-gray-50 flex-shrink-0 gap-3">
           <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors text-sm"

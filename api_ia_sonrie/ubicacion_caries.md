@@ -181,3 +181,8 @@
 
 ---
 
+## Evaluación: img_1208202610.png
+- **Número de caries detectadas:** 0
+
+---
+

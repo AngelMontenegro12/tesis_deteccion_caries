@@ -23,6 +23,10 @@ import { getPreferences } from '../utils/preferences';
 
 const Layout = () => {
   const [isOpen, setIsOpen] = useState(() => getPreferences().sidebarOpen);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
+  );
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -53,6 +57,36 @@ const Layout = () => {
     window.addEventListener('preferences:changed', handlePreferencesChanged);
     return () => window.removeEventListener('preferences:changed', handlePreferencesChanged);
   }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const handleMediaChange = (event) => {
+      setIsMobile(event.matches);
+      if (!event.matches) {
+        setIsMobileOpen(false);
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleMediaChange);
+    return () => mediaQuery.removeEventListener('change', handleMediaChange);
+  }, []);
+
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMobileOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsMobileOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen]);
 
   useEffect(() => {
     if (!user) return;
@@ -96,6 +130,7 @@ const Layout = () => {
 
   const isAdmin = user?.rol === 'admin' || user?.rol === 'superadmin' || user?.id_odontologo === 1;
   const canManageSolicitudes = user?.id_odontologo === 1 || user?.rol === 'superadmin';
+  const showExpanded = isOpen || isMobile;
 
   const baseMainMenuItems = [
     { icon: Home, label: 'Inicio', path: '/dashboard' },
@@ -166,22 +201,34 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen max-lg:h-[100dvh] bg-gray-50 overflow-hidden font-sans">
       
+      {/* Overlay del menú móvil */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-gray-900/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar Fijo / Colapsable */}
       <aside 
-        className={`flex flex-col bg-slate-50 border-r border-gray-200 transition-all duration-300 ease-in-out relative z-20 shrink-0 ${
-          isOpen ? 'w-64' : 'w-20'
+        id="sidebar-principal"
+        className={`flex flex-col bg-slate-50 border-r border-gray-200 transition-all duration-300 ease-in-out relative z-20 shrink-0 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-40 max-lg:h-full max-lg:shadow-2xl ${
+          isMobileOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'
+        } ${
+          showExpanded ? 'w-64' : 'w-20'
         }`}
       >
         
         {/* Cabecera del sidebar (Logo superior) */}
-        <div className={`flex items-center h-20 border-b border-gray-200 bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 shrink-0 transition-all duration-300 ${isOpen ? 'justify-between px-4' : 'justify-center px-2'}`}>
+        <div className={`flex items-center h-20 border-b border-gray-200 bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 shrink-0 transition-all duration-300 ${showExpanded ? 'justify-between px-4' : 'justify-center px-2'}`}>
           <div className="flex items-center space-x-3 overflow-hidden">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-lg font-bold text-dentBlue-900">CS</span>
             </div>
-            {isOpen && (
+            {showExpanded && (
               <div className="whitespace-nowrap transition-opacity duration-300">
                 <h1 className="text-xl font-bold text-white leading-tight">Clínica Sonríe</h1>
                 <p className="text-xs text-white">Diagnóstico</p>
@@ -189,16 +236,23 @@ const Layout = () => {
             )}
           </div>
           <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className={`p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors focus:outline-none flex-shrink-0 ${!isOpen ? 'hidden' : 'block'}`}
-            title="Contraer"
+            onClick={() => {
+              if (isMobile) {
+                setIsMobileOpen(false);
+              } else {
+                setIsOpen(!isOpen);
+              }
+            }}
+            className={`p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors focus:outline-none flex-shrink-0 ${!showExpanded ? 'hidden' : 'block'}`}
+            title={isMobile ? 'Cerrar menú' : 'Contraer'}
+            aria-label={isMobile ? 'Cerrar menú' : 'Contraer menú'}
           >
             <ChevronLeft size={20} />
           </button>
         </div>
 
         {/* Botón expandir (visible cuando está cerrado) */}
-        {!isOpen && (
+        {!showExpanded && (
           <button 
             onClick={() => setIsOpen(true)}
             className="w-full py-3 flex justify-center text-gray-500 hover:text-dentBlue-900 hover:bg-gray-100 border-b border-gray-200 transition-colors"
@@ -215,17 +269,18 @@ const Layout = () => {
               <Link 
                 key={index}
                 to={item.path}
-                title={!isOpen ? item.label : ""}
-                className={`group flex items-center ${isOpen ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                onClick={() => setIsMobileOpen(false)}
+                title={!showExpanded ? item.label : ""}
+                className={`group flex items-center ${showExpanded ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                   isActive(item.path)
                     ? 'bg-dentBlue-900 text-white shadow-lg'
                     : 'text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900'
                 }`}
               >
-                <item.icon className={`${isOpen ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors ${
+                <item.icon className={`${showExpanded ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors ${
                   isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-dentBlue-900'
                 }`} />
-                {isOpen && <span className="whitespace-nowrap">{item.label}</span>}
+                {showExpanded && <span className="whitespace-nowrap">{item.label}</span>}
               </Link>
             ))}
           </div>
@@ -238,28 +293,29 @@ const Layout = () => {
                     <div>
                       <button
                         onClick={() => {
-                          if (!isOpen) setIsOpen(true);
+                          if (!showExpanded) setIsOpen(true);
                           item.toggleOpen();
                         }}
-                        title={!isOpen ? item.label : ""}
-                        className={`w-full group flex items-center ${isOpen ? 'justify-between px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900`}
+                        title={!showExpanded ? item.label : ""}
+                        className={`w-full group flex items-center ${showExpanded ? 'justify-between px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900`}
                       >
                         <div className="flex items-center">
-                          <item.icon className={`${isOpen ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors text-gray-400 group-hover:text-dentBlue-900`} />
-                          {isOpen && <span className="whitespace-nowrap">{item.label}</span>}
+                          <item.icon className={`${showExpanded ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors text-gray-400 group-hover:text-dentBlue-900`} />
+                          {showExpanded && <span className="whitespace-nowrap">{item.label}</span>}
                         </div>
-                        {isOpen && (
+                        {showExpanded && (
                           <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${item.isOpen ? 'rotate-180' : ''}`} />
                         )}
                       </button>
                       
                       {/* SubItems */}
-                      {item.isOpen && isOpen && (
+                      {item.isOpen && showExpanded && (
                         <div className="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
                           {item.subItems.map((subItem, subIdx) => (
                             <Link
                               key={subIdx}
                               to={subItem.path}
+                              onClick={() => setIsMobileOpen(false)}
                               className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                                 isActive(subItem.path)
                                   ? 'bg-dentBlue-900 text-white shadow-lg'
@@ -283,17 +339,18 @@ const Layout = () => {
                   ) : (
                     <Link 
                       to={item.path}
-                      title={!isOpen ? item.label : ""}
-                      className={`group flex items-center ${isOpen ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      onClick={() => setIsMobileOpen(false)}
+                      title={!showExpanded ? item.label : ""}
+                      className={`group flex items-center ${showExpanded ? 'px-4' : 'justify-center'} py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                         isActive(item.path)
                           ? 'bg-dentBlue-900 text-white shadow-lg'
                           : 'text-gray-700 hover:bg-white hover:shadow-md hover:text-dentBlue-900'
                       }`}
                     >
-                      <item.icon className={`${isOpen ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors ${
+                      <item.icon className={`${showExpanded ? 'mr-3' : ''} shrink-0 h-5 w-5 transition-colors ${
                         isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-dentBlue-900'
                       }`} />
-                      {isOpen && <span className="whitespace-nowrap">{item.label}</span>}
+                      {showExpanded && <span className="whitespace-nowrap">{item.label}</span>}
                     </Link>
                   )}
                 </div>
@@ -305,7 +362,7 @@ const Layout = () => {
         {/* Footer del sidebar (Info usuario y Cerrar Sesión) */}
         <div className="p-4 border-t border-gray-200 shrink-0 bg-white">
           {user && (
-            <div className={`flex items-center space-x-3 mb-4 ${isOpen ? '' : 'justify-center'}`}>
+            <div className={`flex items-center space-x-3 mb-4 ${showExpanded ? '' : 'justify-center'}`}>
               {(user.foto_perfil && user.foto_perfil !== 'null' && user.foto_perfil.length > 5) ? (
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm border border-gray-200 bg-gray-100 relative">
                   <User className="w-5 h-5 text-gray-400 absolute" />
@@ -321,7 +378,7 @@ const Layout = () => {
                   <User className="w-5 h-5 text-gray-400" />
                 </div>
               )}
-              {isOpen && (
+              {showExpanded && (
                 <div className="overflow-hidden">
                   <p className="text-sm font-medium text-gray-900 truncate">{user.nombres} {user.apellidos}</p>
                   <p className="text-xs text-gray-500 truncate">{user.especialidad}</p>
@@ -332,30 +389,70 @@ const Layout = () => {
           
           <button 
             onClick={handleLogout}
-            title={!isOpen ? "Cerrar Sesión" : ""}
-            className={`w-full flex items-center ${isOpen ? 'px-4 justify-start' : 'justify-center px-0'} py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors overflow-hidden group`}
+            title={!showExpanded ? "Cerrar Sesión" : ""}
+            className={`w-full flex items-center ${showExpanded ? 'px-4 justify-start' : 'justify-center px-0'} py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors overflow-hidden group`}
           >
-            <LogOut className={`shrink-0 h-5 w-5 ${isOpen ? 'mr-3' : ''} group-hover:-translate-x-1 transition-transform`} />
-            {isOpen && <span className="whitespace-nowrap">Cerrar Sesión</span>}
+            <LogOut className={`shrink-0 h-5 w-5 ${showExpanded ? 'mr-3' : ''} group-hover:-translate-x-1 transition-transform`} />
+            {showExpanded && <span className="whitespace-nowrap">Cerrar Sesión</span>}
           </button>
         </div>
       </aside>
 
       {/* Contenido Principal (Espacio de trabajo renderizado con Outlet) */}
       <main className="flex-1 flex flex-col overflow-hidden relative bg-gray-50/50">
-        {isRouteAllowed() ? (
-          <Outlet />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full p-6">
-            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
-              <Shield className="w-12 h-12 text-red-600" />
+        {/* Topbar móvil (oculto en escritorio) */}
+        <div className="lg:hidden flex items-center justify-between h-16 px-4 bg-white/95 backdrop-blur-sm border-b border-gray-200 shrink-0 z-20">
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(true)}
+            className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-dentBlue-900 hover:bg-gray-100 transition-colors"
+            aria-label="Abrir menú"
+            aria-expanded={isMobileOpen}
+            aria-controls="sidebar-principal"
+          >
+            <Menu size={22} />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 rounded-lg flex items-center justify-center">
+              <span className="text-xs font-bold text-white">CS</span>
             </div>
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-3 text-center">Acceso Denegado</h2>
-            <p className="text-gray-500 text-center max-w-md text-lg">
-              No tienes permisos para visualizar este módulo. Si crees que esto es un error, por favor contacta con un administrador.
-            </p>
+            <span className="text-base font-bold text-dentBlue-900">Clínica Sonríe</span>
           </div>
-        )}
+
+          <Link
+            to="/perfil"
+            className="inline-flex items-center justify-center w-11 h-11 rounded-full overflow-hidden border border-gray-200 bg-gray-50 text-gray-400 hover:text-dentBlue-900 transition-colors"
+            aria-label="Mi perfil"
+          >
+            {(user?.foto_perfil && user.foto_perfil !== 'null' && user.foto_perfil.length > 5) ? (
+              <img
+                src={`http://localhost:5000${user.foto_perfil}`}
+                alt="Perfil"
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            ) : (
+              <User className="w-5 h-5" />
+            )}
+          </Link>
+        </div>
+
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0 lg:contents">
+          {isRouteAllowed() ? (
+            <Outlet />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-6">
+              <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                <Shield className="w-12 h-12 text-red-600" />
+              </div>
+              <h2 className="text-3xl font-extrabold text-gray-900 mb-3 text-center">Acceso Denegado</h2>
+              <p className="text-gray-500 text-center max-w-md text-lg">
+                No tienes permisos para visualizar este módulo. Si crees que esto es un error, por favor contacta con un administrador.
+              </p>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Pantalla de Carga - Cerrar Sesión */}

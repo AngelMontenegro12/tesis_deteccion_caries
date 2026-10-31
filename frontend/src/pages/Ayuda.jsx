@@ -311,26 +311,26 @@ const Ayuda = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50">
-      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 z-10">
+      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 z-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-dentBlue-50 rounded-xl flex items-center justify-center">
             <LifeBuoy className="w-5 h-5 text-dentBlue-900" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Soporte / Ayuda</h1>
+            <h1 className="text-2xl max-lg:text-xl font-bold text-gray-900">Soporte / Ayuda</h1>
             <p className="text-sm text-gray-500">Encuentra respuestas rápidas o comunícate con el administrador.</p>
           </div>
         </div>
       </div>
 
       <div
-        className="flex-1 overflow-y-auto relative bg-cover bg-center bg-no-repeat p-6 lg:p-10"
+        className="flex-1 overflow-y-auto relative bg-cover bg-center bg-no-repeat p-6 max-lg:p-4 lg:p-10"
         style={{ backgroundImage: `url(${bgDashboard})` }}
       >
         <div className="absolute inset-0 bg-white/45 z-0 pointer-events-none"></div>
 
         <div className="relative z-10 max-w-6xl mx-auto space-y-6">
-          <section className="rounded-3xl bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 p-8 text-white shadow-xl overflow-hidden relative">
+          <section className="rounded-3xl bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 p-8 max-lg:p-6 text-white shadow-xl overflow-hidden relative">
             <div className="absolute -right-10 -top-14 h-44 w-44 rounded-full bg-white/10"></div>
             <div className="absolute right-24 bottom-0 h-24 w-24 rounded-full bg-white/10"></div>
             <div className="relative max-w-3xl">

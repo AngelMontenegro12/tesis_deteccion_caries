@@ -106,7 +106,7 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Cabecera del Panel (Cerrar) */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+        <div className="flex items-center justify-between p-6 max-lg:p-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-black text-dentBlue-900 tracking-tight flex items-center">
             <User className="w-5 h-5 mr-2 text-dentGreen-500" />
             Perfil Clínico
@@ -131,10 +131,10 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
         {/* Scrollable Content */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {/* SECCIÓN SUPERIOR: Datos del Paciente */}
-          <div className="p-8 bg-white border-b border-gray-100">
+          <div className="p-8 max-lg:p-5 bg-white border-b border-gray-100">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <h1 className="text-2xl font-black text-gray-900 mb-1 leading-tight">
+                <h1 className="text-2xl max-lg:text-xl font-black text-gray-900 mb-1 leading-tight">
                   {patient.nombres} {patient.apellidos}
                 </h1>
                 <p className="text-sm font-semibold text-gray-500 flex items-center">
@@ -183,7 +183,7 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
           </div>
 
           {/* SECCIÓN INFERIOR: Historial Clínico (Línea de Tiempo) */}
-          <div ref={historyRef} className="p-8 bg-gray-50/50 flex-1 min-h-0">
+          <div ref={historyRef} className="p-8 max-lg:p-5 bg-gray-50/50 flex-1 min-h-0">
             <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-6 flex items-center">
               <Activity className="w-4 h-4 mr-2 text-dentBlue-900" />
               Historial de Diagnósticos
@@ -386,7 +386,7 @@ const PatientSlideOver = ({ isOpen, onClose, patient, onEdit }) => {
         </div>
 
         {/* Footer del Drawer (Opcional Acción Rápida) */}
-        <div className="p-6 border-t border-gray-100 bg-white">
+        <div className="p-6 max-lg:p-4 border-t border-gray-100 bg-white">
            <button 
              onClick={() => {
                navigate('/nueva-evaluacion', { 

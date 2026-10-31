@@ -9,7 +9,7 @@ from app.utils.cls_validator  import validar_con_clasificador
 
 load_dotenv()
 
-MODEL_PATH = os.getenv("MODEL_PATH", "models/dentex_caries_v1_3_mejorado.pt")
+MODEL_PATH = os.getenv("MODEL_PATH", "models/best_model_v2_3.pt")
 CONFIDENCE = float(os.getenv("CONFIDENCE", "0.45"))
 
 CLASS_MAP = {

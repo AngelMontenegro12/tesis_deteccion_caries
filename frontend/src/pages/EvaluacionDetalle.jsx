@@ -234,12 +234,12 @@ const EvaluacionDetalle = () => {
 
   return (
     <div 
-      className="flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed overflow-y-auto relative"
+      className="flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed max-lg:bg-scroll overflow-y-auto relative"
       style={{ backgroundImage: `url(${bgDashboard})` }}
     >
       
       {/* Navegacion Breadcrumb */}
-      <div className="px-4 md:px-6 pt-6 pb-2 max-w-[98%] 2xl:max-w-[1600px] mx-auto w-full shrink-0 flex items-center text-sm font-medium text-slate-500">
+      <div className="px-4 md:px-6 pt-6 pb-2 max-w-[98%] 2xl:max-w-[1600px] mx-auto w-full shrink-0 flex flex-wrap items-center gap-y-1 text-sm font-medium text-slate-500">
         <Link to="/historial" className="hover:text-dentBlue-900 transition-colors flex items-center">
           <ChevronLeft className="w-4 h-4 mr-1" />
           Historial de Diagnósticos
@@ -250,16 +250,16 @@ const EvaluacionDetalle = () => {
 
       {/* 1. Cabecera tipo "Tarjeta de Perfil Blanca" */}
       <div className="px-4 md:px-6 pt-2 max-w-[98%] 2xl:max-w-[1600px] mx-auto w-full shrink-0">
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-gray-100">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm p-6 max-lg:p-5 flex flex-col md:flex-row items-center justify-between gap-6 max-lg:gap-4 border border-gray-100">
           
           {/* Izquierda (Avatar y Nombres) */}
-          <div className="flex items-center gap-6 w-full md:w-auto">
-            <div className="w-20 h-20 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center text-3xl font-extrabold shrink-0 border border-teal-100">
+          <div className="flex items-center gap-6 max-lg:gap-4 w-full md:w-auto">
+            <div className="w-20 h-20 max-lg:w-16 max-lg:h-16 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center text-3xl max-lg:text-2xl font-extrabold shrink-0 border border-teal-100">
               {initials}
             </div>
             
-            <div className="flex flex-col">
-              <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight mb-2">
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-2xl max-lg:text-xl font-extrabold text-slate-800 tracking-tight mb-2 break-words">
                 {paciente.nombres} {paciente.apellidos}
               </h1>
               
@@ -296,17 +296,17 @@ const EvaluacionDetalle = () => {
       </div>
 
       {/* Grid Central */}
-      <div className="p-4 md:p-6 max-w-[98%] 2xl:max-w-[1600px] w-full mx-auto flex-1 flex flex-col lg:flex-row gap-8 pb-12">
+      <div className="p-4 md:p-6 max-w-[98%] 2xl:max-w-[1600px] w-full mx-auto flex-1 flex flex-col lg:flex-row gap-8 max-lg:gap-5 pb-12">
         
         {/* 2. Columna Izquierda: Evidencia Visual (60%) */}
         <div className="lg:w-3/5 flex flex-col gap-6">
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4 relative overflow-hidden">
-            <div className="w-full flex items-center justify-between border-b border-gray-50 pb-4">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 max-lg:p-5 shadow-sm border border-gray-100 flex flex-col gap-4 relative overflow-hidden">
+            <div className="w-full flex items-center justify-between max-lg:flex-col max-lg:items-start max-lg:gap-3 border-b border-gray-50 pb-4">
               <h2 className="text-lg font-black text-gray-800 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-dentBlue-500" />
                 Radiografía Panorámica
               </h2>
-              <div className="flex items-center gap-2 flex-wrap justify-end">
+              <div className="flex items-center gap-2 flex-wrap justify-end max-lg:justify-start max-lg:gap-1.5">
                 <button
                   type="button"
                   onClick={() => setShowBoxes((value) => !value)}
@@ -416,7 +416,7 @@ const EvaluacionDetalle = () => {
           </div>
 
           {/* Tarjeta 3: Diagnóstico Clínico Final (Solo Lectura) */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-5">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 max-lg:p-5 shadow-sm border border-gray-100 flex flex-col gap-5">
             <h3 className="font-extrabold text-gray-900 flex items-center">
               <Stethoscope className="w-5 h-5 mr-2 text-teal-600" />
               Diagnóstico Clínico
@@ -469,7 +469,7 @@ const EvaluacionDetalle = () => {
         <div className="lg:w-2/5 flex flex-col gap-6">
           
           {/* Tarjeta 1: Contexto de la Visita */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 max-lg:p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-extrabold text-gray-900 flex items-center">
                 <Calendar className="w-4 h-4 mr-2 text-dentBlue-500" />
@@ -503,7 +503,7 @@ const EvaluacionDetalle = () => {
           </div>
 
           {/* Tarjeta 2: Hallazgos de la IA */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 max-lg:p-5 shadow-sm border border-gray-100">
             <h3 className="font-extrabold text-gray-900 flex items-center mb-5">
               <Info className="w-5 h-5 mr-2 text-red-500" />
               Hallazgos del Modelo

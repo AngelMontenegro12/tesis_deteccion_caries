@@ -83,14 +83,14 @@ const Solicitudes = () => {
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50">
       
       {/* Header Fijo */}
-      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 z-10">
+      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
               <UserCog className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Solicitudes de Rol</h1>
+              <h1 className="text-2xl max-lg:text-xl font-bold text-gray-900">Solicitudes de Rol</h1>
               <p className="text-sm text-gray-500">Aprueba o rechaza solicitudes de nuevos administradores.</p>
             </div>
           </div>
@@ -117,7 +117,7 @@ const Solicitudes = () => {
         <div className="absolute inset-0 bg-white/40 z-0 pointer-events-none"></div>
         <div className="relative z-10 max-w-6xl mx-auto">
           
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 min-h-[75vh] flex flex-col">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 max-lg:p-5 min-h-[75vh] flex flex-col">
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center gap-3">
@@ -127,12 +127,12 @@ const Solicitudes = () => {
         )}
 
         {/* Tabs */}
-        <div className="flex items-center gap-2 border-b border-gray-200 pb-px mb-8">
+        <div className="flex items-center gap-2 border-b border-gray-200 pb-px mb-8 max-lg:mb-5 max-lg:overflow-x-auto">
           {['pendiente', 'aprobada', 'rechazada'].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`px-6 py-3 text-sm font-bold capitalize transition-all border-b-2 ${
+              className={`px-6 max-lg:px-3 py-3 text-sm font-bold capitalize transition-all border-b-2 max-lg:shrink-0 max-lg:whitespace-nowrap ${
                 filter === tab
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -165,9 +165,9 @@ const Solicitudes = () => {
         ) : (
           <div className="grid gap-4">
             {filteredSolicitudes.map((solicitud) => (
-              <div key={solicitud.id_solicitud} className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-shadow">
+              <div key={solicitud.id_solicitud} className="bg-white rounded-2xl border border-gray-100 p-6 max-lg:p-4 flex flex-col md:flex-row md:items-center justify-between gap-6 max-lg:gap-4 shadow-sm hover:shadow-md transition-shadow">
                 
-                <div className="flex items-start gap-5">
+                <div className="flex items-start gap-5 max-lg:gap-3">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                     solicitud.estado === 'pendiente' ? 'bg-amber-100 text-amber-600' :
                     solicitud.estado === 'aprobada' ? 'bg-green-100 text-green-600' :
@@ -178,9 +178,9 @@ const Solicitudes = () => {
                      <XCircle className="w-6 h-6" />}
                   </div>
                   
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-gray-900">{solicitud.objetivo_nombre}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 max-lg:flex-wrap">
+                      <span className="text-lg font-bold text-gray-900 break-words">{solicitud.objetivo_nombre}</span>
                       {solicitud.tipo_solicitud === 'Restablecer Contraseña' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-sm uppercase text-xs">
                           <ChevronRight className="w-4 h-4 text-amber-500" />
@@ -215,18 +215,18 @@ const Solicitudes = () => {
                 </div>
 
                 {solicitud.estado === 'pendiente' && (
-                  <div className="flex items-center gap-3 md:ml-auto">
+                  <div className="flex items-center gap-3 max-lg:w-full md:ml-auto">
                     <button
                       onClick={() => handleAction(solicitud.id_solicitud, 'rechazar')}
                       disabled={processingId === solicitud.id_solicitud}
-                      className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors disabled:opacity-50"
+                      className="px-5 py-2.5 max-lg:flex-1 max-lg:px-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors disabled:opacity-50"
                     >
                       Rechazar
                     </button>
                     <button
                       onClick={() => handleAction(solicitud.id_solicitud, 'aprobar')}
                       disabled={processingId === solicitud.id_solicitud}
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-sm hover:shadow transition-all disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 max-lg:flex-1 max-lg:px-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-sm hover:shadow transition-all disabled:opacity-50"
                     >
                       {processingId === solicitud.id_solicitud ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                       Aprobar

@@ -5,18 +5,19 @@ from app.models import db, DeteccionesCaries, EvaluacionDiagnostica, Paciente, R
 reportes_bp = Blueprint('reportes', __name__, url_prefix='/api/reportes')
 
 
-def _base_query_resultados(id_odontologo):
-    return db.session.query(ResultadosDeteccion).join(
+def _base_query_resultados(id_odontologo=None):
+    query = db.session.query(ResultadosDeteccion).join(
         Radiografia, ResultadosDeteccion.id_radiografia == Radiografia.id_radiografia
     ).join(
         EvaluacionDiagnostica, Radiografia.id_evaluacion == EvaluacionDiagnostica.id_evaluacion
-    ).filter(
-        EvaluacionDiagnostica.id_odontologo == id_odontologo
     )
+    if id_odontologo:
+        query = query.filter(EvaluacionDiagnostica.id_odontologo == id_odontologo)
+    return query
 
 
-def _base_query_detecciones(id_odontologo):
-    return db.session.query(DeteccionesCaries).join(
+def _base_query_detecciones(id_odontologo=None):
+    query = db.session.query(DeteccionesCaries).join(
         ResultadosDeteccion, DeteccionesCaries.id_resultado == ResultadosDeteccion.id_resultado
     ).join(
         Radiografia, ResultadosDeteccion.id_radiografia == Radiografia.id_radiografia
@@ -25,15 +26,17 @@ def _base_query_detecciones(id_odontologo):
     ).join(
         Paciente, EvaluacionDiagnostica.id_paciente == Paciente.id_paciente
     ).filter(
-        EvaluacionDiagnostica.id_odontologo == id_odontologo,
         DeteccionesCaries.severidad.isnot(None)
     )
+    if id_odontologo:
+        query = query.filter(EvaluacionDiagnostica.id_odontologo == id_odontologo)
+    return query
 
 
 @reportes_bp.route('/ia-rendimiento', methods=['GET'])
 def reporte_ia_rendimiento():
     try:
-        id_odontologo = request.args.get('id_odontologo', 1, type=int)
+        id_odontologo = request.args.get('id_odontologo', type=int)
 
         total_resultados = _base_query_resultados(id_odontologo).with_entities(
             func.count(ResultadosDeteccion.id_resultado)
@@ -81,7 +84,7 @@ def reporte_ia_rendimiento():
 @reportes_bp.route('/epidemiologico-caries', methods=['GET'])
 def reporte_epidemiologico_caries():
     try:
-        id_odontologo = request.args.get('id_odontologo', 1, type=int)
+        id_odontologo = request.args.get('id_odontologo', type=int)
 
         base_detecciones = _base_query_detecciones(id_odontologo)
 

@@ -28,7 +28,7 @@ const PatientCard = ({ patient, onClick }) => {
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-dentBlue-900 via-dentGreen-500 to-dentBlue-900 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       {patient.evaluacion_pendiente && (
-        <div className="absolute right-5 top-5 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700 shadow-sm">
+        <div className="absolute right-5 top-5 max-lg:static max-lg:self-start max-lg:mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700 shadow-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
           Pendiente
         </div>
@@ -39,7 +39,7 @@ const PatientCard = ({ patient, onClick }) => {
           {initials}
         </div>
 
-        <div className="min-w-0 flex-1 pr-14">
+        <div className="min-w-0 flex-1 pr-14 max-lg:pr-0">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Paciente</p>
           <h3 className="text-lg font-extrabold leading-tight break-words text-dentBlue-900" title={`${patient.nombres} ${patient.apellidos}`}>
             {patient.nombres} {patient.apellidos}

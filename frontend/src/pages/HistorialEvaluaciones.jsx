@@ -178,22 +178,22 @@ const HistorialEvaluaciones = () => {
 
   return (
     <div 
-      className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed"
+      className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed max-lg:bg-scroll"
       style={{ backgroundImage: `url(${bgDashboard})` }}
     >
-      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 shrink-0 flex justify-between items-center z-10 sticky top-0">
+      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 shrink-0 flex justify-between items-center z-10 sticky top-0">
         <div>
-          <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Historial de Diagnósticos</h1>
+          <h1 className="text-2xl max-lg:text-xl font-bold text-dentBlue-900 tracking-tight">Historial de Diagnósticos</h1>
           <p className="text-sm text-gray-500 mt-1">
             Consulta y filtra todos los diagnósticos clínicos realizadas a tus pacientes.
           </p>
         </div>
       </header>
 
-      <div className="p-8 flex-1 flex flex-col space-y-6 animate-fade-in-up">
+      <div className="p-8 max-lg:p-4 flex-1 flex flex-col space-y-6 max-lg:space-y-4 animate-fade-in-up">
         
         {/* Barra de Filtros */}
-        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col xl:flex-row gap-4 items-center justify-between">
+        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-gray-200 p-5 max-lg:p-4 flex flex-col xl:flex-row gap-4 items-center justify-between">
           <div className="flex flex-col md:flex-row w-full xl:w-auto gap-4 flex-1">
             <div className="relative w-full md:w-80 flex shrink-0">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -212,26 +212,26 @@ const HistorialEvaluaciones = () => {
             </div>
             
             {/* Rango de Fechas */}
-            <div className="flex items-center space-x-2 w-full md:w-auto shrink-0 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2">
-              <Calendar size={18} className="text-gray-400 shrink-0" />
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <label className="flex flex-col text-[10px] text-gray-500">Desde (Opcional)
+            <div className="flex items-center max-lg:flex-col max-lg:items-stretch space-x-2 max-lg:space-x-0 max-lg:gap-2 w-full md:w-auto shrink-0 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2">
+              <Calendar size={18} className="text-gray-400 shrink-0 max-lg:hidden" />
+              <div className="flex items-center space-x-2 max-lg:flex-col max-lg:items-stretch max-lg:space-x-0 max-lg:gap-2 text-sm text-gray-600 max-lg:w-full">
+                <label className="flex flex-col text-[10px] text-gray-500 max-lg:w-full">Desde (Opcional)
                   <input
                     type="date"
                     min="1900-01-01" max={todayLocal()}
                     value={fechaInicio}
                     onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }}
-                    className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 p-0 text-sm text-gray-700"
+                    className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 max-lg:w-full p-0 text-sm text-gray-700"
                   />
                 </label>
-                <span className="text-gray-400">-</span>
-                <label className="flex flex-col text-[10px] text-gray-500">Hasta (Opcional)
+                <span className="text-gray-400 max-lg:hidden">-</span>
+                <label className="flex flex-col text-[10px] text-gray-500 max-lg:w-full">Hasta (Opcional)
                   <input
                     type="date"
                     min="1900-01-01" max={todayLocal()}
                     value={fechaFin}
                     onChange={(e) => { setFechaFin(e.target.value); setPage(1); }}
-                    className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 p-0 text-sm text-gray-700"
+                    className="bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-28 max-lg:w-full p-0 text-sm text-gray-700"
                   />
                 </label>
               </div>
@@ -257,7 +257,7 @@ const HistorialEvaluaciones = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 w-full md:w-auto shrink-0">
+          <div className="flex items-center max-lg:flex-col max-lg:items-stretch space-x-3 max-lg:space-x-0 max-lg:gap-2 w-full md:w-auto shrink-0">
             {(search || estado || tipoVisita || fechaInicio || fechaFin) && (
               <button
                 type="button"
@@ -267,7 +267,7 @@ const HistorialEvaluaciones = () => {
                 Limpiar filtros
               </button>
             )}
-            <div className="flex items-center bg-gray-50 border border-gray-300 rounded-lg px-3 py-2.5 min-w-[200px]">
+            <div className="flex items-center bg-gray-50 border border-gray-300 rounded-lg px-3 py-2.5 min-w-[200px] max-lg:min-w-0 max-lg:w-full">
               <Filter size={18} className="text-gray-400 mr-2 shrink-0" />
               <select
                 className="bg-transparent border-none text-gray-700 text-sm focus:ring-0 w-full cursor-pointer outline-none p-0"
@@ -292,7 +292,7 @@ const HistorialEvaluaciones = () => {
           
           {error && <div className="p-4 text-red-500 bg-red-50 text-sm">{error}</div>}
           
-          <div className="overflow-x-auto flex-1">
+          <div className="overflow-x-auto flex-1 max-lg:hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
@@ -425,8 +425,95 @@ const HistorialEvaluaciones = () => {
             </table>
           </div>
 
+          {/* Vista de tarjetas para móvil (la tabla se mantiene intacta en escritorio) */}
+          <div className="lg:hidden flex-1 overflow-y-auto divide-y divide-gray-200">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center space-y-3 px-6 py-12 text-center text-gray-500">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dentBlue-900"></div>
+                <p>Cargando diagnósticos...</p>
+              </div>
+            ) : evaluaciones.length === 0 ? (
+              <div className="flex flex-col items-center justify-center space-y-3 px-6 py-12 text-center text-gray-500">
+                <AlertCircle className="w-10 h-10 text-gray-400" />
+                <p className="text-lg font-medium text-gray-600">No se encontraron diagnósticos</p>
+                <p className="text-sm">Prueba ajustando los filtros de búsqueda.</p>
+              </div>
+            ) : (
+              evaluaciones.map((evaluacion) => (
+                <div key={evaluacion.id_evaluacion} className="p-4 active:bg-gray-50">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-dentBlue-100 to-dentBlue-200 flex items-center justify-center text-dentBlue-900 font-bold">
+                      {evaluacion.paciente.nombres.charAt(0)}{evaluacion.paciente.apellidos.charAt(0)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 break-words">
+                        {evaluacion.paciente.nombres} {evaluacion.paciente.apellidos}
+                      </p>
+                      <p className="text-xs text-gray-500">DNI: {evaluacion.paciente.dni || 'No reg.'}</p>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                          {formatearFecha(evaluacion.fecha_evaluacion).split(',')[0]}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                          {formatearFecha(evaluacion.fecha_evaluacion).split(',')[1]}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm text-gray-900 break-words">{evaluacion.motivo_consulta || 'Sin especificar'}</p>
+                      <p className="text-xs text-gray-500">{evaluacion.tipo_visita}</p>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {evaluacion.radiografias_count} {evaluacion.radiografias_count === 1 ? 'radiografía' : 'radiografías'}
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          evaluacion.estado === 'completada'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {evaluacion.estado === 'completada' ? (
+                            <>
+                              <FileCheck size={14} className="mr-1.5" /> Completada
+                            </>
+                          ) : (
+                            <>
+                              <Activity size={14} className="mr-1.5" /> Pendiente
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      onClick={() => handleVerDetalles(evaluacion.id_evaluacion)}
+                      className="flex-1 text-dentBlue-900 hover:text-white hover:bg-dentBlue-900 bg-blue-50 px-3 py-2 rounded flex items-center justify-center transition-colors shadow-sm text-sm font-medium"
+                    >
+                      <Eye size={16} />
+                      <span className="ml-1.5">Ver detalle</span>
+                    </button>
+                    {evaluacion.estado === 'pendiente' && (
+                      <button
+                        type="button"
+                        onClick={() => navigate('/nueva-evaluacion', { state: { resume: true, id_paciente: evaluacion.paciente.id_paciente, id_evaluacion: evaluacion.id_evaluacion } })}
+                        className="flex-1 text-white hover:bg-dentBlue-800 bg-dentBlue-900 px-3 py-2 rounded flex items-center justify-center transition-colors shadow-sm text-sm font-medium"
+                      >
+                        <Activity size={16} />
+                        <span className="ml-1.5">Continuar</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
            {/* Footer de Paginación */}
-           <div className="shrink-0 border-t border-gray-100 bg-white px-5 py-4 sm:px-6">
+           <div className="shrink-0 border-t border-gray-100 bg-white px-5 max-lg:px-4 py-4 max-lg:py-3 sm:px-6">
              <div className="flex flex-col items-center gap-4 lg:flex-row lg:justify-between lg:gap-5">
                <p className="text-center text-sm text-gray-500 lg:text-left">
                  Mostrando <span className="font-semibold text-gray-800">{totalItems === 0 ? 0 : (page - 1) * perPage + 1}–{Math.min(page * perPage, totalItems)}</span> de <span className="font-semibold text-gray-800">{totalItems}</span> resultados

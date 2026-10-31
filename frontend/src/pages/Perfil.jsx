@@ -246,12 +246,12 @@ const Perfil = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50">
       {/* Header Fijo */}
-      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 z-10">
+      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
 
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Perfil</h1>
+              <h1 className="text-2xl max-lg:text-xl font-bold text-gray-900">Perfil</h1>
                <p className="text-sm text-gray-500">Consulta tus datos y actualiza tu foto, teléfono o contraseña.</p>
             </div>
           </div>
@@ -259,7 +259,7 @@ const Perfil = () => {
       </div>
 
       <div 
-        className="flex-1 overflow-y-auto relative bg-cover bg-center bg-no-repeat p-6 lg:p-10"
+        className="flex-1 overflow-y-auto relative bg-cover bg-center bg-no-repeat p-6 max-lg:p-4 lg:p-10"
         style={{ backgroundImage: `url(${bgDashboard})` }}
       >
         <div className="absolute inset-0 bg-white/40 z-0 pointer-events-none"></div>
@@ -271,11 +271,11 @@ const Perfil = () => {
             <div className="lg:col-span-4 space-y-8 flex flex-col">
               
               {/* Tarjeta de Foto de Perfil */}
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 max-lg:p-6 flex flex-col items-center text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-gray-100 to-white -z-10"></div>
                 
                 <label className="relative group mb-6 cursor-pointer block">
-                  <div className="w-40 h-40 rounded-full border-4 border-white shadow-xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
+                  <div className="w-40 h-40 max-lg:w-32 max-lg:h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
                     {(user.foto_perfil && user.foto_perfil !== 'null' && user.foto_perfil.length > 5 && !imgError) ? (
                       <img 
                         src={`http://localhost:5000${user.foto_perfil}`} 
@@ -386,7 +386,7 @@ const Perfil = () => {
             {/* COLUMNA DERECHA: Información Personal y Profesional */}
             <div className="lg:col-span-8">
               <form onSubmit={handleSubmitGeneral} className="bg-white rounded-3xl shadow-sm border border-gray-100 h-full flex flex-col">
-                <div className="p-8 sm:p-10 flex-1">
+                <div className="p-8 max-lg:p-5 sm:p-10 flex-1">
                   <p className="mb-8 text-xs leading-relaxed text-gray-500">
                     Para modificar otros datos de tu perfil, contacta al administrador mediante el módulo Soporte / Ayuda.
                   </p>
@@ -453,8 +453,8 @@ const Perfil = () => {
                 </div>
                 
                 {/* Footer del Formulario Derecho */}
-                <div className="p-6 sm:p-8 bg-gray-50/50 border-t border-gray-100 flex items-center justify-end">
-                  <button type="submit" disabled={loadingGeneral || !hasChanges || isPhoneInvalid} className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-dentBlue-900 text-white font-bold rounded-xl hover:bg-dentBlue-800 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg">
+          <div className="p-6 max-lg:p-4 sm:p-8 bg-gray-50/50 border-t border-gray-100 flex items-center justify-end">
+            <button type="submit" disabled={loadingGeneral || !hasChanges || isPhoneInvalid} className="inline-flex items-center justify-center gap-2 px-8 max-lg:px-5 py-3.5 bg-dentBlue-900 text-white font-bold rounded-xl hover:bg-dentBlue-800 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg max-lg:text-base max-lg:w-full">
                     {loadingGeneral ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                      Guardar teléfono
                   </button>
@@ -469,7 +469,7 @@ const Perfil = () => {
       {/* MODAL DEL CROPPER */}
       {showCropper && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] max-lg:max-h-[92dvh]">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <Camera className="w-5 h-5 text-dentBlue-900" />
@@ -483,8 +483,8 @@ const Perfil = () => {
               </button>
             </div>
             
-            <div className="p-6 flex-1 flex flex-col">
-              <div className="relative w-full h-80 bg-gray-100 rounded-2xl overflow-hidden mb-6">
+          <div className="p-6 max-lg:p-4 flex-1 flex flex-col max-lg:overflow-y-auto">
+            <div className="relative w-full h-80 max-lg:h-60 bg-gray-100 rounded-2xl overflow-hidden mb-6">
                 <Cropper
                   image={imageSrc}
                   crop={crop}

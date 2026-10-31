@@ -144,9 +144,10 @@ const GroupedAgeBarChart = ({ data }) => {
         ))}
       </div>
 
-      <div className="relative h-[360px] pt-4 pb-10">
-        <div className="absolute left-0 right-0 bottom-10 h-px bg-gray-200" />
-        <div className="relative z-10 flex items-end gap-4 h-full">
+      <div className="max-lg:overflow-x-auto">
+        <div className="relative h-[360px] pt-4 pb-10 max-lg:min-w-[560px]">
+          <div className="absolute left-0 right-0 bottom-10 h-px bg-gray-200" />
+          <div className="relative z-10 flex items-end gap-4 h-full">
           {grouped.map((item) => (
             <div key={item.label} className="flex-1 min-w-[70px] flex flex-col items-center justify-end h-full">
               <div className="flex items-end justify-center gap-1.5 h-full w-full max-h-[270px]">
@@ -170,6 +171,7 @@ const GroupedAgeBarChart = ({ data }) => {
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );
@@ -409,9 +411,6 @@ const Reportes = () => {
         setError('');
         setSelectedInsight(null);
         setHoveredInsight(null);
-        const savedUser = localStorage.getItem('user');
-        const parsedUser = savedUser ? JSON.parse(savedUser) : null;
-        const idOdontologo = parsedUser?.id_odontologo || 1;
         const endpoint = REPORT_ENDPOINTS[activeReport];
 
         if (!endpoint) {
@@ -419,9 +418,7 @@ const Reportes = () => {
           return;
         }
 
-        const response = await api.get(endpoint, {
-          params: { id_odontologo: idOdontologo }
-        });
+        const response = await api.get(endpoint);
 
         if (!cancelled && response.data?.status === 'success') {
           setReportData(response.data.data);
@@ -479,18 +476,18 @@ const Reportes = () => {
   const epidemiologicalIncidence = reportData?.incidencia_por_edad || [];
 
   return (
-    <div className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed" style={{ backgroundImage: `url(${bgDashboard})` }}>
-      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 shrink-0 z-10 sticky top-0">
+    <div className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed max-lg:bg-scroll" style={{ backgroundImage: `url(${bgDashboard})` }}>
+      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 shrink-0 z-10 sticky top-0">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Estadísticas y reportes</h1>
+            <h1 className="text-2xl max-lg:text-xl font-bold text-dentBlue-900 tracking-tight">Estadísticas y reportes</h1>
             <p className="text-sm text-gray-500 mt-1">Métricas clínicas y de IA con un diseño limpio, sobrio y orientado a la lectura rápida.</p>
           </div>
 
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all max-lg:w-full"
           >
             <ArrowUpRight className="w-4 h-4" />
             Ir al dashboard
@@ -498,8 +495,8 @@ const Reportes = () => {
         </div>
       </header>
 
-      <div className="relative flex-1 overflow-auto p-8 space-y-6">
-        <nav className="flex flex-wrap items-center gap-2 p-1.5 bg-white/60 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm w-full">
+      <div className="relative flex-1 overflow-auto p-8 max-lg:p-4 space-y-6 max-lg:space-y-4">
+        <nav className="flex flex-wrap items-center gap-2 max-lg:gap-1.5 p-1.5 bg-white/60 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm w-full">
           {REPORT_OPTIONS.map((item) => {
             const Icon = item.icon;
             const isActive = activeReport === item.id;
@@ -507,7 +504,7 @@ const Reportes = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveReport(item.id)}
-                className={`flex flex-1 justify-center items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 ${
+                className={`flex flex-1 justify-center items-center gap-2.5 max-lg:gap-1.5 max-lg:min-w-0 px-6 max-lg:px-3 py-3 rounded-xl text-sm max-lg:text-xs font-extrabold transition-all duration-300 ${
                   isActive
                     ? 'bg-dentBlue-900 text-white shadow-md transform scale-[1.02]'
                     : 'text-gray-500 hover:bg-white hover:text-dentBlue-900 hover:shadow-sm'
@@ -547,7 +544,7 @@ const Reportes = () => {
             </section>
 
             <section className="grid grid-cols-1 xl:grid-cols-[0.82fr_1.18fr] gap-6">
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-5">
                 <div className="flex items-start justify-between gap-4 mb-6">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Distribución de severidad</p>
@@ -577,7 +574,7 @@ const Reportes = () => {
                 </div>
               </div>
 
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-5">
                 <div className="flex items-start justify-between gap-4 mb-5">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Incidencia por edad</p>
@@ -612,7 +609,7 @@ const Reportes = () => {
             
             <section className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6">
               <div className="space-y-6">
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-5">
                   <div className="flex items-start justify-between gap-4 mb-5">
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Tendencia de Evaluaciones</p>
@@ -623,7 +620,7 @@ const Reportes = () => {
                   <SmoothedAreaChart data={reportData?.tendencia} />
                 </div>
 
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 overflow-hidden">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-5 overflow-hidden">
                   <div className="flex items-start justify-between gap-4 mb-5">
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Rendimiento por Especialista</p>
@@ -632,7 +629,7 @@ const Reportes = () => {
                     </div>
                   </div>
                   
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-lg:hidden">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-[0.1em] text-gray-400">
@@ -690,10 +687,48 @@ const Reportes = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Vista de tarjetas para móvil (la tabla se mantiene intacta en escritorio) */}
+                  <div className="lg:hidden space-y-3">
+                    {(reportData?.especialistas || []).map((doc) => {
+                      const pendientes = doc.total_evaluaciones - doc.completadas;
+                      const hasPendientes = pendientes > 0;
+                      return (
+                        <div key={doc.id} className="rounded-xl border border-gray-100 p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-dentBlue-100 text-dentBlue-900 flex items-center justify-center font-bold text-sm shrink-0">
+                              {doc.nombre.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-dentBlue-900 break-words">{doc.nombre}</p>
+                              <p className="text-xs text-gray-500 break-words">{doc.especialidad}</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-lg font-extrabold text-dentBlue-900">{doc.total_evaluaciones}</p>
+                              <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400 font-bold">Total</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold bg-dentGreen-50 text-dentGreen-700">
+                              {doc.completadas} completadas
+                            </span>
+                            {hasPendientes && (
+                              <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600">
+                                {pendientes} pendientes
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {(!reportData?.especialistas || reportData.especialistas.length === 0) && (
+                      <p className="py-6 text-center text-gray-500 text-sm">No hay especialistas registrados.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 h-fit">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-5 h-fit">
                 <div className="flex items-start justify-between gap-4 mb-6">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Distribución</p>
@@ -707,7 +742,7 @@ const Reportes = () => {
         ) : activeReport === 'diagnostico_individual' ? (
           <ReporteIndividual />
         ) : activeReport !== 'ia_rendimiento' ? (
-          <section className="bg-white/90 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-8 min-h-[340px] flex items-center justify-center text-center">
+            <section className="bg-white/90 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-8 max-lg:p-6 min-h-[340px] flex items-center justify-center text-center">
             <div className="max-w-xl">
               <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400">
                 <FlaskConical className="w-8 h-8" />
@@ -747,7 +782,7 @@ const Reportes = () => {
             </section>
 
             <section className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-5">
                 <div className="flex items-start justify-between gap-4 mb-6">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Indicador radial</p>
@@ -815,7 +850,7 @@ const Reportes = () => {
                 </div>
               </div>
 
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-5">
                 <div className="flex items-start justify-between gap-4 mb-5">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Lectura rápida</p>

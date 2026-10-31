@@ -317,22 +317,22 @@ const ListaPacientes = () => {
 
   return (
     <div 
-      className="flex-1 flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed"
+      className="flex-1 flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed max-lg:bg-scroll"
       style={{ backgroundImage: `url(${bgDashboard})` }}
     >
       
       {/* Cabecera y Filtros "Pill" (Minimalismo puro) */}
-      <header className="px-8 py-6 bg-white/90 backdrop-blur-sm border-b border-gray-100 shrink-0 z-10 sticky top-0">
+      <header className="px-8 py-6 max-lg:px-4 max-lg:py-4 bg-white/90 backdrop-blur-sm border-b border-gray-100 shrink-0 z-10 sticky top-0">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Gestión de Pacientes</h1>
+            <h1 className="text-2xl max-lg:text-xl font-bold text-dentBlue-900 tracking-tight">Gestión de Pacientes</h1>
             <p className="text-sm text-gray-500 mt-1">
               Visualiza, busca y gestiona los expedientes de todos los pacientes.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 self-start lg:self-auto">
-            <div className="inline-flex items-center gap-3 bg-dentBlue-50 border border-dentBlue-100 rounded-2xl px-4 py-3 shadow-sm h-full">
+          <div className="flex flex-col sm:flex-row items-center gap-4 self-start lg:self-auto max-lg:self-stretch max-lg:w-full">
+            <div className="inline-flex items-center gap-3 bg-dentBlue-50 border border-dentBlue-100 rounded-2xl px-4 py-3 shadow-sm h-full max-lg:w-full">
               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-dentBlue-900 font-extrabold shadow-sm border border-dentBlue-100 shrink-0">
                 {patients.length}
               </div>
@@ -344,7 +344,7 @@ const ListaPacientes = () => {
 
             <button 
               onClick={() => setIsNewModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all h-full"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all h-full max-lg:w-full"
             >
               <UserPlus className="w-5 h-5 shrink-0" />
               Registrar Paciente
@@ -354,10 +354,10 @@ const ListaPacientes = () => {
       </header>
 
       {/* Área de Vistas (Listado / Grid / Tabla / Kanban) */}
-      <div className="flex-1 overflow-y-auto p-8 pt-6 flex flex-col gap-6 animate-fade-in-up">
+      <div className="flex-1 overflow-y-auto p-8 pt-6 max-lg:p-4 max-lg:pt-4 flex flex-col gap-6 max-lg:gap-4 animate-fade-in-up">
         
         {/* Controles de Búsqueda y Filtros Separados del Header */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col gap-6 w-full">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 p-6 max-lg:p-4 flex flex-col gap-6 max-lg:gap-4 w-full">
           
           {/* Fila 1: Buscador y Selector de Vistas */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -397,7 +397,7 @@ const ListaPacientes = () => {
           <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
             {/* Primer bloque: Filtros Generales y de Paciente */}
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mr-2 w-24">Pacientes:</span>
+              <span className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mr-2 w-24 max-lg:w-full max-lg:mr-0">Pacientes:</span>
               {['Todos', 'Menores de edad', 'Mayores de edad', 'Nuevos Pacientes'].map(filter => (
                 <button
                   key={filter}
@@ -415,7 +415,7 @@ const ListaPacientes = () => {
             
             {/* Segundo bloque: Filtros Médicos / Diagnósticos */}
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mr-2 w-24">Diagnósticos:</span>
+              <span className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mr-2 w-24 max-lg:w-full max-lg:mr-0">Diagnósticos:</span>
               {['Con Diagnóstico Pendiente', 'Atendidos este mes', 'Urgencias', 'Controles de rutina'].map(filter => (
                 <button
                   key={filter}
@@ -435,12 +435,12 @@ const ListaPacientes = () => {
 
         {/* CONTENIDO (Grillas / Tablas) */}
         {loading ? (
-          <div className="flex flex-col flex-1 items-center justify-center p-12">
+          <div className="flex flex-col flex-1 items-center justify-center p-12 max-lg:p-8">
             <Loader2 className="w-12 h-12 text-dentBlue-900 animate-spin mb-4" />
             <h3 className="text-xl font-bold text-dentBlue-900">Cargando pacientes...</h3>
           </div>
         ) : filteredPatients.length === 0 ? (
-          <div className="text-center py-20 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-200">
+          <div className="text-center py-20 max-lg:py-12 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-200">
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 shadow-sm">
               <Search className="w-8 h-8 text-gray-300" />
             </div>
@@ -450,7 +450,7 @@ const ListaPacientes = () => {
         ) : (
           <>
             {viewMode === 'grid' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-lg:gap-4 shrink-0">
                 {currentPatients.map(patient => (
                   <PatientCard 
                     key={patient.id_paciente} 
@@ -463,17 +463,23 @@ const ListaPacientes = () => {
 
             {viewMode === 'table' && (
               <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 overflow-hidden shrink-0">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-white to-gray-50/80">
+                <div className="flex items-center justify-between px-6 max-lg:px-4 py-4 max-lg:py-3 border-b border-gray-100 bg-gradient-to-r from-white to-gray-50/80">
                   <div>
-                    <h3 className="text-base font-bold text-dentBlue-900">Vista de tabla</h3>
-                    <p className="text-sm text-gray-500">Listado compacto con ordenamiento por columna.</p>
+                    <h3 className="text-base font-bold text-dentBlue-900">
+                      <span className="max-lg:hidden">Vista de tabla</span>
+                      <span className="lg:hidden">Pacientes</span>
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      <span className="max-lg:hidden">Listado compacto con ordenamiento por columna.</span>
+                      <span className="lg:hidden">Toca un paciente para ver su expediente.</span>
+                    </p>
                   </div>
                   <div className="text-sm text-gray-500 font-medium">
                     {sortedPatients.length} paciente{sortedPatients.length !== 1 && 's'}
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-lg:hidden">
                   <table className="min-w-full divide-y divide-gray-100">
                     <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
                       <tr>
@@ -555,6 +561,45 @@ const ListaPacientes = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Vista de tarjetas para móvil (la tabla se mantiene intacta en escritorio) */}
+                <div className="lg:hidden divide-y divide-gray-100">
+                  {currentPatients.map((patient) => (
+                    <div
+                      key={patient.id_paciente}
+                      onClick={() => handleCardClick(patient)}
+                      className={`relative flex items-start gap-3 px-4 py-4 cursor-pointer transition-colors ${patient.evaluacion_pendiente ? 'bg-amber-50/40' : 'hover:bg-gray-50/80'}`}
+                    >
+                      {patient.evaluacion_pendiente && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-400" />
+                      )}
+                      <div className="w-10 h-10 rounded-2xl bg-dentBlue-900 text-white flex items-center justify-center shadow-sm shrink-0 font-bold text-sm">
+                        {patient.nombres?.charAt(0)}{patient.apellidos?.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-bold text-gray-900 break-words">
+                            {patient.nombres} {patient.apellidos}
+                          </p>
+                          {patient.evaluacion_pendiente && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200/60">
+                              Dx pendiente
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                          <span>DNI: <span className="font-medium text-gray-700">{patient.dni || '-'}</span></span>
+                          <span>{getAge(patient.fecha_nacimiento)} años</span>
+                          <span>Última: <span className="font-medium text-gray-700">{patient.ultima_atencion ? patient.ultima_atencion.split('-').reverse().join('-') : '-'}</span></span>
+                        </div>
+                        {getAge(patient.fecha_nacimiento) < 18 && patient.apoderado && (
+                          <p className="mt-1 text-xs text-gray-500 truncate">Apoderado: {patient.apoderado}</p>
+                        )}
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 shrink-0 mt-1" />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -564,7 +609,7 @@ const ListaPacientes = () => {
                   <div
                     key={patient.id_paciente}
                     onClick={() => handleCardClick(patient)}
-                    className="group relative overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white/95 px-5 py-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-dentBlue-900/20 hover:bg-dentBlue-50/20 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] cursor-pointer"
+                    className="group relative overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white/95 px-5 max-lg:px-4 py-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-dentBlue-900/20 hover:bg-dentBlue-50/20 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] cursor-pointer"
                   >
                     {patient.evaluacion_pendiente && (
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-400" />
@@ -625,14 +670,14 @@ const ListaPacientes = () => {
             )}
 
             {viewMode === 'kanban' && (
-              <div className="flex gap-5 overflow-x-auto pb-4 h-full min-h-[540px] snap-x shrink-0">
+              <div className="flex gap-5 max-lg:gap-4 overflow-x-auto pb-4 h-full min-h-[540px] snap-x shrink-0">
                 {KANBAN_COLUMNS.map(col => {
                   const columnPatients = kanbanColumns[col];
                   const columnPages = Math.ceil(columnPatients.length / KANBAN_ITEMS_PER_PAGE);
                   const columnPage = Math.min(kanbanPages[col] || 1, Math.max(1, columnPages));
                   const visiblePatients = columnPatients.slice((columnPage - 1) * KANBAN_ITEMS_PER_PAGE, columnPage * KANBAN_ITEMS_PER_PAGE);
                   return (
-                    <div key={col} className="flex-1 min-w-[290px] w-72 rounded-[1.5rem] border border-gray-200 bg-white/90 backdrop-blur-md shadow-[0_8px_30px_rgba(15,23,42,0.04)] flex flex-col snap-center overflow-hidden">
+                    <div key={col} className="flex-1 min-w-[290px] w-72 max-lg:min-w-[85vw] max-lg:w-[85vw] rounded-[1.5rem] border border-gray-200 bg-white/90 backdrop-blur-md shadow-[0_8px_30px_rgba(15,23,42,0.04)] flex flex-col snap-center overflow-hidden">
                     <div className="border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/70 px-4 py-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -727,7 +772,7 @@ const ListaPacientes = () => {
 
             {/* Paginación compartida de cuadrícula, tabla y lista */}
             {viewMode !== 'kanban' && (
-              <div className="shrink-0 rounded-2xl border border-gray-200 bg-white/95 px-5 py-4 shadow-sm sm:px-6">
+              <div className="shrink-0 rounded-2xl border border-gray-200 bg-white/95 px-5 max-lg:px-4 py-4 max-lg:py-3 shadow-sm sm:px-6">
                 <div className="flex flex-col items-center gap-4 lg:flex-row lg:justify-between lg:gap-5">
                   <p className="text-center text-sm text-gray-500 lg:text-left">
                     Mostrando <span className="font-semibold text-gray-800">{(visiblePage - 1) * itemsPerPage + 1}–{Math.min(visiblePage * itemsPerPage, sortedPatients.length)}</span> de <span className="font-semibold text-gray-800">{sortedPatients.length}</span> pacientes

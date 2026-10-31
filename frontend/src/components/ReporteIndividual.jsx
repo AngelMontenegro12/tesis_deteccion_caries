@@ -71,7 +71,7 @@ const ImageSlider = ({ beforeImage, afterImage, beforeDetections = [], afterDete
   const afterSrc = resolveUrl(afterImage);
 
   return (
-    <div className="relative w-full h-[500px] bg-gray-100 rounded-2xl overflow-hidden group select-none border-2 border-dashed border-gray-300 flex items-center justify-center">
+    <div className="relative w-full h-[500px] max-lg:h-[300px] bg-gray-100 rounded-2xl overflow-hidden group select-none border-2 border-dashed border-gray-300 flex items-center justify-center">
       {/* Base image: Before (Oldest) */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="relative max-w-full max-h-full" style={{ aspectRatio: `${beforeSize.w}/${beforeSize.h}` }}>
@@ -310,7 +310,7 @@ const ReporteIndividual = () => {
   return (
     <div className="space-y-6">
       {/* Búsqueda de Paciente */}
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 relative z-30">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-4 relative z-30">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Contexto clínico</p>
@@ -360,7 +360,7 @@ const ReporteIndividual = () => {
       </div>
 
       {loadingReport && (
-        <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 p-12 flex flex-col items-center justify-center">
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 p-12 max-lg:p-6 flex flex-col items-center justify-center">
            <div className="w-12 h-12 border-4 border-dentBlue-200 border-t-dentBlue-600 rounded-full animate-spin mb-4"></div>
            <p className="text-dentBlue-900 font-bold">Analizando historial del paciente...</p>
         </div>
@@ -377,12 +377,12 @@ const ReporteIndividual = () => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           
           {/* 1. Cabecera del Paciente */}
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-dentBlue-100 to-dentBlue-200 text-dentBlue-900 font-extrabold text-3xl flex items-center justify-center shadow-inner shrink-0">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-4 flex flex-col md:flex-row items-center md:items-start gap-6">
+            <div className="w-24 h-24 max-lg:w-20 max-lg:h-20 rounded-full bg-gradient-to-br from-dentBlue-100 to-dentBlue-200 text-dentBlue-900 font-extrabold text-3xl max-lg:text-2xl flex items-center justify-center shadow-inner shrink-0">
               {reportData.paciente.nombres.charAt(0)}{reportData.paciente.apellidos.charAt(0)}
             </div>
             <div className="flex-1 text-center md:text-left">
-              <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+              <h2 className="text-3xl max-lg:text-2xl font-black text-gray-900 tracking-tight">
                 {reportData.paciente.nombres} <span className="text-dentBlue-900">{reportData.paciente.apellidos}</span>
               </h2>
               <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
@@ -406,7 +406,7 @@ const ReporteIndividual = () => {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* 2. Gráfico de Evolución (Toma 2 columnas) */}
-            <div className="xl:col-span-2 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="xl:col-span-2 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-4">
               <div className="mb-6">
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Progreso Clínico</p>
                 <h3 className="mt-1 text-xl font-extrabold text-dentBlue-900 tracking-tight">Curva de Actividad de Caries</h3>
@@ -414,7 +414,7 @@ const ReporteIndividual = () => {
               </div>
               
               {reportData.grafico_caries && reportData.grafico_caries.length > 0 ? (
-                <div className="h-[350px] w-full mt-4">
+                <div className="h-[350px] max-lg:h-[280px] w-full mt-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={reportData.grafico_caries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -455,7 +455,7 @@ const ReporteIndividual = () => {
             </div>
 
             {/* 3. Timeline Vertical (Toma 1 columna) */}
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col max-h-[500px]">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-4 flex flex-col max-h-[500px]">
               <div className="mb-6 shrink-0">
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Registro Narrativo</p>
                 <h3 className="mt-1 text-xl font-extrabold text-dentBlue-900 tracking-tight">Historial Clínico</h3>
@@ -478,7 +478,7 @@ const ReporteIndividual = () => {
           </div>
 
           {/* 4. Comparativa Radiográfica */}
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 max-lg:p-4">
             <div className="mb-6">
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">Demostración al paciente</p>
               <h3 className="mt-1 text-xl font-extrabold text-dentBlue-900 tracking-tight flex items-center gap-2">
@@ -556,9 +556,9 @@ const ReporteIndividual = () => {
                           beforeDetections={beforeDetections}
                           afterDetections={afterDetections}
                         />
-                        <div className="flex justify-between items-center mt-3 px-2 text-xs font-bold text-gray-500">
+                        <div className="flex justify-between items-center max-lg:flex-col max-lg:items-start max-lg:gap-2 mt-3 px-2 text-xs font-bold text-gray-500">
                           <span>Antes: {beforeDate.split(' ')[0]}</span>
-                          <div className="flex gap-4">
+                          <div className="flex gap-4 max-lg:flex-wrap max-lg:gap-2">
                             <div className="flex items-center gap-1.5" title="Caries en estado inicial (Esmalte)">
                               <div className="w-3 h-3 rounded bg-amber-400/20 border border-amber-500"></div>
                               Incipiente

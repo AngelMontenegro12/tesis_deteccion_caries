@@ -112,10 +112,10 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
         onClick={onClose}
       />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] max-lg:max-h-[92dvh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
         
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50 shrink-0">
-          <h2 className="text-xl font-extrabold text-dentBlue-900 flex items-center">
+        <div className="flex items-center justify-between p-6 max-lg:p-4 border-b border-gray-100 bg-gray-50 shrink-0">
+          <h2 className="text-xl max-lg:text-lg font-extrabold text-dentBlue-900 flex items-center">
             <UserPlus className="w-6 h-6 mr-3 text-dentGreen-500" />
             Registrar Nuevo Paciente
           </h2>
@@ -127,7 +127,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 max-lg:p-4 bg-white custom-scrollbar">
           <div className="px-4 md:px-12 lg:px-16 pb-4">
             {formErrors.general && (
                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm border border-red-100 font-medium">
@@ -160,7 +160,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
               </div>
 
               {/* DNI & Fecha Nacimiento */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 flex items-center"><CreditCard className="w-3.5 h-3.5 mr-1" /> DNI <span className="text-red-500 ml-1">*</span></label>
                   <input 
@@ -182,7 +182,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
               </div>
 
               {/* Género & Edad (Calculada) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 max-lg:grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Género <span className="text-red-500">*</span></label>
                   <select 
@@ -283,7 +283,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
           </div>
         </div>
 
-        <div className="flex items-center justify-end p-6 border-t border-gray-100 bg-gray-50 flex-shrink-0 gap-3">
+        <div className="flex items-center justify-end p-6 max-lg:p-4 max-lg:flex-col-reverse max-lg:items-stretch border-t border-gray-100 bg-gray-50 flex-shrink-0 gap-3">
           <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors text-sm"

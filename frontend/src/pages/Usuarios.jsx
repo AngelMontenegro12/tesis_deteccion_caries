@@ -312,13 +312,13 @@ const Usuarios = () => {
 
   return (
     <div
-      className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed"
+      className="flex-1 overflow-auto flex flex-col h-full bg-cover bg-center bg-no-repeat bg-fixed max-lg:bg-scroll"
       style={{ backgroundImage: `url(${bgDashboard})` }}
     >
-      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 shrink-0 z-10 sticky top-0">
+      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 shrink-0 z-10 sticky top-0">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-dentBlue-900 tracking-tight">Odontólogos del sistema</h1>
+            <h1 className="text-2xl max-lg:text-xl font-bold text-dentBlue-900 tracking-tight">Odontólogos del sistema</h1>
             <p className="text-sm text-gray-500 mt-1">
               Administra únicamente el personal odontológico autorizado para usar la plataforma.
             </p>
@@ -327,7 +327,7 @@ const Usuarios = () => {
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all max-lg:w-full"
           >
             <Plus className="w-4 h-4" />
             Nuevo odontólogo
@@ -335,9 +335,9 @@ const Usuarios = () => {
         </div>
       </header>
 
-      <div className="relative flex-1 overflow-auto p-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+      <div className="relative flex-1 overflow-auto p-8 max-lg:p-4 space-y-6 max-lg:space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 max-lg:gap-3">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Total odontólogos</p>
               <div className="w-10 h-10 rounded-xl bg-dentBlue-50 flex items-center justify-center text-dentBlue-900">
@@ -348,7 +348,7 @@ const Usuarios = () => {
             <p className="text-sm text-gray-500 mt-2">Cuentas registradas en el sistema.</p>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Activos</p>
               <div className="w-10 h-10 rounded-xl bg-dentGreen-50 flex items-center justify-center text-dentGreen-600">
@@ -359,7 +359,7 @@ const Usuarios = () => {
             <p className="text-sm text-gray-500 mt-2">Odontólogos disponibles para iniciar sesión.</p>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Inactivos</p>
               <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
@@ -370,7 +370,7 @@ const Usuarios = () => {
             <p className="text-sm text-gray-500 mt-2">Cuentas suspendidas temporalmente.</p>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white/90 backdrop-blur-md border border-dentBlue-900/10 rounded-2xl p-5 max-lg:p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Especialidades</p>
               <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -382,7 +382,7 @@ const Usuarios = () => {
           </div>
         </div>
 
-        <section className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 p-5 space-y-4">
+        <section className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 p-5 max-lg:p-4 space-y-4">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div className="relative w-full xl:max-w-xl">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -420,7 +420,7 @@ const Usuarios = () => {
         )}
 
         <section className="bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-5 max-lg:px-4 py-4 max-lg:py-3 max-lg:flex-col max-lg:items-start max-lg:gap-1 border-b border-gray-100">
             <div>
               <h2 className="text-base font-bold text-dentBlue-900">Listado de odontólogos</h2>
               <p className="text-sm text-gray-500">Solo se muestran cuentas de odontólogos registrados en el sistema.</p>
@@ -444,7 +444,7 @@ const Usuarios = () => {
               <p className="mt-1">Prueba cambiando el filtro o crea una nueva cuenta.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-lg:hidden">
               <table className="min-w-full divide-y divide-gray-100">
                 <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
                   <tr>
@@ -585,19 +585,117 @@ const Usuarios = () => {
               </table>
             </div>
           )}
+
+          {/* Vista de tarjetas para móvil (la tabla se mantiene intacta en escritorio) */}
+          {!loading && sortedOdontologos.length > 0 && (
+            <div className="lg:hidden divide-y divide-gray-100">
+              {sortedOdontologos.map((odontologo) => (
+                <div key={odontologo.id_odontologo} className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-dentBlue-900 text-white flex items-center justify-center shadow-sm shrink-0">
+                      <Stethoscope className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-gray-900 break-words">{odontologo.nombres} {odontologo.apellidos}</p>
+                      <p className="text-sm text-gray-500 break-words">Colegiatura {odontologo.colegiatura || 'No registrada'}</p>
+
+                      <div className="mt-2 space-y-1 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                          <span className="truncate">{odontologo.correo}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                          <span>{odontologo.telefono || 'Sin teléfono'}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dentBlue-50 text-dentBlue-900 text-xs font-bold border border-dentBlue-100">
+                          <BadgeCheck className="w-3.5 h-3.5 shrink-0" />
+                          {odontologo.especialidad || 'Especialidad general'}
+                        </span>
+                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
+                          odontologo.activo
+                            ? 'bg-green-50 text-green-700 border-green-100'
+                            : 'bg-amber-50 text-amber-700 border-amber-100'
+                        }`}>
+                          {odontologo.activo ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                          {odontologo.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
+                          odontologo.id_odontologo === 1
+                            ? 'bg-purple-100 text-purple-800 border-purple-300 shadow-sm ring-1 ring-purple-500/20'
+                            : odontologo.rol === 'superadmin'
+                            ? 'bg-indigo-100 text-indigo-800 border-indigo-300 shadow-sm ring-1 ring-indigo-500/20'
+                            : odontologo.rol === 'admin'
+                            ? 'bg-purple-50 text-purple-700 border-purple-100'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}>
+                          {odontologo.id_odontologo === 1 ? 'Admin Principal' : odontologo.rol === 'superadmin' ? 'Superadministrador' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo)}
+                      onClick={() => {
+                        setPermisosUser(odontologo);
+                        setPermisosForm(odontologo.permisos || []);
+                        setPermisosRol(odontologo.rol || 'odontologo');
+                        setIsPermisosModalOpen(true);
+                      }}
+                      className={`inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                        (odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo))
+                          ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed'
+                          : 'border-gray-200 text-gray-700 hover:border-purple-900/30 hover:text-purple-700 hover:bg-purple-50'
+                      }`}
+                      title={odontologo.id_odontologo === 1 ? 'Los permisos del Administrador Principal no se pueden modificar' : (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo) ? 'No puedes modificar tus propios permisos' : 'Gestionar permisos'}
+                    >
+                      <Shield className="w-4 h-4" />
+                      Permisos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(odontologo)}
+                      className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:border-dentBlue-900/30 hover:text-dentBlue-900 hover:bg-dentBlue-50 transition-all text-sm font-semibold"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleActive(odontologo)}
+                      className={`col-span-2 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                        odontologo.activo
+                          ? 'border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-300'
+                          : 'border-dentGreen-200 text-dentGreen-700 hover:bg-dentGreen-50 hover:border-dentGreen-300'
+                      }`}
+                    >
+                      {odontologo.activo ? <X className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                      {odontologo.activo ? 'Desactivar' : 'Activar'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 backdrop-blur-sm px-4">
-          <div className="w-full max-w-3xl bg-white rounded-[1.75rem] shadow-2xl border border-gray-100 overflow-hidden">
-            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-dentBlue-50 to-white">
-              <div>
+          <div className="w-full max-w-3xl max-lg:max-h-[92dvh] max-lg:overflow-y-auto bg-white rounded-[1.75rem] shadow-2xl border border-gray-100 overflow-hidden">
+            <div className="flex items-start justify-between gap-4 px-6 max-lg:px-4 py-5 max-lg:py-4 border-b border-gray-100 bg-gradient-to-r from-dentBlue-50 to-white">
+              <div className="min-w-0">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-dentBlue-100 text-dentBlue-900 text-xs font-bold uppercase tracking-[0.2em] mb-3">
                   <UserCog className="w-3.5 h-3.5" />
                   {editingUser ? 'Editar odontólogo' : 'Nuevo odontólogo'}
                 </div>
-                <h3 className="text-2xl font-extrabold text-dentBlue-900 tracking-tight">
+                <h3 className="text-2xl max-lg:text-xl font-extrabold text-dentBlue-900 tracking-tight">
                   {editingUser ? 'Actualizar datos clínicos' : 'Registrar odontólogo'}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
@@ -607,14 +705,14 @@ const Usuarios = () => {
               <button
                 type="button"
                 onClick={closeModal}
-                className="w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                className="w-10 h-10 shrink-0 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
                 aria-label="Cerrar modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="p-6 max-lg:p-4 space-y-5">
               {error && <p role="alert" className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-2">
@@ -698,7 +796,7 @@ const Usuarios = () => {
                 </label>
               </div>
 
-              <div className="flex items-center justify-between gap-4 pt-2 flex-wrap">
+              <div className="flex items-center justify-between gap-4 pt-2 flex-wrap max-lg:flex-col max-lg:items-stretch">
                 <label className="inline-flex items-center gap-3 text-sm font-semibold text-gray-700 select-none">
                   <input
                     type="checkbox"
@@ -710,18 +808,18 @@ const Usuarios = () => {
                    Cuenta activa (Opcional)
                 </label>
 
-                <div className="flex items-center gap-3 ml-auto">
+                <div className="flex items-center gap-3 ml-auto max-lg:ml-0 max-lg:w-full max-lg:flex-col-reverse">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-5 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                    className="px-5 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors max-lg:w-full"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-dentBlue-900 text-white font-bold shadow-md hover:bg-dentBlue-800 hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed max-lg:w-full"
                   >
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     {saving ? 'Guardando' : 'Guardar cambios'}
@@ -734,27 +832,27 @@ const Usuarios = () => {
       )}
       {isPermisosModalOpen && permisosUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 backdrop-blur-sm px-4 py-6">
-          <div className="w-full max-w-lg bg-white rounded-[1.75rem] shadow-2xl border border-gray-100 flex flex-col max-h-[95vh] overflow-hidden">
-            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white shrink-0">
-              <div>
+          <div className="w-full max-w-lg bg-white rounded-[1.75rem] shadow-2xl border border-gray-100 flex flex-col max-h-[95vh] max-lg:max-h-[92dvh] overflow-hidden">
+            <div className="flex items-start justify-between gap-4 px-6 max-lg:px-4 py-5 max-lg:py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white shrink-0">
+              <div className="min-w-0">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-purple-100 text-purple-700 text-xs font-bold uppercase tracking-[0.2em] mb-3">
                   <Shield className="w-3.5 h-3.5" />
                   Permisos de acceso
                 </div>
-                <h3 className="text-xl font-extrabold text-dentBlue-900 tracking-tight">
+                <h3 className="text-xl font-extrabold text-dentBlue-900 tracking-tight break-words">
                   {permisosUser.nombres} {permisosUser.apellidos}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsPermisosModalOpen(false)}
-                className="w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                className="w-10 h-10 shrink-0 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-6 overflow-y-auto">
+            <div className="p-6 max-lg:p-4 space-y-6 overflow-y-auto">
               <div className="space-y-3">
                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">1. Rol del usuario <span className="text-red-500">*</span></h4>
                 <p className="text-sm text-gray-500">Define el nivel de control sobre el sistema.</p>
@@ -879,7 +977,7 @@ const Usuarios = () => {
             </div>
 
             {/* Footer con botones fijos */}
-            <div className="flex items-center gap-3 p-6 border-t border-gray-100 bg-gray-50 shrink-0">
+            <div className="flex items-center gap-3 p-6 max-lg:p-4 border-t border-gray-100 bg-gray-50 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsPermisosModalOpen(false)}

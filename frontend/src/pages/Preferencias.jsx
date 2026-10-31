@@ -189,13 +189,13 @@ const Preferencias = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gray-50/50">
-      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 z-10">
+      <div className="flex-none bg-white border-b border-gray-200 px-8 py-6 max-lg:px-4 max-lg:py-4 z-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-dentBlue-50 rounded-xl flex items-center justify-center">
             <SlidersHorizontal className="w-5 h-5 text-dentBlue-900" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Preferencias</h1>
+            <h1 className="text-2xl max-lg:text-xl font-bold text-gray-900">Preferencias</h1>
             <p className="text-sm text-gray-500">
               Personaliza tu experiencia y revisa el estado de los servicios.
             </p>
@@ -204,7 +204,7 @@ const Preferencias = () => {
       </div>
 
       <div
-        className="flex-1 overflow-y-auto relative bg-cover bg-center bg-no-repeat p-6 lg:p-10"
+        className="flex-1 overflow-y-auto relative bg-cover bg-center bg-no-repeat p-6 max-lg:p-4 lg:p-10"
         style={{ backgroundImage: `url(${bgDashboard})` }}
       >
         <div className="absolute inset-0 bg-white/40 z-0 pointer-events-none"></div>
