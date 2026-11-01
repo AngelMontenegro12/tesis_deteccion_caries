@@ -1,0 +1,259 @@
+unittest.case.FunctionTestCase (test)
+CB-03 valid_dni_1 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_dni_2 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_dni_3 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_dni_4 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_dni_5 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_phone_1 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_phone_2 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_phone_3 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_phone_4 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_phone_5 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_phone_6 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_email_1 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_email_2 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_email_3 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_email_4 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_email_5 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_email_6 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_1 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_2 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_3 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_4 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_5 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_6 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_7 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_8 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 valid_date_9 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 adulto_valido ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 correo_opcional_vacio ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 correo_invalido ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 nombre_corto ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 apellido_corto ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 genero_ausente ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 dni_invalido ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 fecha_futura ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 telefono_invalido ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 menor_sin_apoderado ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 menor_sin_telefono_apoderado ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 menor_telefono_apoderado_invalido ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 menor_con_apoderado_valido ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 cumple_18_hoy ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 aun_17 ... ok
+unittest.case.FunctionTestCase (test)
+CB-03 actualizacion_parcial_combina_datos ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 mime_imagen ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 mime_txt_incompatible ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_horizontal ...   [C0] Tamaño (post-recorte): 400×200px
+  [C0] Ratio: 2.00
+  [C0] ✅ Validación técnica OK
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_ancho_299 ...   [C0] Tamaño (post-recorte): 299×100px
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_ancho_300 ...   [C0] Tamaño (post-recorte): 300×100px
+  [C0] Ratio: 3.00
+  [C0] ✅ Validación técnica OK
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_alto_99 ...   [C0] Tamaño (post-recorte): 400×99px
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_alto_100 ...   [C0] Tamaño (post-recorte): 400×100px
+  [C0] Ratio: 4.00
+  [C0] ✅ Validación técnica OK
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_ratio_124 ...   [C0] Tamaño (post-recorte): 372×300px
+  [C0] Ratio: 1.24
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_ratio_125 ...   [C0] Tamaño (post-recorte): 375×300px
+  [C0] Ratio: 1.25
+  [C0] ✅ Validación técnica OK
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 tecnica_vertical ...   [C0] Tamaño (post-recorte): 400×800px
+  [C0] Ratio: 0.50
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 archivo_corrupto ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 imagen_toda_negra_sin_recorte ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 recorte_bordes_negros ...   [C0] Bordes recortados: 600×300 → 410×210
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 pipeline_tecnica ... 
+──────────────────────────────────────────────────
+  [PIPELINE] Bytes recibidos: 8
+  [PIPELINE] ❌ Capa 0 rechazó
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 pipeline_clip ... 
+──────────────────────────────────────────────────
+  [PIPELINE] Bytes recibidos: 880
+  [C0] Tamaño (post-recorte): 400×200px
+  [C0] Ratio: 2.00
+  [C0] ✅ Validación técnica OK
+  [PIPELINE] ❌ Capa 1 (CLIP) rechazó
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 pipeline_cls ... 
+──────────────────────────────────────────────────
+  [PIPELINE] Bytes recibidos: 880
+  [C0] Tamaño (post-recorte): 400×200px
+  [C0] Ratio: 2.00
+  [C0] ✅ Validación técnica OK
+  [PIPELINE] ❌ Capa 2 (Clasificador) rechazó
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 pipeline_aceptada ... 
+──────────────────────────────────────────────────
+  [PIPELINE] Bytes recibidos: 880
+  [C0] Tamaño (post-recorte): 400×200px
+  [C0] Ratio: 2.00
+  [C0] ✅ Validación técnica OK
+  [PIPELINE] ✅ Todas las capas aprobadas — iniciando detección...
+  [PIPELINE] Detecciones encontradas: 0
+  [PIPELINE] Total detecciones finales: 0
+──────────────────────────────────────────────────
+
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 detector_no_disponible ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 excepcion_inferencia_devuelve_valid_true ... 
+──────────────────────────────────────────────────
+  [PIPELINE] Bytes recibidos: 880
+  [C0] Tamaño (post-recorte): 400×200px
+  [C0] Ratio: 2.00
+  [C0] ✅ Validación técnica OK
+  [PIPELINE] ✅ Todas las capas aprobadas — iniciando detección...
+  [PIPELINE] ERROR en inferencia: RuntimeError: fallo IA ficticio
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clasificador_no_disponible ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 clasificador_valida ...   [CLS] Clase predicha: valida (conf=0.900)
+  [CLS] Score clase 'valida': 0.900 (umbral: 0.6)
+  [CLS] ✅ Aprobada como panorámica dental humana
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clasificador_umbral_exacto ...   [CLS] Clase predicha: valida (conf=0.900)
+  [CLS] Score clase 'valida': 0.600 (umbral: 0.6)
+  [CLS] ✅ Aprobada como panorámica dental humana
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clasificador_clase_invalida ...   [CLS] Clase predicha: invalida (conf=0.900)
+  [CLS] Score clase 'valida': 0.200 (umbral: 0.6)
+  [CLS] ❌ Rechazada: clase invalida detectada
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clasificador_baja_confianza ...   [CLS] Clase predicha: valida (conf=0.900)
+  [CLS] Score clase 'valida': 0.590 (umbral: 0.6)
+  [CLS] ❌ Rechazada: score bajo (0.590)
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clasificador_excepcion_deja_pasar ...   [CLS] ⚠️  Error: ficticio — dejando pasar
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clip_no_disponible ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 clip_valida_ganadora ...   [CLIP] Score panorámica humana: 0.800 (umbral: 0.25)
+  [CLIP] Label ganador: [0] 'a dental panoramic X-ray radiograph of a human showing teeth and jaw' (0.800)
+  [CLIP] ✅ Aprobada como panorámica dental humana
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clip_valida_no_ganadora ...   [CLIP] Score panorámica humana: 0.300 (umbral: 0.25)
+  [CLIP] Label ganador: [5] 'a dental periapical X-ray or bitewing X-ray showing individual teeth' (0.700)
+  [CLIP] ✅ Score válido (0.300) aunque no ganó — aprobada
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clip_foto_rechazada ...   [CLIP] Score panorámica humana: 0.300 (umbral: 0.25)
+  [CLIP] Label ganador: [3] 'a photograph or portrait of a person, animal or landscape' (0.700)
+  [CLIP] ❌ Rechazada: La imagen parece ser una fotografía, no una radiografía dental panorámica.
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clip_score_bajo ...   [CLIP] Score panorámica humana: 0.200 (umbral: 0.25)
+  [CLIP] Label ganador: [0] 'a dental panoramic X-ray radiograph of a human showing teeth and jaw' (0.200)
+  [CLIP] ❌ Rechazada por bajo score: La imagen no parece ser una radiografía panorámica dental humana (confianza=20%). Verifique que sea una panorámica completa.
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 clip_excepcion_deja_pasar ...   [CLIP] ⚠️  Error durante validación: ficticio — dejando pasar
+ok
+unittest.case.FunctionTestCase (test)
+CB-04 ruta_validate_tecnica ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 ruta_validate_clip ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 ruta_validate_cls ... ok
+unittest.case.FunctionTestCase (test)
+CB-04 ruta_validate_aceptada ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 inexistente ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 pendiente ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 sin_diagnostico ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 sin_paciente ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 completada_generador_real_sin_radiografias ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 falta_pymupdf ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 otra_dependencia ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 error_generico ... ok
+unittest.case.FunctionTestCase (test)
+CB-05 nombre_archivo_normalizado ... ok
+
+----------------------------------------------------------------------
+Ran 86 tests in 0.489s
+
+OK

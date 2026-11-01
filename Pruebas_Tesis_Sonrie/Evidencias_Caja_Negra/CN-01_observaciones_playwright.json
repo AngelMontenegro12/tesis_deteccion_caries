@@ -1,0 +1,9 @@
+{
+  "caso": "CN-01",
+  "formulario_observado": true,
+  "login_http": 200,
+  "dashboard_observado": true,
+  "fecha_respuesta": "2026-10-31T22:10:00.343Z",
+  "url": "http://localhost:3000/dashboard",
+  "fecha_captura": "2026-10-31T22:10:01.961Z"
+}

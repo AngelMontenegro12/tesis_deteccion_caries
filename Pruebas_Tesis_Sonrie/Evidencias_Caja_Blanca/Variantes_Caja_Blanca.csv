@@ -1,0 +1,112 @@
+﻿Caso,Variante,Datos simulados,Funciones,Esperado,Obtenido,Estado
+CB-01,sin_credenciales,JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales,"login, valid_email, verify_password",400,400,Aprobado
+CB-01,sin_correo,JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales,"login, valid_email, verify_password",400,400,Aprobado
+CB-01,sin_clave,JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales,"login, valid_email, verify_password",400,400,Aprobado
+CB-01,correo_invalido,JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales,"login, valid_email, verify_password",400,400,Aprobado
+CB-01,usuario_inexistente,JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales,"login, valid_email, verify_password",401,401,Aprobado
+CB-01,clave_incorrecta,JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales,"login, valid_email, verify_password",401,401,Aprobado
+CB-01,credenciales_ficticias_correctas,JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales,"login, valid_email, verify_password",200,200,Aprobado
+CB-01,consulta_solo_usuario_activo,Consulta ORM simulada,login,true,true,Aprobado
+CB-01,rechazos_formato_no_suman_intentos,Dos JSON inválidos,login,0,0,Aprobado
+CB-01,excepcion_persistencia_en_login_exitoso,Commit simulado que falla,login,"{""http"": 200, ""rollback"": true}","{""http"": 200, ""rollback"": true}",Aprobado
+CB-01,excepcion_auditoria_clave_erronea,Commit de auditoría simulado que falla,"login, _registrar_acceso","{""http"": 401, ""rollback"": true}","{""http"": 401, ""rollback"": true}",Aprobado
+CB-02,umbral_clave_erronea,IP ficticia 192.0.2.44; reloj 1000; cinco fallos,login,"[401, 401, 401, 401, 429]","[401, 401, 401, 401, 429]",Aprobado
+CB-02,umbral_usuario_ausente,IP ficticia 192.0.2.44; reloj 1000; cinco fallos,login,"[401, 401, 401, 401, 429]","[401, 401, 401, 401, 429]",Aprobado
+CB-02,clave_correcta_durante_bloqueo,Reloj justo antes del vencimiento,login,429,429,Aprobado
+CB-02,vence_1300,Reloj simulado en/después del vencimiento,login,"{""http"": 401, ""intentos"": 1, ""bloqueado_hasta"": null}","{""http"": 401, ""intentos"": 1, ""bloqueado_hasta"": null}",Aprobado
+CB-02,vence_1301,Reloj simulado en/después del vencimiento,login,"{""http"": 401, ""intentos"": 1, ""bloqueado_hasta"": null}","{""http"": 401, ""intentos"": 1, ""bloqueado_hasta"": null}",Aprobado
+CB-02,exito_reinicia_contador,Cuatro fallos y éxito ficticio,login,"{""http"": 200, ""intentos"": 0, ""bloqueado_hasta"": null}","{""http"": 200, ""intentos"": 0, ""bloqueado_hasta"": null}",Aprobado
+CB-02,duracion_300_segundos,Reloj fijo sin esperas reales,login,300.0,300.0,Aprobado
+CB-02,otra_ip_independiente,IP A bloqueada; IP B ficticia diferente,login,200,200,Aprobado
+CB-02,fallos_previos_no_caducan,Cuatro fallos; gran salto del reloj antes del quinto,login,429,429,Aprobado
+CB-03,valid_dni_1,'00123456'; hoy simulado 2026-10-31,valid_dni,true,true,Aprobado
+CB-03,valid_dni_2,'1234567'; hoy simulado 2026-10-31,valid_dni,false,false,Aprobado
+CB-03,valid_dni_3,'123456789'; hoy simulado 2026-10-31,valid_dni,false,false,Aprobado
+CB-03,valid_dni_4,'1234567a'; hoy simulado 2026-10-31,valid_dni,false,false,Aprobado
+CB-03,valid_dni_5,None; hoy simulado 2026-10-31,valid_dni,false,false,Aprobado
+CB-03,valid_phone_1,'912345678'; hoy simulado 2026-10-31,valid_phone,true,true,Aprobado
+CB-03,valid_phone_2,'812345678'; hoy simulado 2026-10-31,valid_phone,false,false,Aprobado
+CB-03,valid_phone_3,'91234567'; hoy simulado 2026-10-31,valid_phone,false,false,Aprobado
+CB-03,valid_phone_4,'9123456789'; hoy simulado 2026-10-31,valid_phone,false,false,Aprobado
+CB-03,valid_phone_5,''; hoy simulado 2026-10-31,valid_phone,false,false,Aprobado
+CB-03,valid_phone_6,None; hoy simulado 2026-10-31,valid_phone,false,false,Aprobado
+CB-03,valid_email_1,'persona@example.test'; hoy simulado 2026-10-31,valid_email,true,true,Aprobado
+CB-03,valid_email_2,'persona@dominio'; hoy simulado 2026-10-31,valid_email,false,false,Aprobado
+CB-03,valid_email_3,'persona@dominio.'; hoy simulado 2026-10-31,valid_email,false,false,Aprobado
+CB-03,valid_email_4,'sin-arroba'; hoy simulado 2026-10-31,valid_email,false,false,Aprobado
+CB-03,valid_email_5,''; hoy simulado 2026-10-31,valid_email,false,false,Aprobado
+CB-03,valid_email_6,None; hoy simulado 2026-10-31,valid_email,false,false,Aprobado
+CB-03,valid_date_1,'1900-01-01'; hoy simulado 2026-10-31,valid_date,true,true,Aprobado
+CB-03,valid_date_2,'2026-10-31'; hoy simulado 2026-10-31,valid_date,true,true,Aprobado
+CB-03,valid_date_3,'1899-12-31'; hoy simulado 2026-10-31,valid_date,false,false,Aprobado
+CB-03,valid_date_4,'2026-11-01'; hoy simulado 2026-10-31,valid_date,false,false,Aprobado
+CB-03,valid_date_5,'2001-02-29'; hoy simulado 2026-10-31,valid_date,false,false,Aprobado
+CB-03,valid_date_6,'2000-02-29'; hoy simulado 2026-10-31,valid_date,true,true,Aprobado
+CB-03,valid_date_7,'2000-13-01'; hoy simulado 2026-10-31,valid_date,false,false,Aprobado
+CB-03,valid_date_8,'1900-1-01'; hoy simulado 2026-10-31,valid_date,false,false,Aprobado
+CB-03,valid_date_9,None; hoy simulado 2026-10-31,valid_date,false,false,Aprobado
+CB-03,adulto_valido,{},patient_error,null,null,Aprobado
+CB-03,correo_opcional_vacio,"{""correo"": """"}",patient_error,null,null,Aprobado
+CB-03,correo_invalido,"{""correo"": ""invalido""}",patient_error,"""Ingrese un correo electrónico válido""","""Ingrese un correo electrónico válido""",Aprobado
+CB-03,nombre_corto,"{""nombres"": ""A""}",patient_error,"""Los nombres son requeridos (mínimo 2 caracteres)""","""Los nombres son requeridos (mínimo 2 caracteres)""",Aprobado
+CB-03,apellido_corto,"{""apellidos"": """"}",patient_error,"""Los apellidos son requeridos (mínimo 2 caracteres)""","""Los apellidos son requeridos (mínimo 2 caracteres)""",Aprobado
+CB-03,genero_ausente,"{""genero"": """"}",patient_error,"""El género es requerido""","""El género es requerido""",Aprobado
+CB-03,dni_invalido,"{""dni"": ""123""}",patient_error,"""El DNI debe tener exactamente 8 dígitos""","""El DNI debe tener exactamente 8 dígitos""",Aprobado
+CB-03,fecha_futura,"{""fecha_nacimiento"": ""2026-11-01""}",patient_error,"""La fecha de nacimiento debe estar entre 1900 y hoy""","""La fecha de nacimiento debe estar entre 1900 y hoy""",Aprobado
+CB-03,telefono_invalido,"{""telefono"": ""812345678""}",patient_error,"""El teléfono es requerido (9 dígitos y debe empezar en 9)""","""El teléfono es requerido (9 dígitos y debe empezar en 9)""",Aprobado
+CB-03,menor_sin_apoderado,"{""fecha_nacimiento"": ""2015-01-01""}",patient_error,"""El nombre del apoderado es requerido para menores""","""El nombre del apoderado es requerido para menores""",Aprobado
+CB-03,menor_sin_telefono_apoderado,"{""fecha_nacimiento"": ""2015-01-01"", ""apoderado"": ""Tutor Ficticio""}",patient_error,"""El teléfono del apoderado es requerido (9 dígitos y debe empezar en 9)""","""El teléfono del apoderado es requerido (9 dígitos y debe empezar en 9)""",Aprobado
+CB-03,menor_telefono_apoderado_invalido,"{""fecha_nacimiento"": ""2015-01-01"", ""apoderado"": ""Tutor Ficticio"", ""telefono_apoderado"": ""123""}",patient_error,"""El teléfono del apoderado debe tener 9 dígitos y empezar en 9""","""El teléfono del apoderado debe tener 9 dígitos y empezar en 9""",Aprobado
+CB-03,menor_con_apoderado_valido,"{""fecha_nacimiento"": ""2015-01-01"", ""apoderado"": ""Tutor Ficticio"", ""telefono_apoderado"": ""912345679""}",patient_error,null,null,Aprobado
+CB-03,cumple_18_hoy,"{""fecha_nacimiento"": ""2008-10-31""}",patient_error,null,null,Aprobado
+CB-03,aun_17,"{""fecha_nacimiento"": ""2008-11-01""}",patient_error,"""El nombre del apoderado es requerido para menores""","""El nombre del apoderado es requerido para menores""",Aprobado
+CB-03,actualizacion_parcial_combina_datos,Objeto ficticio actual y cambio de nombres,patient_error,null,null,Aprobado
+CB-04,mime_imagen,UploadFile image/png con lectura de bytes,process_image,"{""bytes"": 8}","{""bytes"": 8}",Aprobado
+CB-04,mime_txt_incompatible,UploadFile text/plain,process_image,"{""http"": 400, ""mensaje"": ""El archivo debe ser una imagen.""}","{""http"": 400, ""mensaje"": ""El archivo debe ser una imagen.""}",Aprobado
+CB-04,tecnica_horizontal,PNG ficticio uniforme 400x200,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",true,true,Aprobado
+CB-04,tecnica_ancho_299,PNG ficticio uniforme 299x100,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",false,false,Aprobado
+CB-04,tecnica_ancho_300,PNG ficticio uniforme 300x100,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",true,true,Aprobado
+CB-04,tecnica_alto_99,PNG ficticio uniforme 400x99,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",false,false,Aprobado
+CB-04,tecnica_alto_100,PNG ficticio uniforme 400x100,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",true,true,Aprobado
+CB-04,tecnica_ratio_124,PNG ficticio uniforme 372x300,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",false,false,Aprobado
+CB-04,tecnica_ratio_125,PNG ficticio uniforme 375x300,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",true,true,Aprobado
+CB-04,tecnica_vertical,PNG ficticio uniforme 400x800,"validar_capa0, _check_decodificable, _check_tamanio_minimo, _check_ratio_basico",false,false,Aprobado
+CB-04,archivo_corrupto,Bytes no vacíos que no son una imagen,"validar_capa0, _check_decodificable",false,false,Aprobado
+CB-04,imagen_toda_negra_sin_recorte,Array negro ficticio; rama sin coordenadas,_recortar_bordes_negros,"[200, 400, 3]","[200, 400, 3]",Aprobado
+CB-04,recorte_bordes_negros,Contenido central 400x200 con padding,_recortar_bordes_negros,"[210, 410, 3]","[210, 410, 3]",Aprobado
+CB-04,pipeline_tecnica,Validadores semánticos y modelo simulados,"run_inference, validar_capa0","{""valid"": false, ""modelo_invocado"": false}","{""valid"": false, ""modelo_invocado"": false}",Aprobado
+CB-04,pipeline_clip,Validadores semánticos y modelo simulados,"run_inference, validar_capa0","{""valid"": false, ""modelo_invocado"": false}","{""valid"": false, ""modelo_invocado"": false}",Aprobado
+CB-04,pipeline_cls,Validadores semánticos y modelo simulados,"run_inference, validar_capa0","{""valid"": false, ""modelo_invocado"": false}","{""valid"": false, ""modelo_invocado"": false}",Aprobado
+CB-04,pipeline_aceptada,Validadores semánticos y modelo simulados,"run_inference, validar_capa0","{""valid"": true, ""modelo_invocado"": true}","{""valid"": true, ""modelo_invocado"": true}",Aprobado
+CB-04,detector_no_disponible,Modelo simulado None,run_inference,"""RuntimeError""","""RuntimeError""",Aprobado
+CB-04,excepcion_inferencia_devuelve_valid_true,Modelo simulado que lanza excepción,run_inference,"{""valid"": true, ""error_presente"": true, ""detections"": []}","{""valid"": true, ""error_presente"": true, ""detections"": []}",Aprobado
+CB-04,clasificador_no_disponible,"Salida del modelo ficticia; umbral 0,60",validar_con_clasificador,true,true,Aprobado
+CB-04,clasificador_valida,"Salida del modelo ficticia; umbral 0,60",validar_con_clasificador,true,true,Aprobado
+CB-04,clasificador_umbral_exacto,"Salida del modelo ficticia; umbral 0,60",validar_con_clasificador,true,true,Aprobado
+CB-04,clasificador_clase_invalida,"Salida del modelo ficticia; umbral 0,60",validar_con_clasificador,false,false,Aprobado
+CB-04,clasificador_baja_confianza,"Salida del modelo ficticia; umbral 0,60",validar_con_clasificador,false,false,Aprobado
+CB-04,clasificador_excepcion_deja_pasar,Excepción interna ficticia,validar_con_clasificador,true,true,Aprobado
+CB-04,clip_no_disponible,Probabilidades y disponibilidad simuladas,validar_con_clip,true,true,Aprobado
+CB-04,clip_valida_ganadora,Probabilidades y disponibilidad simuladas,validar_con_clip,true,true,Aprobado
+CB-04,clip_valida_no_ganadora,Probabilidades y disponibilidad simuladas,validar_con_clip,true,true,Aprobado
+CB-04,clip_foto_rechazada,Probabilidades y disponibilidad simuladas,validar_con_clip,false,false,Aprobado
+CB-04,clip_score_bajo,Probabilidades y disponibilidad simuladas,validar_con_clip,false,false,Aprobado
+CB-04,clip_excepcion_deja_pasar,Excepción interna ficticia,validar_con_clip,true,true,Aprobado
+CB-04,ruta_validate_tecnica,Archivo ficticio y capas controladas,"validate_only, process_image",false,false,Aprobado
+CB-04,ruta_validate_clip,Archivo ficticio y capas controladas,"validate_only, process_image",false,false,Aprobado
+CB-04,ruta_validate_cls,Archivo ficticio y capas controladas,"validate_only, process_image",false,false,Aprobado
+CB-04,ruta_validate_aceptada,Archivo ficticio y capas controladas,"validate_only, process_image",true,true,Aprobado
+CB-05,inexistente,Objetos ORM simulados sin base de datos,descargar_diagnostico_pdf,"{""http"": 404, ""generador_invocado"": false}","{""http"": 404, ""generador_invocado"": false}",Aprobado
+CB-05,pendiente,Objetos ORM simulados sin base de datos,descargar_diagnostico_pdf,"{""http"": 409, ""generador_invocado"": false}","{""http"": 409, ""generador_invocado"": false}",Aprobado
+CB-05,sin_diagnostico,Objetos ORM simulados sin base de datos,descargar_diagnostico_pdf,"{""http"": 404, ""generador_invocado"": false}","{""http"": 404, ""generador_invocado"": false}",Aprobado
+CB-05,sin_paciente,Objetos ORM simulados sin base de datos,descargar_diagnostico_pdf,"{""http"": 404, ""generador_invocado"": false}","{""http"": 404, ""generador_invocado"": false}",Aprobado
+CB-05,completada_generador_real_sin_radiografias,Entidades ficticias y plantilla original de solo lectura,"descargar_diagnostico_pdf, generar_pdf_diagnostico","{""http"": 200, ""tipo"": ""application/pdf"", ""texto_ficticio"": true, ""paciente_ficticio"": true, ""paginas"": 1}","{""http"": 200, ""tipo"": ""application/pdf"", ""texto_ficticio"": true, ""paciente_ficticio"": true, ""paginas"": 1}",Aprobado
+CB-05,falta_pymupdf,Excepción simulada del generador,descargar_diagnostico_pdf,503,503,Aprobado
+CB-05,otra_dependencia,Excepción simulada del generador,descargar_diagnostico_pdf,500,500,Aprobado
+CB-05,error_generico,Excepción simulada del generador,descargar_diagnostico_pdf,500,500,Aprobado
+CB-05,nombre_archivo_normalizado,Nombre ficticio con tildes y espacios,descargar_diagnostico_pdf,true,true,Aprobado
+CB-04,frontend_imagen_aceptada,Respuesta HTTP 200 simulada,validateImage,"{""aceptada"": true}","{""aceptada"": true, ""mensajes"": [], ""estado_cargando_final"": false}",Aprobado
+CB-04,frontend_rechazo_semantico_200,Respuesta HTTP 200 simulada,validateImage,"{""aceptada"": false}","{""aceptada"": false, ""mensajes"": [""Rechazo ficticio""], ""estado_cargando_final"": false}",Aprobado
+CB-04,frontend_http_400_debe_rechazarse,Respuesta HTTP 400 simulada,validateImage,"{""aceptada"": false}","{""aceptada"": true, ""mensajes"": [], ""estado_cargando_final"": false}",Fallido
+CB-04,frontend_http_500_debe_rechazarse,Respuesta HTTP 500 simulada,validateImage,"{""aceptada"": false}","{""aceptada"": true, ""mensajes"": [], ""estado_cargando_final"": false}",Fallido
+CB-04,frontend_error_de_red_debe_rechazarse,Excepción de fetch simulada,validateImage,"{""aceptada"": false}","{""aceptada"": true, ""mensajes"": [], ""estado_cargando_final"": false}",Fallido

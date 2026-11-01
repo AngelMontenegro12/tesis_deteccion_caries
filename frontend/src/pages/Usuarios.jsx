@@ -63,7 +63,7 @@ const Usuarios = () => {
     return saved ? JSON.parse(saved) : null;
   }, []);
   const isLoggedAdmin = loggedUser?.rol === 'admin' || loggedUser?.rol === 'superadmin';
-  const isSuperadmin = loggedUser?.id_odontologo === 1 || loggedUser?.rol === 'superadmin';
+  const isSuperadmin = loggedUser?.rol === 'superadmin';
   const hasAccess = isLoggedAdmin || isSuperadmin;
 
   if (!hasAccess) {
@@ -237,8 +237,8 @@ const Usuarios = () => {
       return;
     }
 
-    if (editingUser && form.contrasena.trim() && !isValidPassword(form.contrasena)) {
-      setError('La contraseña debe tener al menos 6 caracteres.');
+    if (editingUser && form.contrasena.trim()) {
+      setError('La contraseña solo puede cambiarla su titular desde Mi Perfil.');
       return;
     }
 
@@ -254,7 +254,9 @@ const Usuarios = () => {
       activo: form.activo
     };
 
-    if (!editingUser || form.contrasena.trim()) {
+    if (editingUser?.id_odontologo === loggedUser?.id_odontologo) delete payload.activo;
+
+    if (!editingUser) {
       payload.contrasena = form.contrasena.trim();
     }
 
@@ -525,22 +527,20 @@ const Usuarios = () => {
                       </td>
                       <td className="px-5 py-4 align-top text-center">
                         <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                          odontologo.id_odontologo === 1
-                            ? 'bg-purple-100 text-purple-800 border-purple-300 shadow-sm ring-1 ring-purple-500/20'
-                            : odontologo.rol === 'superadmin'
+                          odontologo.rol === 'superadmin'
                             ? 'bg-indigo-100 text-indigo-800 border-indigo-300 shadow-sm ring-1 ring-indigo-500/20'
                             : odontologo.rol === 'admin'
                             ? 'bg-purple-50 text-purple-700 border-purple-100'
                             : 'bg-slate-50 text-slate-700 border-slate-200'
                         }`}>
-                          {odontologo.id_odontologo === 1 ? 'Admin Principal' : odontologo.rol === 'superadmin' ? 'Superadministrador' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
+                          {odontologo.rol === 'superadmin' ? 'Superadministrador' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
                         </span>
                       </td>
                       <td className="px-5 py-4 align-top">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             type="button"
-                            disabled={odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo)}
+                            disabled={odontologo.id_odontologo === loggedUser?.id_odontologo || (!isSuperadmin && odontologo.rol !== 'odontologo')}
                             onClick={() => {
                               setPermisosUser(odontologo);
                               setPermisosForm(odontologo.permisos || []);
@@ -548,11 +548,11 @@ const Usuarios = () => {
                               setIsPermisosModalOpen(true);
                             }}
                             className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                              (odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo))
+                              (odontologo.id_odontologo === loggedUser?.id_odontologo || (!isSuperadmin && odontologo.rol !== 'odontologo'))
                                 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed'
                                 : 'border-gray-200 text-gray-700 hover:border-purple-900/30 hover:text-purple-700 hover:bg-purple-50'
                             }`}
-                            title={odontologo.id_odontologo === 1 ? 'Los permisos del Administrador Principal no se pueden modificar' : (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo) ? 'No puedes modificar tus propios permisos' : 'Gestionar permisos'}
+                            title={odontologo.id_odontologo === loggedUser?.id_odontologo ? 'No puedes modificar tus propios permisos' : 'Gestionar permisos'}
                           >
                             <Shield className="w-4 h-4" />
                             Permisos
@@ -624,15 +624,13 @@ const Usuarios = () => {
                           {odontologo.activo ? 'Activo' : 'Inactivo'}
                         </span>
                         <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                          odontologo.id_odontologo === 1
-                            ? 'bg-purple-100 text-purple-800 border-purple-300 shadow-sm ring-1 ring-purple-500/20'
-                            : odontologo.rol === 'superadmin'
+                          odontologo.rol === 'superadmin'
                             ? 'bg-indigo-100 text-indigo-800 border-indigo-300 shadow-sm ring-1 ring-indigo-500/20'
                             : odontologo.rol === 'admin'
                             ? 'bg-purple-50 text-purple-700 border-purple-100'
                             : 'bg-slate-50 text-slate-700 border-slate-200'
                         }`}>
-                          {odontologo.id_odontologo === 1 ? 'Admin Principal' : odontologo.rol === 'superadmin' ? 'Superadministrador' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
+                          {odontologo.rol === 'superadmin' ? 'Superadministrador' : odontologo.rol === 'admin' ? 'Administrador' : 'Odontólogo'}
                         </span>
                       </div>
                     </div>
@@ -641,7 +639,7 @@ const Usuarios = () => {
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      disabled={odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo)}
+                      disabled={odontologo.id_odontologo === loggedUser?.id_odontologo || (!isSuperadmin && odontologo.rol !== 'odontologo')}
                       onClick={() => {
                         setPermisosUser(odontologo);
                         setPermisosForm(odontologo.permisos || []);
@@ -649,11 +647,11 @@ const Usuarios = () => {
                         setIsPermisosModalOpen(true);
                       }}
                       className={`inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                        (odontologo.id_odontologo === 1 || (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo))
+                        (odontologo.id_odontologo === loggedUser?.id_odontologo || (!isSuperadmin && odontologo.rol !== 'odontologo'))
                           ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed'
                           : 'border-gray-200 text-gray-700 hover:border-purple-900/30 hover:text-purple-700 hover:bg-purple-50'
                       }`}
-                      title={odontologo.id_odontologo === 1 ? 'Los permisos del Administrador Principal no se pueden modificar' : (!isSuperadmin && odontologo.id_odontologo === loggedUser?.id_odontologo) ? 'No puedes modificar tus propios permisos' : 'Gestionar permisos'}
+                      title={odontologo.id_odontologo === loggedUser?.id_odontologo ? 'No puedes modificar tus propios permisos' : 'Gestionar permisos'}
                     >
                       <Shield className="w-4 h-4" />
                       Permisos
@@ -994,7 +992,6 @@ const Usuarios = () => {
                     const response = await api.put(`/odontologos/${permisosUser.id_odontologo}`, {
                       rol: permisosRol,
                       permisos: permisosForm,
-                      id_solicitante: loggedUser?.id_odontologo
                     });
                     if (response.data?.status === 'success') {
                       await fetchOdontologos();

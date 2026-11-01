@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import PrivateImage from './PrivateImage';
 
 const CLASS_STYLES = {
   incipiente: {
@@ -269,7 +270,7 @@ const BoundingBoxViewer = ({
             transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${scale})`,
           }}
         >
-          <img
+          <PrivateImage
             src={imageSrc}
             alt={alt}
             onLoad={handleImageLoad}

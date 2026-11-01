@@ -306,6 +306,29 @@ class Sesion(db.Model):
         }
 
 
+class IdentidadExpediente(db.Model):
+    __tablename__ = 'identidades_expediente'
+
+    id_evaluacion = db.Column(db.Integer, primary_key=True)
+    identidad = db.Column(db.JSON, nullable=False)
+    origen = db.Column(db.String(40), nullable=False)
+    id_actor = db.Column(db.Integer, nullable=False)
+    creado_en = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
+
+class AuditoriaClinica(db.Model):
+    __tablename__ = 'auditoria_clinica'
+
+    id_evento = db.Column(db.Integer, primary_key=True)
+    id_actor = db.Column(db.Integer, nullable=False, index=True)
+    recurso = db.Column(db.String(30), nullable=False)
+    id_recurso = db.Column(db.Integer, nullable=False, index=True)
+    accion = db.Column(db.String(40), nullable=False)
+    campos = db.Column(db.JSON, nullable=False)
+    motivo = db.Column(db.String(500), nullable=True)
+    creado_en = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
+
 class MensajeSoporte(db.Model):
     __tablename__ = 'mensajes_soporte'
 

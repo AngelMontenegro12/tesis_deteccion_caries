@@ -1,0 +1,98 @@
+{
+  "fecha_utc": "2026-10-31T22:51:20.866Z",
+  "framework": "node:test",
+  "node": "v24.22.1",
+  "archivo_original": "frontend/src/pages/EvaluacionClinica.jsx",
+  "linea_inicial": 877,
+  "cuerpo_original_sin_modificaciones": true,
+  "variantes": [
+    {
+      "caso": "CB-04",
+      "variante": "frontend_imagen_aceptada",
+      "datos": "Respuesta HTTP 200 simulada",
+      "funciones": [
+        "validateImage"
+      ],
+      "esperado": {
+        "aceptada": true
+      },
+      "obtenido": {
+        "aceptada": true,
+        "mensajes": [],
+        "estado_cargando_final": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "frontend_rechazo_semantico_200",
+      "datos": "Respuesta HTTP 200 simulada",
+      "funciones": [
+        "validateImage"
+      ],
+      "esperado": {
+        "aceptada": false
+      },
+      "obtenido": {
+        "aceptada": false,
+        "mensajes": [
+          "Rechazo ficticio"
+        ],
+        "estado_cargando_final": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "frontend_http_400_debe_rechazarse",
+      "datos": "Respuesta HTTP 400 simulada",
+      "funciones": [
+        "validateImage"
+      ],
+      "esperado": {
+        "aceptada": false
+      },
+      "obtenido": {
+        "aceptada": true,
+        "mensajes": [],
+        "estado_cargando_final": false
+      },
+      "estado": "Fallido"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "frontend_http_500_debe_rechazarse",
+      "datos": "Respuesta HTTP 500 simulada",
+      "funciones": [
+        "validateImage"
+      ],
+      "esperado": {
+        "aceptada": false
+      },
+      "obtenido": {
+        "aceptada": true,
+        "mensajes": [],
+        "estado_cargando_final": false
+      },
+      "estado": "Fallido"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "frontend_error_de_red_debe_rechazarse",
+      "datos": "Excepción de fetch simulada",
+      "funciones": [
+        "validateImage"
+      ],
+      "esperado": {
+        "aceptada": false
+      },
+      "obtenido": {
+        "aceptada": true,
+        "mensajes": [],
+        "estado_cargando_final": false
+      },
+      "estado": "Fallido"
+    }
+  ],
+  "cobertura": "Sin porcentaje de ramas; escenarios controlados sobre función original extraída del componente."
+}

@@ -1,0 +1,37 @@
+ 
+ Clínica Odontológica Sonríe
+7 de Enero 145, Chiclayo  ·  (074) 23-5339 / +51 74 235339
+INFORME DE DIAGNÓSTICO
+Expediente #201  |  Fecha: 31/10/2026
+DATOS DEL PACIENTE
+Paciente: Prueba Tesis Paciente Ficticio
+DNI: 99103125
+Nacimiento: 15/01/1990
+Edad: 36 años
+Sexo: Otro
+ATENCIÓN CLÍNICA
+Odontólogo: Aldo Montenegro Delgado
+Tipo de visita: Primera vez
+Motivo de consulta: PRUEBA FICTICIA CN-03. Validacion funcional de procesamiento y visualizacion; sin valor
+de atencion clinica.
+DIAGNÓSTICO FINAL
+DIAGNOSTICO FICTICIO CN-05. Prueba funcional de guardado y consulta del Sistema Sonrie. El modelo
+devolvio tres hallazgos en la panoramica autorizada para pruebas. Este texto no constituye un diagnostico clinico
+ni una indicacion de tratamiento.
+OBSERVACIONES
+PRUEBA FICTICIA CN-03 y CN-05. Radiografia autorizada para validacion; no valorar precision clinica.
+ 
+ Clínica Odontológica Sonríe
+7 de Enero 145, Chiclayo  ·  (074) 23-5339 / +51 74 235339
+EVIDENCIA RADIOGRÁFICA
+Expediente #201  |  Imagen 1 de 1
+RADIOGRAFÍA Y HALLAZGOS
+1
+2
+3
+DETALLE DE HALLAZGOS
+1. Severidad: Carie incipiente | Confianza: 54.1%
+2. Severidad: Carie incipiente | Confianza: 53.8%
+3. Severidad: Carie incipiente | Confianza: 50.3%
+Aldo Montenegro Delgado
+Odontología General

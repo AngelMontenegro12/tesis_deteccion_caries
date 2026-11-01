@@ -1,0 +1,21 @@
+{
+  "filas_cn_csv_sin_cambios": true,
+  "fichas_cn_word_sin_cambios": true,
+  "imagenes_anteriores_word_conservadas": true,
+  "archivos_evidencia_caja_negra_sin_cambios": true,
+  "archivos_evidencia_verificados": 53,
+  "imagenes_word_actual": 19,
+  "variantes_totales": 111,
+  "resultados": {
+    "CN-01": "Aprobado",
+    "CN-02": "Aprobado",
+    "CN-03": "Aprobado",
+    "CN-04": "Fallido",
+    "CN-05": "Aprobado",
+    "CB-01": "Aprobado",
+    "CB-02": "Aprobado",
+    "CB-03": "Aprobado",
+    "CB-04": "Fallido",
+    "CB-05": "Aprobado"
+  }
+}

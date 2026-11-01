@@ -3,6 +3,7 @@ import { User, Mail, Phone, Award, Stethoscope, Save, Loader2, CheckCircle2, Shi
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 import api from '../services/api';
+import PrivateImage from '../components/PrivateImage';
 import ModalFinalizacion from '../components/ModalFinalizacion';
 import PhoneInput from '../components/PhoneInput';
 import { isValidPhone, isValidPassword, isNotEmpty, phoneError } from '../utils/validation';
@@ -277,8 +278,8 @@ const Perfil = () => {
                 <label className="relative group mb-6 cursor-pointer block">
                   <div className="w-40 h-40 max-lg:w-32 max-lg:h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
                     {(user.foto_perfil && user.foto_perfil !== 'null' && user.foto_perfil.length > 5 && !imgError) ? (
-                      <img 
-                        src={`http://localhost:5000${user.foto_perfil}`} 
+                       <PrivateImage
+                         src={`http://localhost:5000${user.foto_perfil}`}
                         alt="Perfil" 
                         className="w-full h-full object-cover group-hover:opacity-70 transition-opacity duration-300" 
                         onError={() => setImgError(true)}

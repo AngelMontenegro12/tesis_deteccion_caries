@@ -6,6 +6,7 @@ import {
   Plus
 } from 'lucide-react';
 import BoundingBoxViewer from '../components/BoundingBoxViewer';
+import PrivateImage from '../components/PrivateImage';
 import api from '../services/api';
 import { downloadDiagnosticoPdf } from '../utils/downloadDiagnosticoPdf';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
@@ -404,7 +405,7 @@ const EvaluacionDetalle = () => {
                         : 'border-gray-200 opacity-70 hover:opacity-100 hover:scale-105'
                     }`}
                   >
-                    <img
+                    <PrivateImage
                       src={getRadiografiaSrc(rad)}
                       alt={`Miniatura ${idx + 1}`}
                       className="w-full h-full object-contain"

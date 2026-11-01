@@ -1,0 +1,191 @@
+{
+  "fecha": "2026-10-31T22:36:51.766Z",
+  "url": "http://localhost:3000/evaluacion/201",
+  "texto": "CS\nClínica Sonríe\n\nDiagnóstico\n\nInicio\nDiagnóstico\nPacientes\nHistorial de diagnósticos\nReportes\nConfiguración\nSoporte / Ayuda\n\nPlis Plis\n\nCirujano\n\nCerrar Sesión\nHistorial de Diagnósticos\n/\nPrueba Tesis Paciente Ficticio\nPP\nPrueba Tesis Paciente Ficticio\nDNI: 99103125\n36 años (Adulto)\n999000125\nprueba.tesis@example.com\nRadiografía Panorámica\nOcultar cajas\nOcultar etiquetas\nAislar selección\nImagen única\nRadiografía Panorámica\n-\n100%\n+\n1:1\nCaries Incipiente\nCaries Incipiente\nCaries Incipiente\nDiagnóstico Clínico\nDIAGNÓSTICO FINAL\n\nDIAGNOSTICO FICTICIO CN-05. Prueba funcional de guardado y consulta del Sistema Sonrie. El modelo devolvio tres hallazgos en la panoramica autorizada para pruebas. Este texto no constituye un diagnostico clinico ni una indicacion de tratamiento.\n\nDescargar Expediente\nVolver a Pacientes\nContexto de Visita\nPrimera vez\n\nFECHA\n\n31 oct. 2026, 05:35 p. m.\n\nMOTIVO DE CONSULTA\n\nPRUEBA FICTICIA CN-03. Validacion funcional de procesamiento y visualizacion; sin valor de atencion clinica.\n\nOBSERVACIONES AUXILIARES\n\nPRUEBA FICTICIA CN-03 y CN-05. Radiografia autorizada para validacion; no valorar precision clinica.\n\nHallazgos del Modelo\n\nSe detectaron 3 posibles lesiones en esta radiografía.\n\nHallazgo 1\nCARIES INCIPIENTE\nCaries Incipiente\n54%\nCaries Profunda\n30%\nCaries Periapical (Avanzada)\n16%\nHallazgo 2\nCARIES INCIPIENTE\nCaries Incipiente\n54%\nCaries Profunda\n30%\nCaries Periapical (Avanzada)\n16%\nHallazgo 3\nCARIES INCIPIENTE\nCaries Incipiente\n51%\nCaries Profunda\n32%\nCaries Periapical (Avanzada)\n17%",
+  "controles": [
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Inicio",
+      "href": "/dashboard"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Diagnóstico",
+      "href": "/nueva-evaluacion"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Pacientes",
+      "href": "/pacientes"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Historial de diagnósticos",
+      "href": "/historial"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Reportes",
+      "href": "/reportes"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Configuración",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Soporte / Ayuda",
+      "href": "/ayuda"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Cerrar Sesión",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "",
+      "href": "/perfil"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Historial de Diagnósticos",
+      "href": "/historial"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Ocultar cajas",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Ocultar etiquetas",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Aislar selección",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "-",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "+",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "1:1",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Caries Incipiente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Caries Incipiente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Caries Incipiente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Descargar Expediente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Volver a Pacientes",
+      "disabled": false
+    }
+  ]
+}

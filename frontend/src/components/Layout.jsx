@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import api from '../services/api';
+import PrivateImage from './PrivateImage';
 import { 
   Home, 
   Activity, 
@@ -47,6 +48,18 @@ const Layout = () => {
     }
   }, [navigate]);
 
+  const [accessError, setAccessError] = useState('');
+  useEffect(() => {
+    const expired = () => { setUser(null); navigate('/login', { replace: true }); };
+    const forbidden = () => setAccessError('No tienes permisos para esta operación.');
+    window.addEventListener('auth:expired', expired);
+    window.addEventListener('auth:forbidden', forbidden);
+    return () => {
+      window.removeEventListener('auth:expired', expired);
+      window.removeEventListener('auth:forbidden', forbidden);
+    };
+  }, [navigate]);
+
   useEffect(() => {
     const handlePreferencesChanged = (event) => {
       if (typeof event.detail?.sidebarOpen === 'boolean') {
@@ -91,7 +104,7 @@ const Layout = () => {
   useEffect(() => {
     if (!user) return;
 
-    if (user.id_odontologo === 1 || user.rol === 'superadmin') {
+    if (user.rol === 'superadmin') {
       api.get('/solicitudes').then(res => {
         if (res.data && res.data.data) {
           const pending = res.data.data.filter(s => s.estado === 'pendiente').length;
@@ -114,10 +127,7 @@ const Layout = () => {
     try {
       const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
       if (savedUser) {
-        await api.post('/auth/logout', {
-          token: savedUser.token,
-          id_odontologo: savedUser.id_odontologo
-        });
+        await api.post('/auth/logout');
       }
     } catch (error) {
       // El cierre de sesión local se realiza aunque falle el registro en el servidor
@@ -128,8 +138,8 @@ const Layout = () => {
     }, 1500);
   };
 
-  const isAdmin = user?.rol === 'admin' || user?.rol === 'superadmin' || user?.id_odontologo === 1;
-  const canManageSolicitudes = user?.id_odontologo === 1 || user?.rol === 'superadmin';
+  const isAdmin = user?.rol === 'admin' || user?.rol === 'superadmin';
+  const canManageSolicitudes = user?.rol === 'superadmin';
   const showExpanded = isOpen || isMobile;
 
   const baseMainMenuItems = [
@@ -366,8 +376,8 @@ const Layout = () => {
               {(user.foto_perfil && user.foto_perfil !== 'null' && user.foto_perfil.length > 5) ? (
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm border border-gray-200 bg-gray-100 relative">
                   <User className="w-5 h-5 text-gray-400 absolute" />
-                  <img 
-                    src={`http://localhost:5000${user.foto_perfil}`} 
+                   <PrivateImage
+                     src={`http://localhost:5000${user.foto_perfil}`}
                     alt="Perfil" 
                     className="w-full h-full object-cover relative z-10" 
                     onError={(e) => { e.target.style.display = 'none'; }}
@@ -400,6 +410,9 @@ const Layout = () => {
 
       {/* Contenido Principal (Espacio de trabajo renderizado con Outlet) */}
       <main className="flex-1 flex flex-col overflow-hidden relative bg-gray-50/50">
+        {accessError && <div role="alert" className="bg-red-50 text-red-800 px-4 py-2 flex justify-between">
+          {accessError}<button type="button" onClick={() => setAccessError('')} aria-label="Cerrar aviso">×</button>
+        </div>}
         {/* Topbar móvil (oculto en escritorio) */}
         <div className="lg:hidden flex items-center justify-between h-16 px-4 bg-white/95 backdrop-blur-sm border-b border-gray-200 shrink-0 z-20">
           <button
@@ -426,8 +439,8 @@ const Layout = () => {
             aria-label="Mi perfil"
           >
             {(user?.foto_perfil && user.foto_perfil !== 'null' && user.foto_perfil.length > 5) ? (
-              <img
-                src={`http://localhost:5000${user.foto_perfil}`}
+               <PrivateImage
+                 src={`http://localhost:5000${user.foto_perfil}`}
                 alt="Perfil"
                 className="w-full h-full object-cover"
                 onError={(e) => { e.target.style.display = 'none'; }}

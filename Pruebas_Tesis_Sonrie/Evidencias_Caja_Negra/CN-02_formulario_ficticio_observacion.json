@@ -1,0 +1,392 @@
+{
+  "fecha": "2026-10-31T22:33:31.162Z",
+  "url": "http://localhost:3000/pacientes",
+  "texto": "CS\nClínica Sonríe\n\nDiagnóstico\n\nInicio\nDiagnóstico\nPacientes\nHistorial de diagnósticos\nReportes\nConfiguración\nSoporte / Ayuda\n\nPlis Plis\n\nCirujano\n\nCerrar Sesión\nGestión de Pacientes\n\nVisualiza, busca y gestiona los expedientes de todos los pacientes.\n\n14\n\nTOTAL PACIENTES\n\nRegistrados en el sistema\n\nRegistrar Paciente\nPACIENTES:\nTodos\nMenores de edad\nMayores de edad\nNuevos Pacientes\nDIAGNÓSTICOS:\nCon Diagnóstico Pendiente\nAtendidos este mes\nUrgencias\nControles de rutina\nÁM\n\nPACIENTE\n\nÁngel Montenegro Lucumí\n\nDNI: 76543210\n\nÚltima atención: 30-10-2026\nPENDIENTE\nSH\n\nPACIENTE\n\nSofía Richi Herrera Campos\n\nDNI: 76543211\n\nEval. pendiente\nÚltima atención: 08-09-2026\nDS\n\nPACIENTE\n\nDiego Sánchez Pérez\n\nDNI: 76543212\n\nApoderado: Carmen\nÚltima atención: 10-10-2026\nPENDIENTE\nVF\n\nPACIENTE\n\nValentina Flores Díaz\n\nDNI: 76543213\n\nEval. pendiente\nÚltima atención: 21-09-2026\nRV\n\nPACIENTE\n\nRodrigo Vásquez Carrasco\n\nDNI: 76543214\n\nApoderado: Luis\nÚltima atención: 23-05-2026\nCH\n\nPACIENTE\n\nCamila Herrera Bustamante\n\nDNI: 76543215\n\nÚltima atención: 24-05-2026\nPM\n\nPACIENTE\n\nPapoi Montenegro\n\nDNI: 70814171\n\nÚltima atención: 10-06-2026\nPENDIENTE\nPM\n\nPACIENTE\n\nPapoi 2 Montenegro\n\nDNI: 70814172\n\nApoderado: Papoi\nEval. pendiente\nÚltima atención: 08-06-2026\nLS\n\nPACIENTE\n\nLuis Santamaría\n\nDNI: 82829392\n\nÚltima atención: 10-06-2026\nAM\n\nPACIENTE\n\nAngel Eduardo Montenegro Lucumi\n\nDNI: 72388387\n\nÚltima atención: 19-10-2026\nJO\n\nPACIENTE\n\nJoseph Odar Seclen\n\nDNI: 87657686\n\nÚltima atención: 02-06-2026\nFF\n\nPACIENTE\n\nFernando Fernandez Uchofen\n\nDNI: 70814174\n\nÚltima atención: No registrada\n\nMostrando 1–12 de 14 pacientes\n\n1\n2\nIr a página\nRegistrar Nuevo Paciente\nNOMBRES *\nAPELLIDOS *\nDNI\n*\nNACIMIENTO\n*\nGÉNERO *\nSeleccionar...\nMasculino\nFemenino\nOtro\nEDAD\nTELÉFONO\n*\n+51\nDIRECCIÓN (OPCIONAL)\nCORREO (OPCIONAL)\nOBSERVACIONES GENERALES (OPCIONAL)\nDatos del Apoderado (Obligatorio en menores de edad)\nNOMBRE DEL APODERADO *\nTEL. APODERADO\n*\n+51\nCancelar\nRegistrar Paciente",
+  "controles": [
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Inicio",
+      "href": "/dashboard"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Diagnóstico",
+      "href": "/nueva-evaluacion"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Pacientes",
+      "href": "/pacientes"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Historial de diagnósticos",
+      "href": "/historial"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Reportes",
+      "href": "/reportes"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Configuración",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Soporte / Ayuda",
+      "href": "/ayuda"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Cerrar Sesión",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "",
+      "href": "/perfil"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Registrar Paciente",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "",
+      "id": "",
+      "placeholder": "Buscar por nombres, apellidos o DNI (Opcional)...",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Todos",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Menores de edad",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Mayores de edad",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Nuevos Pacientes",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Con Diagnóstico Pendiente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Atendidos este mes",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Urgencias",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Controles de rutina",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": true
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "1",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "2",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "",
+      "id": "pacientes-page-jump",
+      "placeholder": "#",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "nombres",
+      "id": "",
+      "placeholder": "Ej: Ángel Eduardo",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "apellidos",
+      "id": "",
+      "placeholder": "Ej: Montenegro Lucumí",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "dni",
+      "id": "",
+      "placeholder": "8 dígitos",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "date",
+      "name": "fecha_nacimiento",
+      "id": "",
+      "placeholder": "",
+      "disabled": false
+    },
+    {
+      "tag": "SELECT",
+      "type": "select-one",
+      "name": "genero",
+      "id": "",
+      "disabled": false,
+      "options": [
+        {
+          "text": "Seleccionar...",
+          "value": ""
+        },
+        {
+          "text": "Masculino",
+          "value": "M"
+        },
+        {
+          "text": "Femenino",
+          "value": "F"
+        },
+        {
+          "text": "Otro",
+          "value": "Otro"
+        }
+      ]
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "",
+      "id": "",
+      "placeholder": "",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "tel",
+      "name": "telefono",
+      "id": "",
+      "placeholder": "999 999 999",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "direccion",
+      "id": "",
+      "placeholder": "Dirección del paciente",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "email",
+      "name": "correo",
+      "id": "",
+      "placeholder": "correo@ejemplo.com",
+      "disabled": false
+    },
+    {
+      "tag": "TEXTAREA",
+      "type": "textarea",
+      "name": "observaciones_generales",
+      "id": "",
+      "placeholder": "Alergias, condiciones previas...",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "apoderado",
+      "id": "",
+      "placeholder": "Nombre completo",
+      "disabled": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "tel",
+      "name": "telefono_apoderado",
+      "id": "",
+      "placeholder": "999 999 999",
+      "disabled": true
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Cancelar",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Registrar Paciente",
+      "disabled": false
+    }
+  ]
+}

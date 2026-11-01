@@ -7,10 +7,19 @@ const api = axios.create({
   }
 });
 
-// Interceptor opcional si usas JWT en el futuro
+const handleAccessError = (status) => {
+  if (status === 401) {
+    localStorage.removeItem('user');
+    window.dispatchEvent(new Event('auth:expired'));
+  } else if (status === 403) {
+    window.dispatchEvent(new Event('auth:forbidden'));
+  }
+};
+
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem('user'));
+    let user;
+    try { user = JSON.parse(localStorage.getItem('user') || 'null'); } catch { user = null; }
     if (user && user.token) {
       config.headers.Authorization = `Bearer ${user.token}`;
     }
@@ -20,5 +29,24 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    handleAccessError(error.response?.status);
+    return Promise.reject(error);
+  }
+);
+
+// Para pantallas que necesitan la interfaz Response de fetch (incluye multipart).
+export const authenticatedFetch = async (url, options = {}) => {
+  let user;
+  try { user = JSON.parse(localStorage.getItem('user') || 'null'); } catch { user = null; }
+  const headers = new Headers(options.headers || {});
+  if (user?.token) headers.set('Authorization', `Bearer ${user.token}`);
+  const response = await fetch(url, { ...options, headers });
+  handleAccessError(response.status);
+  return response;
+};
 
 export default api;

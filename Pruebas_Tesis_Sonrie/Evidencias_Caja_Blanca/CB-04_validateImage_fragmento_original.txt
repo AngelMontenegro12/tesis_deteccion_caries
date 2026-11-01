@@ -1,0 +1,30 @@
+Archivo: frontend/src/pages/EvaluacionClinica.jsx
+Inicio: línea 877
+
+  const validateImage = async (file) => {
+    try {
+      setIsSubmitting(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('http://localhost:8000/api/validate', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (!data.valid) {
+          showInvalidImageModal(data.error || data.message || 'Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
+          return false;
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Error validando imagen:", error);
+      return true; // Continuar si hay un error de red
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+

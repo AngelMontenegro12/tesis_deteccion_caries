@@ -1,12 +1,12 @@
 import os
 import unittest
-from datetime import date
+from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 import pymupdf
 
 from app import create_app, db
-from app.models import DiagnosticoOdontologo, EvaluacionDiagnostica, Odontologo, Paciente
+from app.models import DiagnosticoOdontologo, EvaluacionDiagnostica, Odontologo, Paciente, Sesion
 from app.services.diagnostico_pdf import TEMPLATE
 
 
@@ -19,8 +19,11 @@ class PdfEndpointTests(unittest.TestCase):
         db.create_all()
 
         dentist = Odontologo(id_odontologo=1, nombres='Luis', apellidos='Díaz',
-                             correo='luis@example.pe', contrasena_hash='prueba')
+                             correo='luis@example.invalid', contrasena_hash='prueba',
+                             permisos=['/historial', '/nueva-evaluacion'])
         db.session.add(dentist)
+        db.session.add(Sesion(id_odontologo=1, token_sesion='pdf-fixture-token',
+                              expira_en=datetime.now() + timedelta(hours=1)))
         db.session.flush()
         patient = Paciente(id_odontologo=1, nombres='Ana', apellidos='Pérez', dni='12345678',
                            fecha_nacimiento=date(1990, 1, 1), edad=36, genero='F', telefono='912345678')
@@ -32,6 +35,7 @@ class PdfEndpointTests(unittest.TestCase):
         db.session.commit()
         self.id = evaluation.id_evaluacion
         self.client = self.app.test_client()
+        self.client.environ_base['HTTP_AUTHORIZATION'] = 'Bearer pdf-fixture-token'
 
     def tearDown(self):
         db.session.remove()
@@ -73,6 +77,28 @@ class PdfEndpointTests(unittest.TestCase):
         self.assertIn('Caries molar', pdf[0].get_text())
         self.assertIn('Ana Pérez', pdf[0].get_text())
         self.assertTrue(pdf[0].get_images())
+        pdf.close()
+
+    @unittest.skipUnless(TEMPLATE.is_file(), 'Falta la referencia PDF de la clínica')
+    def test_pdf_keeps_patient_identity_after_confirmed_correction(self):
+        self.assertEqual(self.client.put(f'/api/evaluaciones/{self.id}/completar',
+                                         json={'finalDiagnosis': 'Diagnóstico ficticio'}).status_code, 200)
+        patient = Paciente.query.filter_by(dni='12345678').one()
+        response = self.client.put(f'/api/pacientes/{patient.id_paciente}', json={
+            'nombres': 'Nombre corregido', 'apellidos': 'Apellido corregido', 'dni': '88888888',
+            'fecha_nacimiento': '1991-02-02', 'confirmar_identidad': True,
+            'motivo_rectificacion': 'Prueba ficticia de corrección',
+        })
+        self.assertEqual(response.status_code, 200, response.json)
+        response = self.client.get(f'/api/evaluaciones/{self.id}/pdf')
+        self.assertEqual(response.status_code, 200)
+        pdf = pymupdf.open(stream=response.data, filetype='pdf')
+        text = pdf[0].get_text()
+        self.assertIn('Ana Pérez', text)
+        self.assertIn('12345678', text)
+        self.assertIn('01/01/1990', text)
+        self.assertNotIn('Nombre corregido', text)
+        self.assertNotIn('88888888', text)
         pdf.close()
 
     def test_missing_pdf_dependency_explains_which_python_needs_it(self):

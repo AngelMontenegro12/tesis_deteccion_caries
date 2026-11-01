@@ -1,0 +1,93 @@
+{
+  "http": 200,
+  "detalle": {
+    "detecciones_caries": [
+      {
+        "bbox_alto": 292,
+        "bbox_ancho": 316,
+        "bbox_x": 733,
+        "bbox_y": 789,
+        "class_probabilities": {
+          "Caries Incipiente": 0.5407,
+          "Caries Periapical (Avanzada)": 0.1608,
+          "Caries Profunda": 0.2985
+        },
+        "confianza": "0.5407",
+        "id_deteccion": 556,
+        "id_resultado": 241,
+        "localizacion": "Caries Incipiente",
+        "numero_diente": null,
+        "severidad": "incipiente"
+      },
+      {
+        "bbox_alto": 359,
+        "bbox_ancho": 152,
+        "bbox_x": 1878,
+        "bbox_y": 438,
+        "class_probabilities": {
+          "Caries Incipiente": 0.5379,
+          "Caries Periapical (Avanzada)": 0.1617,
+          "Caries Profunda": 0.3003
+        },
+        "confianza": "0.5379",
+        "id_deteccion": 557,
+        "id_resultado": 241,
+        "localizacion": "Caries Incipiente",
+        "numero_diente": null,
+        "severidad": "incipiente"
+      },
+      {
+        "bbox_alto": 296,
+        "bbox_ancho": 286,
+        "bbox_x": 2015,
+        "bbox_y": 756,
+        "class_probabilities": {
+          "Caries Incipiente": 0.5026,
+          "Caries Periapical (Avanzada)": 0.1741,
+          "Caries Profunda": 0.3233
+        },
+        "confianza": "0.5026",
+        "id_deteccion": 558,
+        "id_resultado": 241,
+        "localizacion": "Caries Incipiente",
+        "numero_diente": null,
+        "severidad": "incipiente"
+      }
+    ],
+    "diagnostico": null,
+    "evaluacion": {
+      "estado": "pendiente",
+      "fecha_evaluacion": "2026-10-31 17:35:03",
+      "id_evaluacion": 201,
+      "id_odontologo": 1,
+      "id_paciente": 17,
+      "motivo_consulta": "PRUEBA FICTICIA CN-03. Validacion funcional de procesamiento y visualizacion; sin valor de atencion clinica.",
+      "observaciones": "PRUEBA FICTICIA CN-03 y CN-05. Radiografia autorizada para validacion; no valorar precision clinica.",
+      "tipo_visita": "Primera vez"
+    },
+    "paciente": {
+      "activo": true,
+      "apellidos": "Paciente Ficticio",
+      "apoderado": "",
+      "correo": "prueba.tesis@example.com",
+      "direccion": "Direccion ficticia para prueba de software",
+      "dni": "99103125",
+      "edad": 36,
+      "fecha_nacimiento": "1990-01-15",
+      "genero": "Otro",
+      "id_odontologo": 1,
+      "id_paciente": 17,
+      "nombres": "Prueba Tesis",
+      "observaciones_generales": "PACIENTE COMPLETAMENTE FICTICIO. Exclusivo CN-02, CN-03 y CN-05. No usar en atencion clinica.",
+      "telefono": "999000125",
+      "telefono_apoderado": ""
+    },
+    "radiografias": [
+      {
+        "id_radiografia": 310,
+        "id_resultado": 241,
+        "ruta_archivo": "uploads/radiografias/2026/10/eval201_1793486121465_CN03_panoramica_prueba.png"
+      }
+    ]
+  }
+}

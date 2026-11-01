@@ -9,17 +9,30 @@ from app.models import EvaluacionDiagnostica, Radiografia, DiagnosticoOdontologo
 from app.services.ia_service import procesar_radiografia_con_ia
 from datetime import datetime
 from app.utils.validation import valid_date
+from app.utils.auth import require_module, can_edit_clinical, forbidden
+from app.utils.auditoria_clinica import registrar_operacion
+from app.utils.identidad_clinica import capturar_identidad, datos_expediente, paciente_expediente
 
 evaluaciones_bp = Blueprint('evaluaciones', __name__, url_prefix='/api/evaluaciones')
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads', 'radiografias')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def _diagnostico_final(evaluacion):
+    return DiagnosticoOdontologo.query.filter_by(id_evaluacion=evaluacion.id_evaluacion).order_by(
+        DiagnosticoOdontologo.id_diagnostico.desc()).first()
+
+
+def _bloqueo_finalizada(evaluacion):
+    if evaluacion.estado == 'completada' or _diagnostico_final(evaluacion):
+        return jsonify({'error': 'La evaluación tiene un diagnóstico finalizado. No se permite editar ni reprocesar; crea una nueva evaluación.'}), 409
+    return None
 
 @evaluaciones_bp.route('', methods=['GET'])
 def obtener_evaluaciones():
+    _, error = require_module('/historial', '/nueva-evaluacion')
+    if error: return error
     try:
-        # TODO: En un sistema real el id_odontologo se saca de la sesión actual JWT/Login
-        id_odontologo_harcoded = 1
         
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
@@ -127,22 +140,27 @@ def obtener_evaluaciones():
 
 @evaluaciones_bp.route('', methods=['POST'])
 def crear_evaluacion():
+    user, auth_error = require_module('/nueva-evaluacion')
+    if auth_error: return auth_error
+    if not can_edit_clinical(user, '/nueva-evaluacion'): return forbidden()
     data = request.get_json(silent=True) or {}
     if not str(data.get('tipo_visita') or '').strip() or not str(data.get('motivo_consulta') or '').strip():
         return jsonify({'error': 'El tipo de visita y el motivo de consulta son requeridos'}), 400
+    paciente = db.session.get(Paciente, data.get('id_paciente')) if str(data.get('id_paciente', '')).isdigit() else None
+    if not paciente or not paciente.activo:
+        return jsonify({'error': 'Paciente no encontrado'}), 404
     try:
-        # TODO: En un sistema real el id_odontologo se saca de la sesión actual JWT/Login
-        id_odontologo_harcoded = 1 
-
         nueva_eval = EvaluacionDiagnostica(
-            id_paciente=data['id_paciente'],
-            id_odontologo=id_odontologo_harcoded,
+            id_paciente=paciente.id_paciente,
+            id_odontologo=user.id_odontologo,
             tipo_visita=data.get('tipo_visita', 'Primera vez'),
             motivo_consulta=data.get('motivo_consulta', ''),
             observaciones=data.get('observaciones', ''),
             estado='pendiente'
         )
         db.session.add(nueva_eval)
+        db.session.flush()
+        registrar_operacion(user, 'evaluacion', nueva_eval.id_evaluacion, 'crear')
         db.session.commit()
         return jsonify(nueva_eval.to_dict()), 201
     except Exception as e:
@@ -151,19 +169,28 @@ def crear_evaluacion():
 
 @evaluaciones_bp.route('/<int:id_evaluacion>', methods=['PUT'])
 def actualizar_evaluacion(id_evaluacion):
+    user, auth_error = require_module('/nueva-evaluacion')
+    if auth_error: return auth_error
     data = request.get_json(silent=True) or {}
     try:
         evaluacion = EvaluacionDiagnostica.query.get(id_evaluacion)
         if not evaluacion:
             return jsonify({"error": "Evaluación no encontrada"}), 404
+        if not can_edit_clinical(user, '/nueva-evaluacion'):
+            return forbidden()
+        bloqueo = _bloqueo_finalizada(evaluacion)
+        if bloqueo: return bloqueo
 
         if ('tipo_visita' in data and not str(data['tipo_visita'] or '').strip()) or ('motivo_consulta' in data and not str(data['motivo_consulta'] or '').strip()):
             return jsonify({'error': 'El tipo de visita y el motivo de consulta son requeridos'}), 400
 
+        cambios = [campo for campo in ('tipo_visita', 'motivo_consulta', 'observaciones')
+                   if campo in data and data[campo] != getattr(evaluacion, campo)]
         if 'tipo_visita' in data: evaluacion.tipo_visita = data['tipo_visita']
         if 'motivo_consulta' in data: evaluacion.motivo_consulta = data['motivo_consulta']
         if 'observaciones' in data: evaluacion.observaciones = data['observaciones']
 
+        registrar_operacion(user, 'evaluacion', id_evaluacion, 'editar', cambios)
         db.session.commit()
         return jsonify(evaluacion.to_dict()), 200
     except Exception as e:
@@ -172,19 +199,20 @@ def actualizar_evaluacion(id_evaluacion):
 
 @evaluaciones_bp.route('/<int:id_evaluacion>/completar', methods=['PUT', 'POST'])
 def completar_evaluacion(id_evaluacion):
+    user, auth_error = require_module('/nueva-evaluacion')
+    if auth_error: return auth_error
     try:
         evaluacion = db.session.get(EvaluacionDiagnostica, id_evaluacion)
         if not evaluacion:
             return jsonify({"error": "Evaluación no encontrada"}), 404
+        if not can_edit_clinical(user, '/nueva-evaluacion'):
+            return forbidden()
+        # Mismo bloqueo de paciente que usa su edición: captura y rectificación se serializan.
+        paciente = Paciente.query.filter_by(id_paciente=evaluacion.id_paciente).with_for_update().first()
+        if not paciente:
+            return jsonify({'error': 'Paciente no encontrado'}), 404
 
         # Una repetición de la solicitud no debe crear diagnósticos duplicados.
-        if evaluacion.estado == 'completada':
-            existente = DiagnosticoOdontologo.query.filter_by(id_evaluacion=id_evaluacion).order_by(
-                DiagnosticoOdontologo.fecha_diagnostico.desc(), DiagnosticoOdontologo.id_diagnostico.desc()
-            ).first()
-            if existente:
-                return jsonify({'message': 'La evaluación ya estaba finalizada', 'diagnostico': existente.to_dict()}), 200
-        
         data = request.json or {}
         diagnostico_texto = data.get('finalDiagnosis', '').strip()
         if not diagnostico_texto:
@@ -194,13 +222,21 @@ def completar_evaluacion(id_evaluacion):
         confirma_ia = data.get('confirma_ia', 1)
         observaciones = data.get('observaciones', '')
 
-        # TODO: ID odontologo real basado en token
-        id_odontologo_harcoded = 1
+        existente = _diagnostico_final(evaluacion)
+        if existente or evaluacion.estado == 'completada':
+            if (existente and evaluacion.estado == 'completada'
+                    and existente.id_odontologo == user.id_odontologo
+                    and existente.diagnostico_texto == diagnostico_texto
+                    and existente.plan_tratamiento == plan_tratamiento
+                    and bool(existente.confirma_ia) == bool(confirma_ia)
+                    and (existente.observaciones or '') == observaciones):
+                return jsonify({'message': 'La evaluación ya estaba finalizada', 'diagnostico': existente.to_dict()}), 200
+            return jsonify({'error': 'Ya existe un cierre clínico. No se puede sustituir el diagnóstico ni su responsable.'}), 409
 
         # Crear registro en diagnosticos_odontologo
         nuevo_diagnostico = DiagnosticoOdontologo(
             id_evaluacion=id_evaluacion,
-            id_odontologo=id_odontologo_harcoded,
+            id_odontologo=user.id_odontologo,
             diagnostico_texto=diagnostico_texto,
             plan_tratamiento=plan_tratamiento,
             confirma_ia=confirma_ia,
@@ -211,6 +247,8 @@ def completar_evaluacion(id_evaluacion):
 
         # Actualizar evaluación a completada
         evaluacion.estado = 'completada'
+        capturar_identidad(evaluacion, paciente, user, 'cierre')
+        registrar_operacion(user, 'evaluacion', id_evaluacion, 'finalizar')
         db.session.commit()
         
         return jsonify({
@@ -224,6 +262,8 @@ def completar_evaluacion(id_evaluacion):
 
 @evaluaciones_bp.route('/<int:id_evaluacion>/pdf', methods=['GET'])
 def descargar_diagnostico_pdf(id_evaluacion):
+    _, error = require_module('/historial', '/reportes', '/nueva-evaluacion')
+    if error: return error
     evaluacion = db.session.get(EvaluacionDiagnostica, id_evaluacion)
     if not evaluacion:
         return jsonify({'error': 'Evaluación no encontrada'}), 404
@@ -239,6 +279,8 @@ def descargar_diagnostico_pdf(id_evaluacion):
     paciente = db.session.get(Paciente, evaluacion.id_paciente)
     if not paciente:
         return jsonify({'error': 'Paciente no encontrado'}), 404
+
+    paciente = paciente_expediente(evaluacion, paciente)
 
     odontologo = db.session.get(Odontologo, diagnostico.id_odontologo)
     radiografias = Radiografia.query.filter_by(id_evaluacion=id_evaluacion).order_by(Radiografia.id_radiografia).all()
@@ -279,15 +321,21 @@ def descargar_diagnostico_pdf(id_evaluacion):
 
 @evaluaciones_bp.route('/pendientes/paciente/<int:id_paciente>', methods=['GET'])
 def obtener_evaluacion_pendiente(id_paciente):
+    user, auth_error = require_module('/nueva-evaluacion')
+    if auth_error: return auth_error
     try:
-        # TODO: En un sistema real el id_odontologo se saca de la sesión actual JWT/Login
-        id_odontologo_harcoded = 1
+        if not db.session.get(Paciente, id_paciente):
+            return jsonify({'error': 'Paciente no encontrado'}), 404
         
         # Buscar la última evaluación pendiente del paciente
-        evaluacion = EvaluacionDiagnostica.query.filter_by(
+        query = EvaluacionDiagnostica.query.filter_by(
             id_paciente=id_paciente,
             estado='pendiente'
-        ).order_by(EvaluacionDiagnostica.fecha_evaluacion.desc()).first()
+        )
+        # Cualquier trabajador habilitado puede reanudar un caso compartido sin cierre.
+        query = query.filter(~EvaluacionDiagnostica.id_evaluacion.in_(
+            db.session.query(DiagnosticoOdontologo.id_evaluacion)))
+        evaluacion = query.order_by(EvaluacionDiagnostica.fecha_evaluacion.desc()).first()
         
         if evaluacion:
             eval_dict = evaluacion.to_dict()
@@ -310,6 +358,15 @@ def subir_radiografias(id_evaluacion):
     O bien el cliente envía files y una lista de metadata asociada, 
     pero enviar 'file_X' y 'tipo_X' como clave de form-data es más simple con axios/fetch.
     """
+    user, auth_error = require_module('/nueva-evaluacion')
+    if auth_error: return auth_error
+    evaluacion = db.session.get(EvaluacionDiagnostica, id_evaluacion)
+    if not evaluacion:
+        return jsonify({'error': 'Evaluación no encontrada'}), 404
+    if not can_edit_clinical(user, '/nueva-evaluacion'):
+        return forbidden()
+    bloqueo = _bloqueo_finalizada(evaluacion)
+    if bloqueo: return bloqueo
     try:
         evaluacion = EvaluacionDiagnostica.query.get(id_evaluacion)
         if not evaluacion:
@@ -319,7 +376,7 @@ def subir_radiografias(id_evaluacion):
         anio = now.strftime('%Y')
         mes = now.strftime('%m')
         ruta_directorio = os.path.join('uploads', 'radiografias', anio, mes)
-        ruta_fisica = os.path.join(os.getcwd(), ruta_directorio)
+        ruta_fisica = os.path.join(current_app.config['UPLOADS_ROOT'], 'radiografias', anio, mes)
         os.makedirs(ruta_fisica, exist_ok=True)
 
         radiografias_procesadas = []
@@ -357,7 +414,7 @@ def subir_radiografias(id_evaluacion):
                         
                     if rad_existente and rad_existente.id_evaluacion == id_evaluacion:
                         # Eliminar el archivo físico anterior
-                        old_file_path = os.path.join(os.getcwd(), rad_existente.ruta_archivo)
+                        old_file_path = os.path.join(current_app.config['UPLOADS_ROOT'], rad_existente.ruta_archivo.removeprefix('uploads/'))
                         if os.path.exists(old_file_path):
                             try: os.remove(old_file_path)
                             except Exception: pass
@@ -401,7 +458,7 @@ def subir_radiografias(id_evaluacion):
         for rad_vieja in radiografias_viejas:
             if rad_vieja.id_radiografia not in ids_bd_recibidos:
                 # Borrar archivo físico antes de descartar
-                ruta_completa = os.path.join(os.getcwd(), rad_vieja.ruta_archivo)
+                ruta_completa = os.path.join(current_app.config['UPLOADS_ROOT'], rad_vieja.ruta_archivo.removeprefix('uploads/'))
                 if os.path.exists(ruta_completa):
                     try: os.remove(ruta_completa)
                     except Exception: pass
@@ -418,6 +475,7 @@ def subir_radiografias(id_evaluacion):
                     d['local_id'] = recien['local_id']
             lista_completa.append(d)
 
+        registrar_operacion(user, 'evaluacion', id_evaluacion, 'guardar_radiografias')
         db.session.commit()
 
         return jsonify({
@@ -432,6 +490,15 @@ def subir_radiografias(id_evaluacion):
 
 @evaluaciones_bp.route('/<int:id_evaluacion>/procesar', methods=['POST'])
 def procesar_evaluacion(id_evaluacion):
+    user, auth_error = require_module('/nueva-evaluacion')
+    if auth_error: return auth_error
+    evaluacion = db.session.get(EvaluacionDiagnostica, id_evaluacion)
+    if not evaluacion:
+        return jsonify({'error': 'Evaluación no encontrada'}), 404
+    if not can_edit_clinical(user, '/nueva-evaluacion'):
+        return forbidden()
+    bloqueo = _bloqueo_finalizada(evaluacion)
+    if bloqueo: return bloqueo
     try:
         evaluacion = EvaluacionDiagnostica.query.get(id_evaluacion)
         if not evaluacion:
@@ -440,6 +507,10 @@ def procesar_evaluacion(id_evaluacion):
         radiografias = Radiografia.query.filter_by(id_evaluacion=id_evaluacion).all()
         if not radiografias:
             return jsonify({"error": "No hay radiografías para procesar"}), 400
+
+        # El servicio IA confirma transacciones propias: registrar la solicitud, no un éxito supuesto.
+        registrar_operacion(user, 'evaluacion', id_evaluacion, 'solicitar_procesamiento')
+        db.session.commit()
 
         resultados = []
         for rad in radiografias:
@@ -462,6 +533,8 @@ def procesar_evaluacion(id_evaluacion):
 
 @evaluaciones_bp.route('/<int:id_evaluacion>/detalle', methods=['GET'])
 def obtener_evaluacion_detalle(id_evaluacion):
+    _, error = require_module('/historial', '/nueva-evaluacion', '/reportes')
+    if error: return error
     from sqlalchemy import text
     from app.models import EvaluacionDiagnostica, Paciente, Radiografia, DiagnosticoOdontologo
     from app import db
@@ -533,7 +606,7 @@ def obtener_evaluacion_detalle(id_evaluacion):
 
         return jsonify({
             'evaluacion': evaluacion.to_dict(),
-            'paciente': paciente.to_dict(),
+            'paciente': datos_expediente(evaluacion, paciente),
             'radiografias': radiografias_data,
             'detecciones_caries': detecciones_data,
             'diagnostico': diagnostico_data

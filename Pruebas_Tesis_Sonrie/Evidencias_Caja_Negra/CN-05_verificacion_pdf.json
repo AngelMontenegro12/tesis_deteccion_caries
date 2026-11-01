@@ -1,0 +1,10 @@
+{
+  "paginas": 2,
+  "bytes": 3749711,
+  "sha256": "86522775477d7d78fe30cabef12b29dd37dc556c5dd72011273c929a0315f188",
+  "paciente_y_dni_correctos": true,
+  "diagnostico_ficticio_presente": true,
+  "expediente": 201,
+  "revision_visual": "Dos páginas renderizadas y revisadas; texto legible, panorámica y tres recuadros presentes.",
+  "observacion": "El PDF identifica a Aldo Montenegro Delgado, mientras la sesión muestra Plis Plis. No se evaluó asignación de identidad del odontólogo como criterio de estos casos."
+}

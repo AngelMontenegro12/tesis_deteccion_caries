@@ -53,8 +53,7 @@ const Dashboard = () => {
 
       const fetchStats = async () => {
         try {
-           const id_odontologo = parsedUser?.id_odontologo || 1;
-           const response = await api.get(`/dashboard/stats?id_odontologo=${id_odontologo}`);
+           const response = await api.get('/dashboard/stats');
            if (response.data.status === 'success') {
               setStats(response.data.data);
            }

@@ -37,6 +37,10 @@ import {
   Sparkles
 } from 'lucide-react';
 import BoundingBoxViewer from '../components/BoundingBoxViewer';
+import PrivateImage from '../components/PrivateImage';
+import { authenticatedFetch } from '../services/api';
+import { updatePatientWithConfirmation } from '../services/patients';
+import { startAnalysisTiming, assertAnalysisResults } from '../utils/analysisTiming';
 import PhoneInput from '../components/PhoneInput';
 import { downloadDiagnosticoPdf } from '../utils/downloadDiagnosticoPdf';
 import { isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
@@ -118,6 +122,7 @@ const EvaluacionClinica = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(() => getInitialState('eval_isAnalyzing', false));
   const [analysisItems, setAnalysisItems] = useState(() => getInitialState('eval_analysisItems', []));
   const [analysisTime, setAnalysisTime] = useState(() => getInitialState('eval_analysisTime', 0));
+  const analysisRunRef = useRef(null);
   const [analysisResultsReady, setAnalysisResultsReady] = useState(() => {
     const items = getInitialState('eval_analysisItems', []);
     return items.length > 0 && items.every(item => item.status === 'completed');
@@ -149,6 +154,9 @@ const EvaluacionClinica = () => {
   const [detalleResultados, setDetalleResultados] = useState({ radiografias: [], detecciones: [] });
 
   useEffect(() => () => {
+    const run = analysisRunRef.current;
+    analysisRunRef.current = null;
+    run?.cancel();
     clearInterval(finishTimerRef.current);
     clearTimeout(finishRedirectRef.current);
   }, []);
@@ -286,6 +294,9 @@ const EvaluacionClinica = () => {
   };
 
   const confirmRestart = () => {
+    analysisRunRef.current?.cancel();
+    analysisRunRef.current = null;
+    setAnalysisResultsReady(false);
     clearSessionStorageState();
     setCurrentStep(1);
     setPatientMode('search');
@@ -332,7 +343,7 @@ const EvaluacionClinica = () => {
 
     try {
       if (!saved) {
-        const response = await fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/completar`, {
+        const response = await authenticatedFetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/completar`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -446,7 +457,7 @@ const EvaluacionClinica = () => {
     if (!evaluacionId) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/detalle`);
+      const response = await authenticatedFetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/detalle`);
       if (!response.ok) return;
       const data = await response.json();
 
@@ -617,15 +628,16 @@ const EvaluacionClinica = () => {
       return;
     }
 
+    analysisRunRef.current?.cancel();
     const items = radiografias.map((rad, index) => ({
       id: rad.id ?? index,
       id_bd: rad.id_bd ?? null,
       id_radiografia: rad.id_radiografia ?? null,
       nombre_archivo: rad.file?.name || rad.nombreArchivo || rad.nombre_archivo || null,
       tipo: rad.tipo || '1',
-      status: index === 0 ? 'analyzing' : 'waiting',
-      progress: index === 0 ? 1 : 0,
-      startTime: index === 0 ? Date.now() : null
+      status: 'analyzing',
+      progress: 1,
+      startTime: Date.now()
     }));
 
     setAnalysisItems(items);
@@ -633,160 +645,43 @@ const EvaluacionClinica = () => {
     setIsAnalyzing(true);
     setAnalysisResultsReady(false);
 
-    const MIN_ANALYSIS_DELAY = 4000;
-    const MAX_ANALYSIS_DELAY = 6000;
-    const analysisDelay = Math.floor(Math.random() * (MAX_ANALYSIS_DELAY - MIN_ANALYSIS_DELAY + 1)) + MIN_ANALYSIS_DELAY;
-
-    const waitForMinimumDelay = new Promise((resolve) => {
-      setTimeout(resolve, analysisDelay);
+    const run = startAnalysisTiming({
+      onSecond: setAnalysisTime,
+      onVisual: (elapsed, minimumMs) => {
+        // La barra mantiene su animación decorativa; no es progreso medido de inferencia.
+        const progress = Math.max(1, Math.floor(Math.min(elapsed / minimumMs, 1) * 98));
+        setAnalysisItems(prev => prev.map(item => ({ ...item, progress })));
+      },
+      request: async (signal) => {
+        const response = await authenticatedFetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/procesar`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
+        });
+        if (!response.ok) {
+          const details = await response.json().catch(() => ({}));
+          throw new Error(details.error || 'No se pudo procesar la evaluación');
+        }
+        const data = await response.json();
+        return assertAnalysisResults(data, items.map(item => item.id_bd ?? item.id_radiografia));
+      },
     });
-
-    let stopAnimation = false;
-
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    const animateItemProgress = (itemIndex, durationMs = 4200, tickMs = 80) => new Promise((resolve) => {
-      const animationStart = Date.now();
-      const targetProgress = 98;
-
-      const timer = setInterval(() => {
-        if (stopAnimation) {
-          clearInterval(timer);
-          resolve();
-          return;
-        }
-
-        const elapsed = Date.now() - animationStart;
-        const ratio = Math.min(elapsed / durationMs, 1);
-        const nextProgress = Math.max(1, Math.floor(ratio * targetProgress));
-
-        setAnalysisItems((prev) => prev.map((item, idx) => (
-          idx === itemIndex
-            ? { ...item, status: 'analyzing', progress: nextProgress }
-            : item
-        )));
-
-        if (ratio >= 1) {
-          clearInterval(timer);
-          resolve();
-        }
-      }, tickMs);
-    });
-
-    const runVisualQueue = async () => {
-      for (let idx = 0; idx < items.length; idx++) {
-        if (stopAnimation) {
-          return;
-        }
-
-        setAnalysisItems(prev => prev.map((item, itemIdx) => {
-          if (itemIdx < idx) return { ...item, status: 'completed', progress: 100 };
-          if (itemIdx === idx) return { ...item, status: 'analyzing', progress: Math.max(1, Number(item.progress || 0)), startTime: Date.now() };
-          return { ...item, status: 'waiting', progress: 0 };
-        }));
-
-        await animateItemProgress(idx, 4200, 80);
-
-        if (stopAnimation) {
-          return;
-        }
-
-        await sleep(200);
-        setAnalysisItems(prev => prev.map((item, itemIdx) => (
-          itemIdx === idx ? { ...item, status: 'completed', progress: 100 } : item
-        )));
-      }
-    };
-
-    const timeInterval = setInterval(() => {
-      setAnalysisTime(prev => prev + 1);
-    }, 1000);
-
+    analysisRunRef.current = run;
     try {
-      const visualQueuePromise = runVisualQueue();
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 segundos
-
-      const responsePromise = fetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/procesar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal
-      });
-
-      const response = await Promise.all([responsePromise, waitForMinimumDelay]).then(([res]) => {
-        clearTimeout(timeoutId);
-        return res;
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'No se pudo procesar la evaluación');
-      }
-
-      // Intentar leer la respuesta para detectar validaciones (por ejemplo: imagen no es radiografía)
-      let resData = {};
-      try {
-        resData = await response.json();
-      } catch (e) {
-        resData = {};
-      }
-
-      // Comprobaciones defensivas: distintos backends pueden devolver keys diferentes.
-      const invalidFlag = (
-        resData.validation === false ||
-        resData.validacion === false ||
-        resData.valid === false ||
-        resData.is_radiograph === false ||
-        resData.any_invalid_images === true ||
-        resData.image_valid === false ||
-        resData.status === 'invalid_image' ||
-        resData.status === 'error'
-      );
-
-      // Si el backend agrupa resultados por radiografía, revisar cada resultado anidado
-      if (!invalidFlag && Array.isArray(resData.resultados)) {
-        for (const r of resData.resultados) {
-          const inner = r?.resultado || r?.result || r;
-          if (!inner) continue;
-          if (inner.status === 'invalid_image' || inner.status === 'error' || inner.valid === false) {
-            stopAnimation = true;
-            clearAnalysisPersistence();
-            setAnalysisResultsReady(false);
-            setCurrentStep(4);
-            setAnalysisItems([]);
-            showInvalidImageModal(inner.message || inner.error || 'Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
-            setIsAnalyzing(false);
-            return;
-          }
-        }
-      }
-
-      if (invalidFlag) {
-        // No avanzar a resultados; informar al usuario y resetear estado de análisis
-        stopAnimation = true;
-        clearAnalysisPersistence();
-        setAnalysisResultsReady(false);
-        setCurrentStep(4);
-        setAnalysisItems([]);
-        showInvalidImageModal(resData.message || resData.error || 'Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
-        setIsAnalyzing(false);
-        return;
-      }
-
-      await visualQueuePromise;
+      await run.result;
+      if (analysisRunRef.current !== run) return;
+      setAnalysisItems(prev => prev.map(item => ({ ...item, status: 'completed', progress: 100 })));
       setAnalysisResultsReady(true);
     } catch (error) {
-      stopAnimation = true;
+      if (analysisRunRef.current !== run) return;
       setAnalysisResultsReady(false);
+      clearAnalysisPersistence();
       console.error('Error al procesar radiografías:', error);
-      setAnalysisItems(prev => prev.map(item => ({
-        ...item,
-        status: 'waiting',
-        progress: 0
-      })));
+      setAnalysisItems([]);
+      setCurrentStep(4);
       setIsAnalyzing(false);
+      if (error.invalidImage) showInvalidImageModal(error.message);
+      else if (error.name !== 'AbortError') alert(error.message || 'No se pudo procesar la evaluación');
     } finally {
-      clearInterval(timeInterval);
+      if (analysisRunRef.current === run) analysisRunRef.current = null;
     }
   };
 
@@ -1050,7 +945,7 @@ const EvaluacionClinica = () => {
       if (searchQuery.trim().length > 0) {
         setIsSearching(true);
         try {
-          const response = await fetch(`http://localhost:5000/api/pacientes/buscar?q=${searchQuery.trim()}`);
+          const response = await authenticatedFetch(`http://localhost:5000/api/pacientes/buscar?q=${searchQuery.trim()}`);
           if (response.ok) {
             const data = await response.json();
             setSearchResults(data);
@@ -1095,7 +990,7 @@ const EvaluacionClinica = () => {
           : 'http://localhost:5000/api/pacientes';
 
         // Calcular si es menor de edad para asegurar enviar apoderado correctamente (aunque ya estaria en formData)
-        const response = await fetch(url, {
+        const response = isEditing ? await updatePatientWithConfirmation(url, formData) : await authenticatedFetch(url, {
           method: method,
           headers: {
             'Content-Type': 'application/json',
@@ -1148,7 +1043,7 @@ const EvaluacionClinica = () => {
           observaciones: contextoClinico.observaciones
         };
 
-        const response = await fetch(url, {
+        const response = await authenticatedFetch(url, {
           method: method,
           headers: {
             'Content-Type': 'application/json',
@@ -1174,7 +1069,8 @@ const EvaluacionClinica = () => {
         } else {
           setIsSubmitting(false);
           console.error('Error al registrar evaluación');
-          alert('Hubo un error al registrar el contexto clínico.');
+          const details = await response.json().catch(() => ({}));
+          alert(details.error || 'Hubo un error al registrar el contexto clínico.');
         }
       } catch (error) {
         setIsSubmitting(false);
@@ -1198,7 +1094,8 @@ const EvaluacionClinica = () => {
           const previewSrc = getRadiografiaPreviewSrc(rad);
           if (!fileToUpload && !rad.id_bd && previewSrc) {
             try {
-              const resBlob = await fetch(previewSrc);
+              const resBlob = previewSrc.startsWith('http://localhost:5000/uploads/')
+                ? await authenticatedFetch(previewSrc) : await fetch(previewSrc);
               const blobData = await resBlob.blob();
               fileToUpload = new File([blobData], `imagen_recuperada_${index}.jpg`, { type: blobData.type || 'image/jpeg' });
             } catch (err) {
@@ -1223,7 +1120,7 @@ const EvaluacionClinica = () => {
         }
 
         const url = `http://localhost:5000/api/evaluaciones/${evaluacionId}/radiografias`;
-        const response = await fetch(url, {
+        const response = await authenticatedFetch(url, {
           method: 'PUT', // PUT para indicar reemplazo y actualizacion de radiografias
           body: formDataPayload,
           // 'Content-Type' no se establece manualmente cuando usamos FormData,
@@ -1319,7 +1216,7 @@ const EvaluacionClinica = () => {
         setIsResuming(true);
         try {
           // Obtener paciente
-          const res = await fetch(`http://localhost:5000/api/pacientes/${location.state.id_paciente}`);
+          const res = await authenticatedFetch(`http://localhost:5000/api/pacientes/${location.state.id_paciente}`);
           if (res.ok) {
             const paciente = await res.json();
             await handleSelectPatient(paciente);
@@ -1373,6 +1270,9 @@ const EvaluacionClinica = () => {
 
     // 2. Si es un paciente DUAL limpiar toda su variable local, caso contrario mantenemos
     if (!isSamePatient || location.state?.forceNew) {
+      analysisRunRef.current?.cancel();
+      analysisRunRef.current = null;
+      setAnalysisResultsReady(false);
       clearSessionStorageState();
       setActiveResultIndex(0);
       setIsAnalyzing(false);
@@ -1387,7 +1287,7 @@ const EvaluacionClinica = () => {
     setSelectedPatient(paciente);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/evaluaciones/pendientes/paciente/${paciente.id_paciente}`);
+      const response = await authenticatedFetch(`http://localhost:5000/api/evaluaciones/pendientes/paciente/${paciente.id_paciente}`);
       if (response.ok) {
         const evalPendiente = await response.json();
         
@@ -2225,7 +2125,7 @@ const EvaluacionClinica = () => {
                               ) : (
                                 /* View de Imagen subida */
                                 <div className="relative w-full h-36 bg-gray-900 rounded-xl overflow-hidden group">
-                                  <img 
+                                  <PrivateImage
                                     src={getRadiografiaPreviewSrc(rad)} 
                                     alt="Preview" 
                                     className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity"
@@ -2329,7 +2229,7 @@ const EvaluacionClinica = () => {
                             {/* Imagen Miniatura */}
                             <div className="relative w-24 h-16 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer shadow-inner border border-gray-100"
                                  onClick={() => setPreviewModal({ isOpen: true, url: getRadiografiaSrc(rad) })}>
-                              <img 
+                              <PrivateImage
                                 src={getRadiografiaSrc(rad)} 
                                 alt={`Radiografía ${idx+1}`} 
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
@@ -2482,7 +2382,7 @@ const EvaluacionClinica = () => {
                                 : 'border-gray-200 hover:border-gray-400 hover:scale-105'
                             }`}
                           >
-                            <img src={getRadiografiaSrc(rad)} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                            <PrivateImage src={getRadiografiaSrc(rad)} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
                             {safeActiveResultIndex === idx && (
                               <>
                                 <div className="absolute inset-0 bg-dentBlue-900/10 mix-blend-overlay"></div>
@@ -2780,7 +2680,7 @@ const EvaluacionClinica = () => {
             </button>
             
             {/* Imagen Responsiva */}
-            <img 
+            <PrivateImage
               src={previewModal.url} 
               alt="Previsualización Ampliada" 
               className="w-auto h-auto max-h-[85vh] rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] object-contain border border-white/10"
@@ -2861,17 +2761,12 @@ const EvaluacionClinica = () => {
                           {item.status === 'completed' && <><CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-dentGreen-500" /><span className="text-dentGreen-600">Completado</span></>}
                         </div>
                         
-                        {/* Progress */}
-                        {item.status === 'analyzing' && (
-                          <span className="text-xs font-bold text-gray-500">{item.progress}%</span>
-                        )}
-                        {item.status === 'completed' && (
-                          <span className="text-xs font-bold text-dentGreen-500">100%</span>
-                        )}
+                        {/* Sin porcentajes ficticios de inferencia. */}
                       </div>
 
                       {/* Bar Fill */}
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <span className="sr-only">Animación decorativa; no representa el progreso real de la IA.</span>
+                      <div aria-hidden="true" title="Animación visual, no porcentaje de inferencia" className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                         <div 
                           className={`h-full rounded-full transition-all duration-500 ease-out ${
                             item.status === 'completed' ? 'bg-dentGreen-500' : 'bg-gradient-to-r from-dentBlue-900 to-sky-400'

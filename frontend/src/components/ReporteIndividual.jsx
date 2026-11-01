@@ -24,6 +24,7 @@ import {
   Legend 
 } from 'recharts';
 import api from '../services/api';
+import PrivateImage from './PrivateImage';
 
 const getBaseUrl = () => {
   // Extraer la URL base del API eliminando el '/api' al final
@@ -75,7 +76,7 @@ const ImageSlider = ({ beforeImage, afterImage, beforeDetections = [], afterDete
       {/* Base image: Before (Oldest) */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="relative max-w-full max-h-full" style={{ aspectRatio: `${beforeSize.w}/${beforeSize.h}` }}>
-          <img 
+          <PrivateImage
             src={beforeSrc} 
             className="w-full h-full object-contain" 
             alt="Antes" 
@@ -111,7 +112,7 @@ const ImageSlider = ({ beforeImage, afterImage, beforeDetections = [], afterDete
         style={{ clipPath: `polygon(${sliderPos}% 0, 100% 0, 100% 100%, ${sliderPos}% 100%)` }}
       >
         <div className="relative max-w-full max-h-full" style={{ aspectRatio: `${afterSize.w}/${afterSize.h}` }}>
-          <img 
+          <PrivateImage
             src={afterSrc} 
             className="w-full h-full object-contain" 
             alt="Después" 

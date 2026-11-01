@@ -1,0 +1,233 @@
+{
+  "fecha": "2026-10-31T22:36:42.534Z",
+  "url": "http://localhost:3000/historial",
+  "texto": "CS\nClínica Sonríe\n\nDiagnóstico\n\nInicio\nDiagnóstico\nPacientes\nHistorial de diagnósticos\nReportes\nConfiguración\nSoporte / Ayuda\n\nPlis Plis\n\nCirujano\n\nCerrar Sesión\nHistorial de Diagnósticos\n\nConsulta y filtra todos los diagnósticos clínicos realizadas a tus pacientes.\n\nDesde (Opcional)\n-\nHasta (Opcional)\nTipo de visita (Todos)\nPrimera vez\nControl rutina\nUrgencia\nSeguimiento\nLimpiar filtros\nTodos los Estados\nCompletadas\nPendientes\nPACIENTE\n\t\nFECHA / HORA\n\t\nMOTIVO / VISITA\n\t\nRADIOGRAFÍAS\n\t\nESTADO\n\tACCIONES\n\nPP\nPrueba Tesis Paciente Ficticio\nDNI: 99103125\n\t\n31 oct. 2026\n05:35 p. m.\n\t\nPRUEBA FICTICIA CN-03. Validacion funcional de procesamiento y visualizacion; sin valor de atencion clinica.\nPrimera vez\n\t1 radiografía\t\nCompletada\t\nVer detalle\n\nMostrando 1–1 de 1 resultados",
+  "controles": [
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Inicio",
+      "href": "/dashboard"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Diagnóstico",
+      "href": "/nueva-evaluacion"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Pacientes",
+      "href": "/pacientes"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Historial de diagnósticos",
+      "href": "/historial"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Reportes",
+      "href": "/reportes"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Configuración",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Soporte / Ayuda",
+      "href": "/ayuda"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Cerrar Sesión",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "",
+      "href": "/perfil"
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "",
+      "id": "",
+      "placeholder": "Buscar por nombre, apellido o DNI (Opcional)...",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "date",
+      "name": "",
+      "id": "",
+      "placeholder": "",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "date",
+      "name": "",
+      "id": "",
+      "placeholder": "",
+      "disabled": false
+    },
+    {
+      "tag": "SELECT",
+      "type": "select-one",
+      "name": "",
+      "id": "",
+      "disabled": false,
+      "options": [
+        {
+          "text": "Tipo de visita (Todos)",
+          "value": ""
+        },
+        {
+          "text": "Primera vez",
+          "value": "Primera vez"
+        },
+        {
+          "text": "Control rutina",
+          "value": "Control rutina"
+        },
+        {
+          "text": "Urgencia",
+          "value": "Urgencia"
+        },
+        {
+          "text": "Seguimiento",
+          "value": "Seguimiento"
+        }
+      ]
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Limpiar filtros",
+      "disabled": false
+    },
+    {
+      "tag": "SELECT",
+      "type": "select-one",
+      "name": "",
+      "id": "",
+      "disabled": false,
+      "options": [
+        {
+          "text": "Todos los Estados",
+          "value": ""
+        },
+        {
+          "text": "Completadas",
+          "value": "completada"
+        },
+        {
+          "text": "Pendientes",
+          "value": "pendiente"
+        }
+      ]
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "PACIENTE",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "FECHA / HORA",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "MOTIVO / VISITA",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "RADIOGRAFÍAS",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "ESTADO",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Ver detalle",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Ver detalle",
+      "disabled": false
+    }
+  ]
+}

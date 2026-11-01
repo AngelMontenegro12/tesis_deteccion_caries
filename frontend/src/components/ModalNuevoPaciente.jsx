@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Loader2, CreditCard, Calendar, Phone, MapPin, Mail, Users } from 'lucide-react';
 import PhoneInput from './PhoneInput';
+import { authenticatedFetch } from '../services/api';
 import { isValidName, isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
 
 const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
@@ -81,7 +82,7 @@ const ModalNuevoPaciente = ({ isOpen, onClose, onCreated }) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5000/api/pacientes', {
+      const response = await authenticatedFetch('http://localhost:5000/api/pacientes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

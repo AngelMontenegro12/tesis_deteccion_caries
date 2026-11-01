@@ -1,0 +1,66 @@
+✔ CB-04 validateImage imagen_aceptada (2.9556ms)
+✔ CB-04 validateImage rechazo_semantico_200 (1.6268ms)
+✖ CB-04 validateImage http_400_debe_rechazarse (2.0166ms)
+✖ CB-04 validateImage http_500_debe_rechazarse (0.8605ms)
+✖ CB-04 validateImage error_de_red_debe_rechazarse (1.3899ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 136.6341
+
+✖ failing tests:
+
+test at Pruebas_Tesis_Sonrie\Scripts_Pruebas\cb04_frontend_real.cjs:22:25
+✖ CB-04 validateImage http_400_debe_rechazarse (2.0166ms)
+  AssertionError [ERR_ASSERTION]: Ante un rechazo HTTP o fallo de comunicación no debe aceptarse el archivo
+  
+  true !== false
+  
+      at TestContext.<anonymous> (D:\LPT ANGEL\USAT\2026-1\tesis_caries\sistema_sonrie_tesis\Pruebas_Tesis_Sonrie\Scripts_Pruebas\cb04_frontend_real.cjs:31:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at Pruebas_Tesis_Sonrie\Scripts_Pruebas\cb04_frontend_real.cjs:22:25
+✖ CB-04 validateImage http_500_debe_rechazarse (0.8605ms)
+  AssertionError [ERR_ASSERTION]: Ante un rechazo HTTP o fallo de comunicación no debe aceptarse el archivo
+  
+  true !== false
+  
+      at TestContext.<anonymous> (D:\LPT ANGEL\USAT\2026-1\tesis_caries\sistema_sonrie_tesis\Pruebas_Tesis_Sonrie\Scripts_Pruebas\cb04_frontend_real.cjs:31:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at Pruebas_Tesis_Sonrie\Scripts_Pruebas\cb04_frontend_real.cjs:22:25
+✖ CB-04 validateImage error_de_red_debe_rechazarse (1.3899ms)
+  AssertionError [ERR_ASSERTION]: Ante un rechazo HTTP o fallo de comunicación no debe aceptarse el archivo
+  
+  true !== false
+  
+      at TestContext.<anonymous> (D:\LPT ANGEL\USAT\2026-1\tesis_caries\sistema_sonrie_tesis\Pruebas_Tesis_Sonrie\Scripts_Pruebas\cb04_frontend_real.cjs:31:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

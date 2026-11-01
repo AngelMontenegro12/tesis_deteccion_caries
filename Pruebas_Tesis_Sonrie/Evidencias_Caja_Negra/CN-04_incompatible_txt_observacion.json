@@ -1,0 +1,100 @@
+{
+  "fecha": "2026-10-31T22:18:11.050Z",
+  "url": "http://localhost:3000/nueva-evaluacion",
+  "texto": "CS\nClínica Sonríe\n\nDiagnóstico\n\nInicio\nDiagnóstico\nPacientes\nHistorial de diagnósticos\nReportes\nConfiguración\nSoporte / Ayuda\n\nPlis Plis\n\nCirujano\n\nCerrar Sesión\nNuevo Diagnóstico Clínico\n\nCrea y registra un nuevo diagnóstico clínico asistido con inteligencia artificial.\n\nPrueba Carga Ficticio Octubre\nDNI: 99103104\nNuevo Diagnóstico\nIdentificación del Paciente\nContexto Clínico\n3\nCarga de Radiografías\n4\nResumen y Ejecución\n5\nResultados\nCarga de Radiografías\n\nSeleccione y suba las imágenes radiográficas necesarias para que la Inteligencia Artificial analice las lesiones.\n\nTIPO DE IMAGEN *\nPanorámica\nInterproximal\nPeriapical\n\nCN04_incompatible.txt\n\n69 Bytes\n\nARCHIVO *\nCambiar Imagen\nAgregar radiografía adicional\nAnterior\nContinuar",
+  "inputs": [
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Configuración",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Cerrar Sesión",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Nuevo Diagnóstico",
+      "disabled": false
+    },
+    {
+      "tag": "SELECT",
+      "type": "select-one",
+      "name": "",
+      "id": "",
+      "disabled": false,
+      "options": [
+        {
+          "text": "Panorámica",
+          "value": "1"
+        },
+        {
+          "text": "Interproximal",
+          "value": "2"
+        },
+        {
+          "text": "Periapical",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "tag": "INPUT",
+      "type": "file",
+      "name": "",
+      "id": "",
+      "placeholder": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Agregar radiografía adicional",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Anterior",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Continuar",
+      "disabled": false
+    }
+  ]
+}

@@ -1,0 +1,221 @@
+{
+  "inicio": "2026-10-31T22:31:57.819Z",
+  "dni": "99103125",
+  "paciente": {
+    "activo": true,
+    "apellidos": "Paciente Ficticio",
+    "apoderado": "",
+    "correo": "prueba.tesis@example.com",
+    "direccion": "Direccion ficticia para prueba de software",
+    "dni": "99103125",
+    "edad": 36,
+    "fecha_nacimiento": "1990-01-15",
+    "genero": "Otro",
+    "id_odontologo": 1,
+    "id_paciente": 17,
+    "nombres": "Prueba Tesis",
+    "observaciones_generales": "PACIENTE COMPLETAMENTE FICTICIO. Exclusivo CN-02, CN-03 y CN-05. No usar en atencion clinica.",
+    "telefono": "999000125",
+    "telefono_apoderado": ""
+  },
+  "evaluacion": {
+    "estado": "pendiente",
+    "fecha_evaluacion": "2026-10-31 17:35:03",
+    "id_evaluacion": 201,
+    "id_odontologo": 1,
+    "id_paciente": 17,
+    "motivo_consulta": "PRUEBA FICTICIA CN-03. Validacion funcional de procesamiento y visualizacion; sin valor de atencion clinica.",
+    "observaciones": "PRUEBA FICTICIA CN-03 y CN-05. Radiografia autorizada para validacion; no valorar precision clinica.",
+    "tipo_visita": "Primera vez"
+  },
+  "radiografias": [
+    {
+      "creado_en": "2026-10-31 17:35:21",
+      "estado_procesado": "pendiente",
+      "formato": "PNG",
+      "id_evaluacion": 201,
+      "id_radiografia": 310,
+      "id_tipo": 1,
+      "local_id": "1793486095699",
+      "nombre_archivo": "CN03_panoramica_prueba.png",
+      "resolucion": null,
+      "ruta_archivo": "uploads/radiografias/2026/10/eval201_1793486121465_CN03_panoramica_prueba.png",
+      "tamanio_kb": 5007
+    }
+  ],
+  "procesado": true,
+  "finalizado": true,
+  "eventos": [
+    {
+      "ruta": "/api/auth/login",
+      "http": 200,
+      "fecha": "2026-10-31T22:32:15.728Z"
+    },
+    {
+      "fecha": "2026-10-31T22:34:24.626Z",
+      "ruta": "/api/pacientes",
+      "metodo": "POST",
+      "http": 201,
+      "respuesta": {
+        "activo": true,
+        "apellidos": "Paciente Ficticio",
+        "apoderado": "",
+        "correo": "prueba.tesis@example.com",
+        "direccion": "Direccion ficticia para prueba de software",
+        "dni": "99103125",
+        "edad": 36,
+        "fecha_nacimiento": "1990-01-15",
+        "genero": "Otro",
+        "id_odontologo": 1,
+        "id_paciente": 17,
+        "nombres": "Prueba Tesis",
+        "observaciones_generales": "PACIENTE COMPLETAMENTE FICTICIO. Exclusivo CN-02, CN-03 y CN-05. No usar en atencion clinica.",
+        "telefono": "999000125",
+        "telefono_apoderado": ""
+      }
+    },
+    {
+      "fecha": "2026-10-31T22:35:03.448Z",
+      "ruta": "/api/evaluaciones",
+      "metodo": "POST",
+      "http": 201,
+      "respuesta": {
+        "estado": "pendiente",
+        "fecha_evaluacion": "2026-10-31 17:35:03",
+        "id_evaluacion": 201,
+        "id_odontologo": 1,
+        "id_paciente": 17,
+        "motivo_consulta": "PRUEBA FICTICIA CN-03. Validacion funcional de procesamiento y visualizacion; sin valor de atencion clinica.",
+        "observaciones": "PRUEBA FICTICIA CN-03 y CN-05. Radiografia autorizada para validacion; no valorar precision clinica.",
+        "tipo_visita": "Primera vez"
+      }
+    },
+    {
+      "fecha": "2026-10-31T22:35:15.160Z",
+      "ruta": "/api/validate",
+      "metodo": "POST",
+      "http": 200,
+      "respuesta": {
+        "valid": true,
+        "error": null
+      }
+    },
+    {
+      "fecha": "2026-10-31T22:35:21.520Z",
+      "ruta": "/api/evaluaciones/201/radiografias",
+      "metodo": "PUT",
+      "http": 201,
+      "respuesta": {
+        "message": "Radiografías guardadas con éxito",
+        "radiografias": [
+          {
+            "creado_en": "2026-10-31 17:35:21",
+            "estado_procesado": "pendiente",
+            "formato": "PNG",
+            "id_evaluacion": 201,
+            "id_radiografia": 310,
+            "id_tipo": 1,
+            "local_id": "1793486095699",
+            "nombre_archivo": "CN03_panoramica_prueba.png",
+            "resolucion": null,
+            "ruta_archivo": "uploads/radiografias/2026/10/eval201_1793486121465_CN03_panoramica_prueba.png",
+            "tamanio_kb": 5007
+          }
+        ]
+      }
+    },
+    {
+      "fecha": "2026-10-31T22:35:36.553Z",
+      "ruta": "/api/evaluaciones/201/procesar",
+      "metodo": "POST",
+      "http": 200,
+      "respuesta": {
+        "message": "Procesamiento IA completado",
+        "resultados": [
+          {
+            "id_radiografia": 310,
+            "nombre_archivo": "CN03_panoramica_prueba.png",
+            "resultado": {
+              "caries_detectada": true,
+              "confianza_global": 0.5407,
+              "detections": [
+                {
+                  "bbox": [
+                    733,
+                    789,
+                    1049,
+                    1081
+                  ],
+                  "class": "Caries",
+                  "class_display": "Caries Incipiente",
+                  "class_probabilities": {
+                    "Caries Incipiente": 0.5407,
+                    "Caries Periapical (Avanzada)": 0.1608,
+                    "Caries Profunda": 0.2985
+                  },
+                  "confidence": 0.5407
+                },
+                {
+                  "bbox": [
+                    1878,
+                    438,
+                    2030,
+                    797
+                  ],
+                  "class": "Caries",
+                  "class_display": "Caries Incipiente",
+                  "class_probabilities": {
+                    "Caries Incipiente": 0.5379,
+                    "Caries Periapical (Avanzada)": 0.1617,
+                    "Caries Profunda": 0.3003
+                  },
+                  "confidence": 0.5379
+                },
+                {
+                  "bbox": [
+                    2015,
+                    756,
+                    2301,
+                    1052
+                  ],
+                  "class": "Caries",
+                  "class_display": "Caries Incipiente",
+                  "class_probabilities": {
+                    "Caries Incipiente": 0.5026,
+                    "Caries Periapical (Avanzada)": 0.1741,
+                    "Caries Profunda": 0.3233
+                  },
+                  "confidence": 0.5026
+                }
+              ],
+              "detections_count": 3,
+              "status": "success",
+              "tiempo_proceso_ms": 4085
+            }
+          }
+        ]
+      }
+    },
+    {
+      "fecha": "2026-10-31T22:36:28.498Z",
+      "ruta": "/api/evaluaciones/201/completar",
+      "metodo": "PUT",
+      "http": 200,
+      "respuesta": {
+        "diagnostico": {
+          "actualizado_en": "2026-10-31T17:36:28",
+          "confirma_ia": true,
+          "diagnostico_texto": "DIAGNOSTICO FICTICIO CN-05. Prueba funcional de guardado y consulta del Sistema Sonrie. El modelo devolvio tres hallazgos en la panoramica autorizada para pruebas. Este texto no constituye un diagnostico clinico ni una indicacion de tratamiento.",
+          "fecha_diagnostico": "2026-10-31T17:36:28",
+          "id_diagnostico": 179,
+          "id_evaluacion": 201,
+          "id_odontologo": 1,
+          "observaciones": "PRUEBA FICTICIA CN-03 y CN-05. Radiografia autorizada para validacion; no valorar precision clinica.",
+          "plan_tratamiento": "Plan de tratamiento estándar derivado de la evaluación"
+        },
+        "message": "Evaluación finalizada y guardada exitosamente"
+      }
+    }
+  ],
+  "bloqueos": []
+}

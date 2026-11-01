@@ -1,0 +1,45 @@
+unittest.case.FunctionTestCase (test)
+CB-01 sin_credenciales ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 sin_correo ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 sin_clave ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 correo_invalido ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 usuario_inexistente ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 clave_incorrecta ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 credenciales_ficticias_correctas ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 consulta_solo_usuario_activo ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 rechazos_formato_no_suman_intentos ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 excepcion_persistencia_en_login_exitoso ... ok
+unittest.case.FunctionTestCase (test)
+CB-01 excepcion_auditoria_clave_erronea ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 umbral_clave_erronea ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 umbral_usuario_ausente ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 clave_correcta_durante_bloqueo ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 vence_1300 ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 vence_1301 ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 exito_reinicia_contador ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 duracion_300_segundos ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 otra_ip_independiente ... ok
+unittest.case.FunctionTestCase (test)
+CB-02 fallos_previos_no_caducan ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 15.218s
+
+OK

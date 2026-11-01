@@ -1,0 +1,28 @@
+[
+  {
+    "fecha": "2026-10-31T22:17:33.852Z",
+    "ruta": "/api/validate",
+    "http": 200,
+    "respuesta": {
+      "valid": false,
+      "error": "El archivo no pudo ser leído como imagen. Verifique que sea un archivo JPG, PNG o similar válido y no esté dañado."
+    }
+  },
+  {
+    "fecha": "2026-10-31T22:17:54.430Z",
+    "ruta": "/api/validate",
+    "http": 200,
+    "respuesta": {
+      "valid": false,
+      "error": "La imagen tiene una orientación vertical o cuadrada. Por favor, suba nuevamente la imagen y verifique que sea una radiografía panorámica completa (formato horizontal)."
+    }
+  },
+  {
+    "fecha": "2026-10-31T22:18:09.008Z",
+    "ruta": "/api/validate",
+    "http": 400,
+    "respuesta": {
+      "detail": "El archivo debe ser una imagen."
+    }
+  }
+]

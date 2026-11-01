@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy import case, distinct, func, or_
 from app.models import db, DeteccionesCaries, EvaluacionDiagnostica, Paciente, ResultadosDeteccion, Radiografia, Odontologo, DiagnosticoOdontologo
+from app.utils.auth import require_module
 
 reportes_bp = Blueprint('reportes', __name__, url_prefix='/api/reportes')
 
@@ -35,6 +36,8 @@ def _base_query_detecciones(id_odontologo=None):
 
 @reportes_bp.route('/ia-rendimiento', methods=['GET'])
 def reporte_ia_rendimiento():
+    _, error = require_module('/reportes')
+    if error: return error
     try:
         id_odontologo = request.args.get('id_odontologo', type=int)
 
@@ -83,6 +86,8 @@ def reporte_ia_rendimiento():
 
 @reportes_bp.route('/epidemiologico-caries', methods=['GET'])
 def reporte_epidemiologico_caries():
+    _, error = require_module('/reportes')
+    if error: return error
     try:
         id_odontologo = request.args.get('id_odontologo', type=int)
 
@@ -179,6 +184,8 @@ def reporte_epidemiologico_caries():
 
 @reportes_bp.route('/productividad-clinica', methods=['GET'])
 def reporte_productividad():
+    _, error = require_module('/reportes')
+    if error: return error
     try:
         # Tendencia de evaluaciones (últimos 30 días con actividad)
         tendencia_rows = db.session.query(
@@ -249,6 +256,8 @@ def reporte_productividad():
 
 @reportes_bp.route('/diagnostico-individual', methods=['GET'])
 def reporte_diagnostico_individual():
+    _, error = require_module('/reportes')
+    if error: return error
     try:
         id_paciente = request.args.get('id_paciente', type=int)
         if not id_paciente:

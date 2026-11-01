@@ -1,17 +1,16 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 from app.models import db, Paciente, EvaluacionDiagnostica, Odontologo, Radiografia
 from sqlalchemy import func, text
 from datetime import datetime, timedelta
+from app.utils.auth import require_module
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
 
 @dashboard_bp.route('/stats', methods=['GET'])
 def get_dashboard_stats():
+    _, error = require_module('/dashboard')
+    if error: return error
     try:
-        # En un entorno real, `id_odontologo` vendría del token JWT (current_user_id)
-        # Para la prueba, usaremos id=1 (o pasarlo por query admin=1)
-        id_odontologo = request.args.get('id_odontologo', 1, type=int)
-
         # 1. Total Pacientes activos en el sistema
         total_pacientes = Paciente.query.filter_by(activo=True).count()
 

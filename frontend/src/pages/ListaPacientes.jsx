@@ -6,6 +6,7 @@ import ModalEditarPaciente from '../components/ModalEditarPaciente';
 import ModalNuevoPaciente from '../components/ModalNuevoPaciente';
 import ModalFinalizacion from '../components/ModalFinalizacion';
 import bgDashboard from '../assets/fondo_dashboard_2.png';
+import { authenticatedFetch } from '../services/api';
 
 const KANBAN_COLUMNS = ['Nuevos', 'Diagnóstico Pendiente', 'En Tratamiento', 'En Control'];
 const KANBAN_ITEMS_PER_PAGE = 6;
@@ -69,7 +70,7 @@ const ListaPacientes = () => {
   useEffect(() => {
     const fetchPatients = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/pacientes');
+        const response = await authenticatedFetch('http://localhost:5000/api/pacientes');
         if (response.ok) {
           const data = await response.json();
           setPatients(data);

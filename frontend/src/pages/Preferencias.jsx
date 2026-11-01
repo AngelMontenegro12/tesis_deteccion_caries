@@ -123,7 +123,6 @@ const Preferencias = () => {
 
   const roleLabel = useMemo(() => {
     if (!user) return 'Sin sesión';
-    if (user.id_odontologo === 1) return 'Administrador principal';
     if (user.rol === 'superadmin') return 'Superadministrador';
     if (user.rol === 'admin') return 'Administrador';
     return 'Odontólogo';

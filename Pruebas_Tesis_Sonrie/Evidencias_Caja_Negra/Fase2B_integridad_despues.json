@@ -1,0 +1,39 @@
+{
+  "fecha_utc": "2026-10-31T22:40:57.259303+00:00",
+  "cambios_filas_previas": {
+    "pacientes": [],
+    "evaluaciones_diagnosticas": [],
+    "radiografias": [],
+    "resultados_deteccion": [],
+    "detecciones_caries": [],
+    "diagnosticos_odontologo": []
+  },
+  "nuevas_filas": {
+    "pacientes": [
+      "17"
+    ],
+    "evaluaciones_diagnosticas": [
+      "201"
+    ],
+    "radiografias": [
+      "310"
+    ],
+    "resultados_deteccion": [
+      "241"
+    ],
+    "detecciones_caries": [
+      "556",
+      "557",
+      "558"
+    ],
+    "diagnosticos_odontologo": [
+      "179"
+    ]
+  },
+  "uploads_anteriores_alterados": [],
+  "nuevos_uploads": [
+    "radiografias/2026/10/eval201_1793486121465_CN03_panoramica_prueba.png"
+  ],
+  "evidencias_anteriores_intactas": true,
+  "resultados_cn01_cn04_intactos": true
+}

@@ -16,7 +16,7 @@ const Solicitudes = () => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   }, []);
-  const isSuperadmin = loggedUser?.id_odontologo === 1 || loggedUser?.rol === 'superadmin';
+  const isSuperadmin = loggedUser?.rol === 'superadmin';
 
   const fetchSolicitudes = async () => {
     try {

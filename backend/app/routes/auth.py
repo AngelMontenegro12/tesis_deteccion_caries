@@ -3,6 +3,7 @@ from app.models import Odontologo, HistorialAcceso, Sesion
 from app import db
 from app.utils.security import hash_password, verify_password
 from app.utils.validation import valid_email
+from app.utils.auth import get_authenticated_user
 from datetime import datetime, timedelta
 import secrets
 import time
@@ -107,6 +108,7 @@ def login():
             db.session.commit()
         except Exception:
             db.session.rollback()
+            return jsonify({'error': 'No se pudo iniciar la sesión. Inténtalo de nuevo.'}), 503
 
         user_data = odontologo.to_dict()
         user_data['token'] = token
@@ -128,22 +130,19 @@ def login():
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
-    data = request.get_json(silent=True) or {}
-    token = data.get('token')
-    id_odontologo = data.get('id_odontologo')
-
-    # Cerrar la sesión asociada al token, si existe
-    if token:
-        sesion = Sesion.query.filter_by(token_sesion=token).first()
-        if sesion:
-            id_odontologo = sesion.id_odontologo
-            try:
-                db.session.delete(sesion)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
-    _registrar_acceso(id_odontologo, 'logout', 'Cierre de sesión')
+    usuario = get_authenticated_user()
+    token = request.headers['Authorization'][7:].strip()
+    sesion = Sesion.query.filter_by(token_sesion=token, id_odontologo=usuario.id_odontologo).first()
+    if not sesion:
+        return jsonify({'error': 'Sesión no encontrada'}), 401
+    try:
+        db.session.delete(sesion)
+        db.session.add(HistorialAcceso(id_odontologo=usuario.id_odontologo, tipo_evento='logout',
+                                      ip_acceso=request.remote_addr, descripcion='Cierre de sesión'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'No se pudo cerrar la sesión'}), 500
 
     return jsonify({'status': 'success', 'message': 'Sesión cerrada correctamente'}), 200
 

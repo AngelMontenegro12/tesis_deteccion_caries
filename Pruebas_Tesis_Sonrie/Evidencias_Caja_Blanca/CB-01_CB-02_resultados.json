@@ -1,0 +1,311 @@
+{
+  "fecha_utc": "2026-10-31T22:48:45.785929Z",
+  "python": "3.12.5 (tags/v3.12.5:ff3bc82, Aug  6 2024, 20:45:27) [MSC v.1940 64 bit (AMD64)]",
+  "framework": "unittest",
+  "grupos": [
+    "CB-01",
+    "CB-02"
+  ],
+  "variantes": [
+    {
+      "caso": "CB-01",
+      "variante": "sin_credenciales",
+      "datos": "JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales",
+      "esperado": 400,
+      "funciones": [
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "obtenido": 400,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "sin_correo",
+      "datos": "JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales",
+      "esperado": 400,
+      "funciones": [
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "obtenido": 400,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "sin_clave",
+      "datos": "JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales",
+      "esperado": 400,
+      "funciones": [
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "obtenido": 400,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "correo_invalido",
+      "datos": "JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales",
+      "esperado": 400,
+      "funciones": [
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "obtenido": 400,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "usuario_inexistente",
+      "datos": "JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales",
+      "esperado": 401,
+      "funciones": [
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "obtenido": 401,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "clave_incorrecta",
+      "datos": "JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales",
+      "esperado": 401,
+      "funciones": [
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "obtenido": 401,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "credenciales_ficticias_correctas",
+      "datos": "JSON ficticio; usuario ORM y sesión simulados; no se usan credenciales reales",
+      "esperado": 200,
+      "funciones": [
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "obtenido": 200,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "consulta_solo_usuario_activo",
+      "datos": "Consulta ORM simulada",
+      "esperado": true,
+      "funciones": [
+        "login"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "rechazos_formato_no_suman_intentos",
+      "datos": "Dos JSON inválidos",
+      "esperado": 0,
+      "funciones": [
+        "login"
+      ],
+      "obtenido": 0,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "excepcion_persistencia_en_login_exitoso",
+      "datos": "Commit simulado que falla",
+      "esperado": {
+        "http": 200,
+        "rollback": true
+      },
+      "funciones": [
+        "login"
+      ],
+      "obtenido": {
+        "http": 200,
+        "rollback": true
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-01",
+      "variante": "excepcion_auditoria_clave_erronea",
+      "datos": "Commit de auditoría simulado que falla",
+      "esperado": {
+        "http": 401,
+        "rollback": true
+      },
+      "funciones": [
+        "login",
+        "_registrar_acceso"
+      ],
+      "obtenido": {
+        "http": 401,
+        "rollback": true
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "umbral_clave_erronea",
+      "datos": "IP ficticia 192.0.2.44; reloj 1000; cinco fallos",
+      "esperado": [
+        401,
+        401,
+        401,
+        401,
+        429
+      ],
+      "funciones": [
+        "login"
+      ],
+      "obtenido": [
+        401,
+        401,
+        401,
+        401,
+        429
+      ],
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "umbral_usuario_ausente",
+      "datos": "IP ficticia 192.0.2.44; reloj 1000; cinco fallos",
+      "esperado": [
+        401,
+        401,
+        401,
+        401,
+        429
+      ],
+      "funciones": [
+        "login"
+      ],
+      "obtenido": [
+        401,
+        401,
+        401,
+        401,
+        429
+      ],
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "clave_correcta_durante_bloqueo",
+      "datos": "Reloj justo antes del vencimiento",
+      "esperado": 429,
+      "funciones": [
+        "login"
+      ],
+      "obtenido": 429,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "vence_1300",
+      "datos": "Reloj simulado en/después del vencimiento",
+      "esperado": {
+        "http": 401,
+        "intentos": 1,
+        "bloqueado_hasta": null
+      },
+      "funciones": [
+        "login"
+      ],
+      "obtenido": {
+        "http": 401,
+        "intentos": 1,
+        "bloqueado_hasta": null
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "vence_1301",
+      "datos": "Reloj simulado en/después del vencimiento",
+      "esperado": {
+        "http": 401,
+        "intentos": 1,
+        "bloqueado_hasta": null
+      },
+      "funciones": [
+        "login"
+      ],
+      "obtenido": {
+        "http": 401,
+        "intentos": 1,
+        "bloqueado_hasta": null
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "exito_reinicia_contador",
+      "datos": "Cuatro fallos y éxito ficticio",
+      "esperado": {
+        "http": 200,
+        "intentos": 0,
+        "bloqueado_hasta": null
+      },
+      "funciones": [
+        "login"
+      ],
+      "obtenido": {
+        "http": 200,
+        "intentos": 0,
+        "bloqueado_hasta": null
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "duracion_300_segundos",
+      "datos": "Reloj fijo sin esperas reales",
+      "esperado": 300.0,
+      "funciones": [
+        "login"
+      ],
+      "obtenido": 300.0,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "otra_ip_independiente",
+      "datos": "IP A bloqueada; IP B ficticia diferente",
+      "esperado": 200,
+      "funciones": [
+        "login"
+      ],
+      "obtenido": 200,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-02",
+      "variante": "fallos_previos_no_caducan",
+      "datos": "Cuatro fallos; gran salto del reloj antes del quinto",
+      "esperado": 429,
+      "funciones": [
+        "login"
+      ],
+      "obtenido": 429,
+      "estado": "Aprobado"
+    }
+  ],
+  "ejecutadas": 20,
+  "errores": 0,
+  "fallos": 0,
+  "aislamiento": "Sin importación de create_app ni conexión ORM. Cliente Flask y ORM simulados. Reloj e IP ficticios. Red bloqueada. Cuerpos Python compilados con AST sin modificaciones.",
+  "cobertura": "No se calcula porcentaje; coverage no está instalado. Se registran líneas y transiciones observadas, sin equipararlas a cobertura total de ramas."
+}

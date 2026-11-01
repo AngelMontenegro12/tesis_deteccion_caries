@@ -1,13 +1,13 @@
 from flask import Blueprint, jsonify
 from app.models import SolicitudRol, SolicitudPassword, Odontologo, db
-from app.utils.auth import get_authenticated_user
+from app.utils.auth import get_authenticated_user, is_superadmin
 
 solicitudes_bp = Blueprint('solicitudes', __name__, url_prefix='/api/solicitudes')
 
 
 def _puede_gestionar_solicitudes():
     usuario = get_authenticated_user()
-    return bool(usuario and (usuario.id_odontologo == 1 or usuario.rol == 'superadmin'))
+    return is_superadmin(usuario)
 
 
 @solicitudes_bp.route('', methods=['GET'])

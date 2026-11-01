@@ -75,3 +75,6 @@ processed_*/
 
 # Carpetas locales de filtrado y preparación de imágenes
 periapical_filtrar/
+
+# Navegadores descargados para las pruebas automatizadas
+Pruebas_Tesis_Sonrie/Scripts_Pruebas/Navegadores/

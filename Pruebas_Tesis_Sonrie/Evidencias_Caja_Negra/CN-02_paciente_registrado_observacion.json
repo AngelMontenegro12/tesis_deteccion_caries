@@ -1,0 +1,207 @@
+{
+  "fecha": "2026-10-31T22:34:26.766Z",
+  "url": "http://localhost:3000/pacientes",
+  "texto": "CS\nClínica Sonríe\n\nDiagnóstico\n\nInicio\nDiagnóstico\nPacientes\nHistorial de diagnósticos\nReportes\nConfiguración\nSoporte / Ayuda\n\nPlis Plis\n\nCirujano\n\nCerrar Sesión\nGestión de Pacientes\n\nVisualiza, busca y gestiona los expedientes de todos los pacientes.\n\n15\n\nTOTAL PACIENTES\n\nRegistrados en el sistema\n\nRegistrar Paciente\nPACIENTES:\nTodos\nMenores de edad\nMayores de edad\nNuevos Pacientes\nDIAGNÓSTICOS:\nCon Diagnóstico Pendiente\nAtendidos este mes\nUrgencias\nControles de rutina\nPP\n\nPACIENTE\n\nPrueba Tesis Paciente Ficticio\n\nDNI: 99103125\n\nÚltima atención: No registrada\n\nMostrando 1–1 de 1 pacientes",
+  "controles": [
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Inicio",
+      "href": "/dashboard"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Diagnóstico",
+      "href": "/nueva-evaluacion"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Pacientes",
+      "href": "/pacientes"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Historial de diagnósticos",
+      "href": "/historial"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Reportes",
+      "href": "/reportes"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Configuración",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Soporte / Ayuda",
+      "href": "/ayuda"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Cerrar Sesión",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "",
+      "href": "/perfil"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Registrar Paciente",
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "",
+      "id": "",
+      "placeholder": "Buscar por nombres, apellidos o DNI (Opcional)...",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Todos",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Menores de edad",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Mayores de edad",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Nuevos Pacientes",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Con Diagnóstico Pendiente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Atendidos este mes",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Urgencias",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Controles de rutina",
+      "disabled": false
+    }
+  ]
+}

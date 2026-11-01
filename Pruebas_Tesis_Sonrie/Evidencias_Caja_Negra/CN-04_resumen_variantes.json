@@ -1,0 +1,39 @@
+{
+  "caso": "CN-04",
+  "estado": "Fallido",
+  "variantes": [
+    {
+      "codigo": "CN-04-V1",
+      "nombre": "Sin archivo",
+      "estado": "Aprobado",
+      "entrada": "Ningún archivo seleccionado",
+      "resultado": "El campo permanece vacío y Continuar está deshabilitado. No se muestra un mensaje de error adicional. No se intentó forzar el botón deshabilitado.",
+      "imagen": "CN-04_sin_archivo.png"
+    },
+    {
+      "codigo": "CN-04-V2",
+      "nombre": "Imagen corrupta",
+      "estado": "Aprobado",
+      "entrada": "CN04_corrupto.png",
+      "resultado": "POST /api/validate respondió HTTP 200 con valid=false. La interfaz mostró Imagen no válida y el mensaje: El archivo no pudo ser leído como imagen. Verifique que sea un archivo JPG, PNG o similar válido y no esté dañado. El archivo no se incorporó y Continuar permaneció deshabilitado.",
+      "imagen": "CN-04_corrupto_rechazado.png"
+    },
+    {
+      "codigo": "CN-04-V3",
+      "nombre": "Imagen no panorámica",
+      "estado": "Aprobado",
+      "entrada": "CN04_no_panoramica_vertical.png, imagen ficticia vertical de 400 × 800 píxeles",
+      "resultado": "POST /api/validate respondió HTTP 200 con valid=false. La interfaz mostró Imagen no válida y el mensaje: La imagen tiene una orientación vertical o cuadrada. Por favor, suba nuevamente la imagen y verifique que sea una radiografía panorámica completa (formato horizontal). Continuar permaneció deshabilitado. Esta variante prueba orientación, sin acreditar el rechazo semántico de todas las imágenes horizontales no dentales.",
+      "imagen": "CN-04_no_panoramica_rechazada.png"
+    },
+    {
+      "codigo": "CN-04-V4",
+      "nombre": "Archivo incompatible",
+      "estado": "Fallido",
+      "entrada": "CN04_incompatible.txt, 69 bytes, seleccionado con Playwright setInputFiles",
+      "resultado": "POST /api/validate respondió HTTP 400 con detail: El archivo debe ser una imagen. La interfaz no mostró este mensaje; incorporó el nombre del TXT, mostró una previsualización ilegible y habilitó Continuar. No se pulsó el botón. No se verificó almacenamiento ni avance efectivo al siguiente paso.",
+      "imagen": "CN-04_incompatible_txt.png"
+    }
+  ],
+  "alcance": "Cuatro variantes seleccionadas mediante campo de archivo; no se ensayó arrastrar y soltar, fallo de red ni persistencia."
+}

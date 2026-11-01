@@ -1,0 +1,1091 @@
+{
+  "fecha_utc": "2026-10-31T22:50:52.290123Z",
+  "python": "3.12.5 (tags/v3.12.5:ff3bc82, Aug  6 2024, 20:45:27) [MSC v.1940 64 bit (AMD64)]",
+  "framework": "unittest",
+  "grupos": [
+    "CB-03",
+    "CB-04",
+    "CB-05"
+  ],
+  "variantes": [
+    {
+      "caso": "CB-03",
+      "variante": "valid_dni_1",
+      "datos": "'00123456'; hoy simulado 2026-10-31",
+      "esperado": true,
+      "funciones": [
+        "valid_dni"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_dni_2",
+      "datos": "'1234567'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_dni"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_dni_3",
+      "datos": "'123456789'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_dni"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_dni_4",
+      "datos": "'1234567a'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_dni"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_dni_5",
+      "datos": "None; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_dni"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_phone_1",
+      "datos": "'912345678'; hoy simulado 2026-10-31",
+      "esperado": true,
+      "funciones": [
+        "valid_phone"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_phone_2",
+      "datos": "'812345678'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_phone"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_phone_3",
+      "datos": "'91234567'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_phone"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_phone_4",
+      "datos": "'9123456789'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_phone"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_phone_5",
+      "datos": "''; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_phone"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_phone_6",
+      "datos": "None; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_phone"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_email_1",
+      "datos": "'persona@example.test'; hoy simulado 2026-10-31",
+      "esperado": true,
+      "funciones": [
+        "valid_email"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_email_2",
+      "datos": "'persona@dominio'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_email"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_email_3",
+      "datos": "'persona@dominio.'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_email"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_email_4",
+      "datos": "'sin-arroba'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_email"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_email_5",
+      "datos": "''; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_email"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_email_6",
+      "datos": "None; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_email"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_1",
+      "datos": "'1900-01-01'; hoy simulado 2026-10-31",
+      "esperado": true,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_2",
+      "datos": "'2026-10-31'; hoy simulado 2026-10-31",
+      "esperado": true,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_3",
+      "datos": "'1899-12-31'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_4",
+      "datos": "'2026-11-01'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_5",
+      "datos": "'2001-02-29'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_6",
+      "datos": "'2000-02-29'; hoy simulado 2026-10-31",
+      "esperado": true,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_7",
+      "datos": "'2000-13-01'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_8",
+      "datos": "'1900-1-01'; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "valid_date_9",
+      "datos": "None; hoy simulado 2026-10-31",
+      "esperado": false,
+      "funciones": [
+        "valid_date"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "adulto_valido",
+      "datos": "{}",
+      "esperado": null,
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": null,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "correo_opcional_vacio",
+      "datos": "{\"correo\": \"\"}",
+      "esperado": null,
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": null,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "correo_invalido",
+      "datos": "{\"correo\": \"invalido\"}",
+      "esperado": "Ingrese un correo electrónico válido",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "Ingrese un correo electrónico válido",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "nombre_corto",
+      "datos": "{\"nombres\": \"A\"}",
+      "esperado": "Los nombres son requeridos (mínimo 2 caracteres)",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "Los nombres son requeridos (mínimo 2 caracteres)",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "apellido_corto",
+      "datos": "{\"apellidos\": \"\"}",
+      "esperado": "Los apellidos son requeridos (mínimo 2 caracteres)",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "Los apellidos son requeridos (mínimo 2 caracteres)",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "genero_ausente",
+      "datos": "{\"genero\": \"\"}",
+      "esperado": "El género es requerido",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "El género es requerido",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "dni_invalido",
+      "datos": "{\"dni\": \"123\"}",
+      "esperado": "El DNI debe tener exactamente 8 dígitos",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "El DNI debe tener exactamente 8 dígitos",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "fecha_futura",
+      "datos": "{\"fecha_nacimiento\": \"2026-11-01\"}",
+      "esperado": "La fecha de nacimiento debe estar entre 1900 y hoy",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "La fecha de nacimiento debe estar entre 1900 y hoy",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "telefono_invalido",
+      "datos": "{\"telefono\": \"812345678\"}",
+      "esperado": "El teléfono es requerido (9 dígitos y debe empezar en 9)",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "El teléfono es requerido (9 dígitos y debe empezar en 9)",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "menor_sin_apoderado",
+      "datos": "{\"fecha_nacimiento\": \"2015-01-01\"}",
+      "esperado": "El nombre del apoderado es requerido para menores",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "El nombre del apoderado es requerido para menores",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "menor_sin_telefono_apoderado",
+      "datos": "{\"fecha_nacimiento\": \"2015-01-01\", \"apoderado\": \"Tutor Ficticio\"}",
+      "esperado": "El teléfono del apoderado es requerido (9 dígitos y debe empezar en 9)",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "El teléfono del apoderado es requerido (9 dígitos y debe empezar en 9)",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "menor_telefono_apoderado_invalido",
+      "datos": "{\"fecha_nacimiento\": \"2015-01-01\", \"apoderado\": \"Tutor Ficticio\", \"telefono_apoderado\": \"123\"}",
+      "esperado": "El teléfono del apoderado debe tener 9 dígitos y empezar en 9",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "El teléfono del apoderado debe tener 9 dígitos y empezar en 9",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "menor_con_apoderado_valido",
+      "datos": "{\"fecha_nacimiento\": \"2015-01-01\", \"apoderado\": \"Tutor Ficticio\", \"telefono_apoderado\": \"912345679\"}",
+      "esperado": null,
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": null,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "cumple_18_hoy",
+      "datos": "{\"fecha_nacimiento\": \"2008-10-31\"}",
+      "esperado": null,
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": null,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "aun_17",
+      "datos": "{\"fecha_nacimiento\": \"2008-11-01\"}",
+      "esperado": "El nombre del apoderado es requerido para menores",
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": "El nombre del apoderado es requerido para menores",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-03",
+      "variante": "actualizacion_parcial_combina_datos",
+      "datos": "Objeto ficticio actual y cambio de nombres",
+      "esperado": null,
+      "funciones": [
+        "patient_error"
+      ],
+      "obtenido": null,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "mime_imagen",
+      "datos": "UploadFile image/png con lectura de bytes",
+      "esperado": {
+        "bytes": 8
+      },
+      "funciones": [
+        "process_image"
+      ],
+      "obtenido": {
+        "bytes": 8
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "mime_txt_incompatible",
+      "datos": "UploadFile text/plain",
+      "esperado": {
+        "http": 400,
+        "mensaje": "El archivo debe ser una imagen."
+      },
+      "funciones": [
+        "process_image"
+      ],
+      "obtenido": {
+        "http": 400,
+        "mensaje": "El archivo debe ser una imagen."
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_horizontal",
+      "datos": "PNG ficticio uniforme 400x200",
+      "esperado": true,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_ancho_299",
+      "datos": "PNG ficticio uniforme 299x100",
+      "esperado": false,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_ancho_300",
+      "datos": "PNG ficticio uniforme 300x100",
+      "esperado": true,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_alto_99",
+      "datos": "PNG ficticio uniforme 400x99",
+      "esperado": false,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_alto_100",
+      "datos": "PNG ficticio uniforme 400x100",
+      "esperado": true,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_ratio_124",
+      "datos": "PNG ficticio uniforme 372x300",
+      "esperado": false,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_ratio_125",
+      "datos": "PNG ficticio uniforme 375x300",
+      "esperado": true,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "tecnica_vertical",
+      "datos": "PNG ficticio uniforme 400x800",
+      "esperado": false,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable",
+        "_check_tamanio_minimo",
+        "_check_ratio_basico"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "archivo_corrupto",
+      "datos": "Bytes no vacíos que no son una imagen",
+      "esperado": false,
+      "funciones": [
+        "validar_capa0",
+        "_check_decodificable"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "imagen_toda_negra_sin_recorte",
+      "datos": "Array negro ficticio; rama sin coordenadas",
+      "esperado": [
+        200,
+        400,
+        3
+      ],
+      "funciones": [
+        "_recortar_bordes_negros"
+      ],
+      "obtenido": [
+        200,
+        400,
+        3
+      ],
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "recorte_bordes_negros",
+      "datos": "Contenido central 400x200 con padding",
+      "esperado": [
+        210,
+        410,
+        3
+      ],
+      "funciones": [
+        "_recortar_bordes_negros"
+      ],
+      "obtenido": [
+        210,
+        410,
+        3
+      ],
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "pipeline_tecnica",
+      "datos": "Validadores semánticos y modelo simulados",
+      "esperado": {
+        "valid": false,
+        "modelo_invocado": false
+      },
+      "funciones": [
+        "run_inference",
+        "validar_capa0"
+      ],
+      "obtenido": {
+        "valid": false,
+        "modelo_invocado": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "pipeline_clip",
+      "datos": "Validadores semánticos y modelo simulados",
+      "esperado": {
+        "valid": false,
+        "modelo_invocado": false
+      },
+      "funciones": [
+        "run_inference",
+        "validar_capa0"
+      ],
+      "obtenido": {
+        "valid": false,
+        "modelo_invocado": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "pipeline_cls",
+      "datos": "Validadores semánticos y modelo simulados",
+      "esperado": {
+        "valid": false,
+        "modelo_invocado": false
+      },
+      "funciones": [
+        "run_inference",
+        "validar_capa0"
+      ],
+      "obtenido": {
+        "valid": false,
+        "modelo_invocado": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "pipeline_aceptada",
+      "datos": "Validadores semánticos y modelo simulados",
+      "esperado": {
+        "valid": true,
+        "modelo_invocado": true
+      },
+      "funciones": [
+        "run_inference",
+        "validar_capa0"
+      ],
+      "obtenido": {
+        "valid": true,
+        "modelo_invocado": true
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "detector_no_disponible",
+      "datos": "Modelo simulado None",
+      "esperado": "RuntimeError",
+      "funciones": [
+        "run_inference"
+      ],
+      "obtenido": "RuntimeError",
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "excepcion_inferencia_devuelve_valid_true",
+      "datos": "Modelo simulado que lanza excepción",
+      "esperado": {
+        "valid": true,
+        "error_presente": true,
+        "detections": []
+      },
+      "funciones": [
+        "run_inference"
+      ],
+      "obtenido": {
+        "valid": true,
+        "error_presente": true,
+        "detections": []
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clasificador_no_disponible",
+      "datos": "Salida del modelo ficticia; umbral 0,60",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clasificador"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clasificador_valida",
+      "datos": "Salida del modelo ficticia; umbral 0,60",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clasificador"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clasificador_umbral_exacto",
+      "datos": "Salida del modelo ficticia; umbral 0,60",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clasificador"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clasificador_clase_invalida",
+      "datos": "Salida del modelo ficticia; umbral 0,60",
+      "esperado": false,
+      "funciones": [
+        "validar_con_clasificador"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clasificador_baja_confianza",
+      "datos": "Salida del modelo ficticia; umbral 0,60",
+      "esperado": false,
+      "funciones": [
+        "validar_con_clasificador"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clasificador_excepcion_deja_pasar",
+      "datos": "Excepción interna ficticia",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clasificador"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clip_no_disponible",
+      "datos": "Probabilidades y disponibilidad simuladas",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clip"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clip_valida_ganadora",
+      "datos": "Probabilidades y disponibilidad simuladas",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clip"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clip_valida_no_ganadora",
+      "datos": "Probabilidades y disponibilidad simuladas",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clip"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clip_foto_rechazada",
+      "datos": "Probabilidades y disponibilidad simuladas",
+      "esperado": false,
+      "funciones": [
+        "validar_con_clip"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clip_score_bajo",
+      "datos": "Probabilidades y disponibilidad simuladas",
+      "esperado": false,
+      "funciones": [
+        "validar_con_clip"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "clip_excepcion_deja_pasar",
+      "datos": "Excepción interna ficticia",
+      "esperado": true,
+      "funciones": [
+        "validar_con_clip"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "ruta_validate_tecnica",
+      "datos": "Archivo ficticio y capas controladas",
+      "esperado": false,
+      "funciones": [
+        "validate_only",
+        "process_image"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "ruta_validate_clip",
+      "datos": "Archivo ficticio y capas controladas",
+      "esperado": false,
+      "funciones": [
+        "validate_only",
+        "process_image"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "ruta_validate_cls",
+      "datos": "Archivo ficticio y capas controladas",
+      "esperado": false,
+      "funciones": [
+        "validate_only",
+        "process_image"
+      ],
+      "obtenido": false,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-04",
+      "variante": "ruta_validate_aceptada",
+      "datos": "Archivo ficticio y capas controladas",
+      "esperado": true,
+      "funciones": [
+        "validate_only",
+        "process_image"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "inexistente",
+      "datos": "Objetos ORM simulados sin base de datos",
+      "esperado": {
+        "http": 404,
+        "generador_invocado": false
+      },
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": {
+        "http": 404,
+        "generador_invocado": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "pendiente",
+      "datos": "Objetos ORM simulados sin base de datos",
+      "esperado": {
+        "http": 409,
+        "generador_invocado": false
+      },
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": {
+        "http": 409,
+        "generador_invocado": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "sin_diagnostico",
+      "datos": "Objetos ORM simulados sin base de datos",
+      "esperado": {
+        "http": 404,
+        "generador_invocado": false
+      },
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": {
+        "http": 404,
+        "generador_invocado": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "sin_paciente",
+      "datos": "Objetos ORM simulados sin base de datos",
+      "esperado": {
+        "http": 404,
+        "generador_invocado": false
+      },
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": {
+        "http": 404,
+        "generador_invocado": false
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "completada_generador_real_sin_radiografias",
+      "datos": "Entidades ficticias y plantilla original de solo lectura",
+      "esperado": {
+        "http": 200,
+        "tipo": "application/pdf",
+        "texto_ficticio": true,
+        "paciente_ficticio": true,
+        "paginas": 1
+      },
+      "funciones": [
+        "descargar_diagnostico_pdf",
+        "generar_pdf_diagnostico"
+      ],
+      "obtenido": {
+        "http": 200,
+        "tipo": "application/pdf",
+        "texto_ficticio": true,
+        "paciente_ficticio": true,
+        "paginas": 1
+      },
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "falta_pymupdf",
+      "datos": "Excepción simulada del generador",
+      "esperado": 503,
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": 503,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "otra_dependencia",
+      "datos": "Excepción simulada del generador",
+      "esperado": 500,
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": 500,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "error_generico",
+      "datos": "Excepción simulada del generador",
+      "esperado": 500,
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": 500,
+      "estado": "Aprobado"
+    },
+    {
+      "caso": "CB-05",
+      "variante": "nombre_archivo_normalizado",
+      "datos": "Nombre ficticio con tildes y espacios",
+      "esperado": true,
+      "funciones": [
+        "descargar_diagnostico_pdf"
+      ],
+      "obtenido": true,
+      "estado": "Aprobado"
+    }
+  ],
+  "ejecutadas": 86,
+  "errores": 0,
+  "fallos": 0,
+  "aislamiento": "Sin importación de create_app ni conexión ORM. Cliente Flask y ORM simulados. Reloj e IP ficticios. Red bloqueada. Cuerpos Python compilados con AST sin modificaciones.",
+  "cobertura": "No se calcula porcentaje; coverage no está instalado. Se registran líneas y transiciones observadas, sin equipararlas a cobertura total de ramas."
+}

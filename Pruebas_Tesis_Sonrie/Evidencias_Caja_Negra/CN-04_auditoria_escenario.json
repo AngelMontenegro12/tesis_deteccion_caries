@@ -1,0 +1,21 @@
+{
+  "fecha": "2026-10-31T22:18:49.217Z",
+  "pacientes_ficticios": [
+    {
+      "id_paciente": 16,
+      "nombres": "Prueba Carga",
+      "apellidos": "Ficticio Octubre",
+      "dni": "99103104"
+    }
+  ],
+  "evaluaciones_ficticias": [
+    {
+      "id_evaluacion": 200,
+      "estado": "pendiente",
+      "radiografias": [],
+      "diagnostico": null
+    }
+  ],
+  "solicitudes_de_almacenamiento_procesamiento_finalizacion": [],
+  "limites": "No se pulsó Continuar con el TXT; no se evaluó su persistencia. La barrera de automatización bloquea escrituras de radiografías y cambios de registros existentes."
+}

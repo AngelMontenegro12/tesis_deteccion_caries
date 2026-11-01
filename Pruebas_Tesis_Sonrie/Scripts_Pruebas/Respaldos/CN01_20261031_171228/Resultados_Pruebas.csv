@@ -1,0 +1,11 @@
+﻿Codigo,Tipo,Nombre,Resultado obtenido,Estado,Evidencia
+CN-01,Caja negra,Inicio de sesión exitoso,No se inició sesión: no se verificó una instancia aislada ni se dispone de una cuenta ficticia validada. El login escribe sesiones y auditoría. Pendiente de autorización para preparar el entorno o de información de un entorno existente.,Bloqueado,Sin captura: variante no ejecutada por falta de aislamiento verificado
+CN-02,Caja negra,Registro de paciente,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CN-03,Caja negra,Detección de caries,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CN-04,Caja negra,Carga de archivo inválido,"No se ejecutaron variantes de interfaz. Llegar al paso de radiografías requiere guardar una evaluación; no se verificó aislamiento. Se prepararon un TXT incompatible, un PNG corrupto y una imagen vertical ficticia. Sin archivo, incompatible, corrupto y no panorámica quedan bloqueados hasta disponer de condiciones seguras.",Bloqueado,Sin captura: variante no ejecutada por falta de aislamiento verificado
+CN-05,Caja negra,Guardado y consulta del diagnóstico,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-01,Caja blanca,Rutas del inicio de sesión,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-02,Caja blanca,Bloqueo por intentos fallidos,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-03,Caja blanca,Validación interna de datos del paciente,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-04,Caja blanca,Rutas de validación de imágenes,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-05,Caja blanca,Generación del diagnóstico PDF,Pendiente de ejecución,No ejecutado,Pendiente de captura

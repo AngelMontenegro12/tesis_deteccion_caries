@@ -1,0 +1,95 @@
+{
+  "variantes_totales": 111,
+  "aprobadas": 108,
+  "fallidas": 3,
+  "casos": {
+    "CB-01": {
+      "estado": "Aprobado",
+      "variantes": 11,
+      "aprobadas": 11,
+      "fallidas": 0,
+      "bloqueadas": 0,
+      "funciones": [
+        "_registrar_acceso",
+        "login",
+        "valid_email",
+        "verify_password"
+      ],
+      "fragmento": "  63      if not data or not data.get('correo') or not data.get('contrasena'):\n  64          return jsonify({'error': 'Correo y contraseña son requeridos'}), 400\n  65      if not valid_email(data['correo']):\n  66          return jsonify({'error': 'Ingrese un correo electrónico válido'}), 400",
+      "archivo": "backend/app/routes/auth.py",
+      "reporte": "CB-01_reporte.html",
+      "captura": "CB-01_reporte_ejecucion.png"
+    },
+    "CB-02": {
+      "estado": "Aprobado",
+      "variantes": 9,
+      "aprobadas": 9,
+      "fallidas": 0,
+      "bloqueadas": 0,
+      "funciones": [
+        "login"
+      ],
+      "fragmento": "  52          if registro['bloqueado_hasta'] and tiempo_actual < registro['bloqueado_hasta']:\n  53              minutos_restantes = int((registro['bloqueado_hasta'] - tiempo_actual) / 60) + 1\n  54              return jsonify({'error': f'Demasiados intentos fallidos. Intente de nuevo en {minutos_restantes} minuto(s).'}), 429\n  55          elif registro['bloqueado_hasta'] and tiempo_actual >= registro['bloqueado_hasta']:\n  56              # El tiempo de bloqueo ya pasó, reseteamos a 0",
+      "archivo": "backend/app/routes/auth.py",
+      "reporte": "CB-02_reporte.html",
+      "captura": "CB-02_reporte_ejecucion.png"
+    },
+    "CB-03": {
+      "estado": "Aprobado",
+      "variantes": 42,
+      "aprobadas": 42,
+      "fallidas": 0,
+      "bloqueadas": 0,
+      "funciones": [
+        "patient_error",
+        "valid_date",
+        "valid_dni",
+        "valid_email",
+        "valid_phone"
+      ],
+      "fragmento": "  54      if minor and not str(merged.get('apoderado') or '').strip():\n  55          return 'El nombre del apoderado es requerido para menores'\n  56      if minor and not merged.get('telefono_apoderado'):\n  57          return 'El teléfono del apoderado es requerido (9 dígitos y debe empezar en 9)'\n  58      if merged.get('telefono_apoderado') and not valid_phone(merged['telefono_apoderado']):",
+      "archivo": "backend/app/utils/validation.py",
+      "reporte": "CB-03_reporte.html",
+      "captura": "CB-03_reporte_ejecucion.png"
+    },
+    "CB-04": {
+      "estado": "Fallido",
+      "variantes": 40,
+      "aprobadas": 37,
+      "fallidas": 3,
+      "bloqueadas": 0,
+      "funciones": [
+        "_check_decodificable",
+        "_check_ratio_basico",
+        "_check_tamanio_minimo",
+        "_recortar_bordes_negros",
+        "process_image",
+        "run_inference",
+        "validar_capa0",
+        "validar_con_clasificador",
+        "validar_con_clip",
+        "validateImage",
+        "validate_only"
+      ],
+      "fragmento": " 895        return true;\n 896      } catch (error) {\n 897        console.error(\"Error validando imagen:\", error);\n 898        return true; // Continuar si hay un error de red\n 899      } finally {\n 900        setIsSubmitting(false);\n 901      }",
+      "archivo": "frontend/src/pages/EvaluacionClinica.jsx",
+      "reporte": "CB-04_reporte.html",
+      "captura": "CB-04_reporte_ejecucion.png"
+    },
+    "CB-05": {
+      "estado": "Aprobado",
+      "variantes": 9,
+      "aprobadas": 9,
+      "fallidas": 0,
+      "bloqueadas": 0,
+      "funciones": [
+        "descargar_diagnostico_pdf",
+        "generar_pdf_diagnostico"
+      ],
+      "fragmento": " 230      if evaluacion.estado != 'completada':\n 231          return jsonify({'error': 'Finaliza el diagnóstico antes de descargar su PDF'}), 409\n 232  \n 233      diagnostico = DiagnosticoOdontologo.query.filter_by(id_evaluacion=id_evaluacion).order_by(\n 234          DiagnosticoOdontologo.fecha_diagnostico.desc(), DiagnosticoOdontologo.id_diagnostico.desc()",
+      "archivo": "backend/app/routes/evaluaciones.py",
+      "reporte": "CB-05_reporte.html",
+      "captura": "CB-05_reporte_ejecucion.png"
+    }
+  }
+}

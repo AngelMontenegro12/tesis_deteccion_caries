@@ -1,0 +1,11 @@
+﻿Codigo,Tipo,Nombre,Resultado obtenido,Estado,Evidencia
+CN-01,Caja negra,Inicio de sesión exitoso,"Playwright observó el formulario en una instancia independiente de Chromium, el usuario introdujo las credenciales ficticias de forma privada y envió el formulario. POST /api/auth/login respondió HTTP 200 el 31/10/2026 a las 17:10:00 (America/Bogota). Se observó navegación a http://localhost:3000/dashboard y se capturó el Panel de Inicio a las 17:10:01 con la cuenta Plis Plis. No se registraron contraseñas ni tokens. La persistencia interna de sesión y auditoría no se evaluó en este caso de caja negra.",Aprobado,Evidencias_Caja_Negra/CN-01_dashboard_playwright.png; Evidencias_Caja_Negra/CN-01_observaciones_playwright.json
+CN-02,Caja negra,Registro de paciente,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CN-03,Caja negra,Detección de caries,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CN-04,Caja negra,Carga de archivo inválido,Variantes de CN-04 aún no ejecutadas. El usuario confirmó respaldo completo y autorizó usar el sistema actual. Hay archivos ficticios preparados. Se requiere continuar con una sesión controlable de Playwright y un escenario ficticio exclusivo; no se guardarán radiografías incompatibles ni se modificarán evaluaciones existentes.,Bloqueado,Pendiente de captura de variantes; preparación disponible en Scripts_Pruebas/Archivos_Ficticios_CN04/
+CN-05,Caja negra,Guardado y consulta del diagnóstico,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-01,Caja blanca,Rutas del inicio de sesión,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-02,Caja blanca,Bloqueo por intentos fallidos,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-03,Caja blanca,Validación interna de datos del paciente,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-04,Caja blanca,Rutas de validación de imágenes,Pendiente de ejecución,No ejecutado,Pendiente de captura
+CB-05,Caja blanca,Generación del diagnóstico PDF,Pendiente de ejecución,No ejecutado,Pendiente de captura

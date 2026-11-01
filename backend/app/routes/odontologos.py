@@ -3,6 +3,7 @@ from sqlalchemy import or_, func
 from app.models import Odontologo, db
 from app.utils.security import hash_password, verify_password
 from app.utils.validation import valid_email, valid_phone
+from app.utils.auth import require_module, is_admin, is_superadmin, forbidden
 import os
 from werkzeug.utils import secure_filename
 odontologos_bp = Blueprint('odontologos', __name__, url_prefix='/api/odontologos')
@@ -24,6 +25,9 @@ def _normalizar_booleano(valor, default=True):
 
 @odontologos_bp.route('', methods=['GET'])
 def listar_odontologos():
+    user, error = require_module()
+    if error: return error
+    if not is_admin(user): return forbidden()
     try:
         incluir_inactivos = request.args.get('incluir_inactivos', 'false').lower() == 'true'
         busqueda = request.args.get('q', '').strip()
@@ -57,6 +61,10 @@ def listar_odontologos():
 
 @odontologos_bp.route('/<int:id_odontologo>', methods=['GET'])
 def obtener_odontologo(id_odontologo):
+    user, error = require_module()
+    if error: return error
+    if not is_admin(user) and user.id_odontologo != id_odontologo:
+        return forbidden()
     odontologo = Odontologo.query.get(id_odontologo)
     if not odontologo:
         return jsonify({'status': 'error', 'message': 'Odontólogo no encontrado'}), 404
@@ -66,7 +74,12 @@ def obtener_odontologo(id_odontologo):
 
 @odontologos_bp.route('', methods=['POST'])
 def crear_odontologo():
+    user, error = require_module()
+    if error: return error
+    if not is_admin(user): return forbidden()
     data = request.get_json(silent=True) or {}
+    if any(field in data for field in ('rol', 'permisos', 'id_solicitante')):
+        return jsonify({'error': 'Los privilegios se gestionan por separado'}), 403
 
     requeridos = ['nombres', 'apellidos', 'correo', 'contrasena', 'telefono']
     faltantes = [campo for campo in requeridos if not str(data.get(campo) or '').strip()]
@@ -114,10 +127,28 @@ def crear_odontologo():
 
 @odontologos_bp.route('/<int:id_odontologo>', methods=['PUT'])
 def actualizar_odontologo(id_odontologo):
+    user, error = require_module()
+    if error: return error
     data = request.get_json(silent=True) or {}
     odontologo = Odontologo.query.get(id_odontologo)
     if not odontologo:
         return jsonify({'status': 'error', 'message': 'Odontólogo no encontrado'}), 404
+
+    if any(field in data for field in ('id_solicitante', 'contrasena', 'contrasena_hash', 'id_odontologo')):
+        return forbidden()
+    own_profile = user.id_odontologo == id_odontologo
+    administrative = any(field in data for field in ('rol', 'permisos', 'activo')) or not own_profile
+    if administrative:
+        if not is_admin(user) or (odontologo.rol in ('admin', 'superadmin') and not is_superadmin(user)):
+            return forbidden()
+        if not is_superadmin(user) and odontologo.rol != 'odontologo':
+            return forbidden()
+        if own_profile and any(field in data for field in ('rol', 'permisos', 'activo')):
+            return forbidden()
+    if own_profile and not is_admin(user) and set(data) - {
+        'nombres', 'apellidos', 'correo', 'telefono', 'colegiatura', 'especialidad'
+    }:
+        return forbidden()
 
     if any(field in data and len(str(data[field] or '').strip()) < 2 for field in ('nombres', 'apellidos')):
         return jsonify({'status': 'error', 'message': 'Los nombres y apellidos deben tener al menos 2 caracteres'}), 400
@@ -125,8 +156,6 @@ def actualizar_odontologo(id_odontologo):
         return jsonify({'status': 'error', 'message': 'Ingrese un correo electrónico válido'}), 400
     if 'telefono' in data and not valid_phone(data['telefono']):
         return jsonify({'status': 'error', 'message': 'El teléfono debe tener 9 dígitos y empezar en 9'}), 400
-    if data.get('contrasena') and len(str(data['contrasena']).strip()) < 6:
-        return jsonify({'status': 'error', 'message': 'La contraseña debe tener al menos 6 caracteres'}), 400
     for field, label in (('colegiatura', 'La colegiatura'), ('especialidad', 'La especialidad')):
         if data.get(field) and len(str(data[field]).strip()) < 2:
             return jsonify({'status': 'error', 'message': f'{label} debe tener al menos 2 caracteres'}), 400
@@ -157,12 +186,8 @@ def actualizar_odontologo(id_odontologo):
         if nuevo_rol not in ROLES_VALIDOS:
             return jsonify({'status': 'error', 'message': 'El rol indicado no es válido'}), 400
 
-        id_solicitante = data.get('id_solicitante')
-        solicitante = None
-        if str(id_solicitante or '').isdigit():
-            solicitante = Odontologo.query.get(int(id_solicitante))
-
-        es_admin_principal = bool(solicitante and (solicitante.id_odontologo == 1 or solicitante.rol == 'superadmin'))
+        solicitante = user
+        es_admin_principal = is_superadmin(user)
 
         if nuevo_rol == 'superadmin' and not es_admin_principal:
             return jsonify({'status': 'error', 'message': 'Solo el administrador principal puede asignar el rol de superadministrador'}), 403
@@ -199,8 +224,6 @@ def actualizar_odontologo(id_odontologo):
         odontologo.permisos = data.get('permisos')
     if 'activo' in data:
         odontologo.activo = _normalizar_booleano(data.get('activo'), odontologo.activo)
-    if data.get('contrasena'):
-        odontologo.contrasena_hash = hash_password(data['contrasena'])
     try:
         db.session.commit()
         return jsonify({'status': 'success', 'message': mensaje_exito, 'data': odontologo.to_dict() | {'activo': odontologo.activo}}), 200
@@ -211,10 +234,16 @@ def actualizar_odontologo(id_odontologo):
 
 @odontologos_bp.route('/<int:id_odontologo>/estado', methods=['PATCH'])
 def cambiar_estado_odontologo(id_odontologo):
+    user, error = require_module()
+    if error: return error
     data = request.get_json(silent=True) or {}
     odontologo = Odontologo.query.get(id_odontologo)
     if not odontologo:
         return jsonify({'status': 'error', 'message': 'Odontólogo no encontrado'}), 404
+    if not is_admin(user) or user.id_odontologo == id_odontologo or (
+        odontologo.rol in ('admin', 'superadmin') and not is_superadmin(user)
+    ):
+        return forbidden()
 
     if 'activo' not in data:
         return jsonify({'status': 'error', 'message': 'Debe indicar el nuevo estado'}), 400
@@ -232,6 +261,10 @@ def cambiar_estado_odontologo(id_odontologo):
 
 @odontologos_bp.route('/<int:id_odontologo>/password', methods=['PUT'])
 def cambiar_password(id_odontologo):
+    user, error = require_module()
+    if error: return error
+    if user.id_odontologo != id_odontologo:
+        return forbidden()
     data = request.get_json(silent=True) or {}
     odontologo = Odontologo.query.get(id_odontologo)
     if not odontologo:
@@ -263,6 +296,10 @@ def cambiar_password(id_odontologo):
 
 @odontologos_bp.route('/<int:id_odontologo>/avatar', methods=['POST'])
 def actualizar_avatar(id_odontologo):
+    user, error = require_module()
+    if error: return error
+    if user.id_odontologo != id_odontologo:
+        return forbidden()
     odontologo = Odontologo.query.get(id_odontologo)
     if not odontologo:
         return jsonify({'status': 'error', 'message': 'Odontólogo no encontrado'}), 404

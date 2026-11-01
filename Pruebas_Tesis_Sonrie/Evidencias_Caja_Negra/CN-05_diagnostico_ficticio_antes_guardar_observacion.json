@@ -1,0 +1,199 @@
+{
+  "fecha": "2026-10-31T22:36:26.675Z",
+  "url": "http://localhost:3000/nueva-evaluacion",
+  "texto": "CS\nClínica Sonríe\n\nDiagnóstico\n\nInicio\nDiagnóstico\nPacientes\nHistorial de diagnósticos\nReportes\nConfiguración\nSoporte / Ayuda\n\nPlis Plis\n\nCirujano\n\nCerrar Sesión\nNuevo Diagnóstico Clínico\n\nCrea y registra un nuevo diagnóstico clínico asistido con inteligencia artificial.\n\nPrueba Tesis Paciente Ficticio\nDNI: 99103125\nNuevo Diagnóstico\nIdentificación del Paciente\nContexto Clínico\nCarga de Radiografías\nResumen y Ejecución\n5\nResultados\nRadiografía 1\nOcultar cajas\nOcultar etiquetas\nAislar selección\nRadiografía Panorámica\n-\n100%\n+\n1:1\nCaries Incipiente\nCaries Incipiente\nCaries Incipiente\nResultados\n\nAnálisis automático de posibles lesiones.\n\nSe detectaron 3 posibles lesiones en esta radiografía.\n\nHallazgo 1\nCARIES INCIPIENTE\nCaries Incipiente\n54%\nCaries Profunda\n30%\nCaries Periapical (Avanzada)\n16%\nHallazgo 2\nCARIES INCIPIENTE\nCaries Incipiente\n54%\nCaries Profunda\n30%\nCaries Periapical (Avanzada)\n16%\nHallazgo 3\nCARIES INCIPIENTE\nCaries Incipiente\n51%\nCaries Profunda\n32%\nCaries Periapical (Avanzada)\n17%\nCIERRE DEL DIAGNÓSTICO\nDIAGNÓSTICO FINAL (OPCIONAL)\nFinalizar Diagnóstico\nExportar PDF",
+  "controles": [
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Inicio",
+      "href": "/dashboard"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Diagnóstico",
+      "href": "/nueva-evaluacion"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Pacientes",
+      "href": "/pacientes"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Historial de diagnósticos",
+      "href": "/historial"
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Reportes",
+      "href": "/reportes"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Configuración",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "Soporte / Ayuda",
+      "href": "/ayuda"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Cerrar Sesión",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "type": "",
+      "name": "",
+      "id": "",
+      "text": "",
+      "href": "/perfil"
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Nuevo Diagnóstico",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Ocultar cajas",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Ocultar etiquetas",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Aislar selección",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "-",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "+",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "1:1",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Caries Incipiente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Caries Incipiente",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Caries Incipiente",
+      "disabled": false
+    },
+    {
+      "tag": "TEXTAREA",
+      "type": "textarea",
+      "name": "",
+      "id": "",
+      "placeholder": "Ej. Paciente presenta caries en pieza 46. Se requiere restauración con resina compuesta...",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "submit",
+      "name": "",
+      "id": "",
+      "text": "Finalizar Diagnóstico",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "type": "button",
+      "name": "",
+      "id": "",
+      "text": "Exportar PDF",
+      "disabled": false
+    }
+  ]
+}

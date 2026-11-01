@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Edit2, Loader2 } from 'lucide-react';
 import PhoneInput from './PhoneInput';
+import { updatePatientWithConfirmation } from '../services/patients';
 import { isValidName, isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
 
 const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
@@ -28,7 +29,7 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
         apellidos: patient.apellidos || '',
         dni: patient.dni || '',
         fecha_nacimiento: patient.fecha_nacimiento || '',
-        genero: patient.genero || 'M',
+        genero: patient.genero || '',
         telefono: patient.telefono || '',
         correo: patient.correo || '',
         direccion: patient.direccion || '',
@@ -92,13 +93,8 @@ const ModalEditarPaciente = ({ isOpen, onClose, patient, onUpdate }) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/pacientes/${patient.id_paciente}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await updatePatientWithConfirmation(
+        `http://localhost:5000/api/pacientes/${patient.id_paciente}`, formData);
 
       if (response.ok) {
         const updatedPatientData = await response.json();
