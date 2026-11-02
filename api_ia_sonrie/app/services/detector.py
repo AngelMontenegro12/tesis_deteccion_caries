@@ -238,17 +238,12 @@ def run_inference(image_data: bytes) -> dict:
 
     # ── Capa 3: YOLO detección de caries ──────────────────────────────────────
     print(f"  [PIPELINE] ✅ Todas las capas aprobadas — iniciando detección...")
-    try:
-        results    = model(img_cv, conf=CONFIDENCE, imgsz=800, verbose=False)
-        total_real = len(results[0].boxes) if results else 0
-        print(f"  [PIPELINE] Detecciones encontradas: {total_real}")
-    except Exception as e:
-        print(f"  [PIPELINE] ERROR en inferencia: {type(e).__name__}: {e}")
-        return {
-            "valid": True,
-            "error": f"Error interno durante la inferencia: {str(e)}",
-            "detections": []
-        }
+    # Las excepciones llegan a /predict; nunca equivalen a cero detecciones.
+    results = model(img_cv, conf=CONFIDENCE, imgsz=800, verbose=False)
+    if not results or results[0].boxes is None:
+        raise RuntimeError('El modelo no devolvió un resultado de inferencia completo.')
+    total_real = len(results[0].boxes)
+    print(f"  [PIPELINE] Detecciones encontradas: {total_real}")
 
     detections = []
 
@@ -275,6 +270,7 @@ def run_inference(image_data: bytes) -> dict:
     print(f"{'─'*50}\n")
 
     return {
+        "status":     "success",
         "valid":      True,
         "error":      None,
         "detections": detections

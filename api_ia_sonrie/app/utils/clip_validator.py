@@ -13,6 +13,8 @@ import torch
 import cv2
 import numpy as np
 from PIL import Image as PILImage
+from app.utils.validation_errors import ValidationUnavailable
+from app.utils.validation_errors import validation_log as print
 
 # Carga lazy — se importa solo cuando se necesita
 _clip_model     = None
@@ -72,7 +74,7 @@ CLIP_MENSAJES = {
 CLIP_THRESHOLD = 0.25
 
 
-def validar_con_clip(img_cv) -> tuple[bool, str]:
+def validar_con_clip(img_cv, *, strict=False) -> tuple[bool, str]:
     """
     Valida semánticamente si la imagen es una radiografía panorámica dental humana.
 
@@ -84,9 +86,14 @@ def validar_con_clip(img_cv) -> tuple[bool, str]:
         - Si es válida: (True, "OK")
         - Si no es válida: (False, "Mensaje descriptivo para el usuario")
         - Si CLIP no está disponible: (True, "OK") — no bloquear por fallo de CLIP
+        - Con strict=True (/validate): indisponibilidad o excepción genera ValidationUnavailable.
     """
+    global _clip_loaded
     disponible = _load_clip()
     if not disponible:
+        if strict:
+            _clip_loaded = False  # Permitir reintento explícito desde /validate.
+            raise ValidationUnavailable('El validador CLIP no está disponible.')
         # CLIP no está disponible — dejar pasar (no bloquear el sistema)
         return True, "OK"
 
@@ -149,5 +156,7 @@ def validar_con_clip(img_cv) -> tuple[bool, str]:
         return True, "OK"
 
     except Exception as e:
+        if strict:
+            raise ValidationUnavailable('No se pudo completar la validación CLIP.') from e
         print(f"  [CLIP] ⚠️  Error durante validación: {e} — dejando pasar")
         return True, "OK"   # Nunca bloquear por error interno de CLIP

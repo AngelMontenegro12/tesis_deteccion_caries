@@ -258,3 +258,52 @@
 
 ---
 
+## Evaluación: img_140820268.png
+- **Número de caries detectadas:** 2
+- **Detalles de cada carie:**
+  1. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [1849, 516, 2025, 813]
+  2. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [910, 802, 1148, 1084]
+
+---
+
+## Evaluación: img_140820268.png
+- **Número de caries detectadas:** 2
+- **Detalles de cada carie:**
+  1. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [1849, 516, 2025, 813]
+  2. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [910, 802, 1148, 1084]
+
+---
+
+## Evaluación: img_140820268.png
+- **Número de caries detectadas:** 2
+- **Detalles de cada carie:**
+  1. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [1849, 516, 2025, 813]
+  2. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [910, 802, 1148, 1084]
+
+---
+
+## Evaluación: img_120820261.png
+- **Número de caries detectadas:** 3
+- **Detalles de cada carie:**
+  1. Tipo: Caries Incipiente | Coordenadas (x1, y1, x2, y2): [733, 789, 1049, 1081]
+  2. Tipo: Caries Incipiente | Coordenadas (x1, y1, x2, y2): [1878, 438, 2030, 797]
+  3. Tipo: Caries Incipiente | Coordenadas (x1, y1, x2, y2): [2015, 756, 2301, 1052]
+
+---
+
+## Evaluación: img_140820268.png
+- **Número de caries detectadas:** 2
+- **Detalles de cada carie:**
+  1. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [1849, 516, 2025, 813]
+  2. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [910, 802, 1148, 1084]
+
+---
+
+## Evaluación: img_140820268.png
+- **Número de caries detectadas:** 2
+- **Detalles de cada carie:**
+  1. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [1849, 516, 2025, 813]
+  2. Tipo: Caries Profunda | Coordenadas (x1, y1, x2, y2): [910, 802, 1148, 1084]
+
+---
+

@@ -1,9 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file, current_app
-from werkzeug.utils import secure_filename
 from io import BytesIO
 import os
 import re
-import time
 import unicodedata
 from app.models import EvaluacionDiagnostica, Radiografia, DiagnosticoOdontologo, Paciente, Odontologo, ResultadosDeteccion, DeteccionesCaries, db
 from app.services.ia_service import procesar_radiografia_con_ia
@@ -12,10 +10,25 @@ from app.utils.validation import valid_date
 from app.utils.auth import require_module, can_edit_clinical, forbidden
 from app.utils.auditoria_clinica import registrar_operacion
 from app.utils.identidad_clinica import capturar_identidad, datos_expediente, paciente_expediente
+from app.services.radiografia_validation import validar_archivo, RadiografiaValidationError
+from app.services.staged_uploads import StagedUploads
 
 evaluaciones_bp = Blueprint('evaluaciones', __name__, url_prefix='/api/evaluaciones')
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads', 'radiografias')
+
+
+def _evaluacion_bloqueada(id_evaluacion):
+    # Lectura actual (no snapshot) en InnoDB, renovando también la identidad ORM.
+    return (EvaluacionDiagnostica.query.filter_by(id_evaluacion=id_evaluacion)
+            .populate_existing().with_for_update().first())
+
+
+def _version_radiografias(id_evaluacion):
+    rows = Radiografia.query.filter_by(id_evaluacion=id_evaluacion).populate_existing().order_by(Radiografia.id_radiografia).all()
+    return [(r.id_radiografia, r.ruta_archivo, r.nombre_archivo, r.id_tipo, r.estado_procesado,
+             tuple(x.id_resultado for x in ResultadosDeteccion.query.filter_by(
+                 id_radiografia=r.id_radiografia).order_by(ResultadosDeteccion.id_resultado).all())) for r in rows]
 
 
 def _diagnostico_final(evaluacion):
@@ -211,6 +224,8 @@ def completar_evaluacion(id_evaluacion):
         paciente = Paciente.query.filter_by(id_paciente=evaluacion.id_paciente).with_for_update().first()
         if not paciente:
             return jsonify({'error': 'Paciente no encontrado'}), 404
+        # Orden paciente -> evaluación, compatible con la rectificación de identidad.
+        evaluacion = _evaluacion_bloqueada(id_evaluacion)
 
         # Una repetición de la solicitud no debe crear diagnósticos duplicados.
         data = request.json or {}
@@ -367,17 +382,30 @@ def subir_radiografias(id_evaluacion):
         return forbidden()
     bloqueo = _bloqueo_finalizada(evaluacion)
     if bloqueo: return bloqueo
+    # Validar TODO el lote antes de guardar, reemplazar o eliminar cualquier archivo/fila.
     try:
-        evaluacion = EvaluacionDiagnostica.query.get(id_evaluacion)
+        for key, file in request.files.items(multi=True):
+            if not key.startswith('file_'):
+                return jsonify({'error': 'Campo de archivo no reconocido. No se guardaron cambios.'}), 400
+            index = key.split('_')[1]
+            if request.form.get(f'tipo_{index}', '1') != '1':
+                return jsonify({'error': 'Solo se admiten radiografías panorámicas.'}), 400
+            validar_archivo(file)
+    except RadiografiaValidationError as error:
+        return jsonify({'error': str(error), 'validation_status': 'unavailable' if error.status == 503 else 'rejected'}), error.status
+    staged = StagedUploads(current_app.config['UPLOADS_ROOT'])
+    try:
+        # H10 ya terminó; renovar snapshot y bloquear solo durante la escritura.
+        db.session.rollback()
+        evaluacion = _evaluacion_bloqueada(id_evaluacion)
         if not evaluacion:
             return jsonify({"error": "Evaluación no encontrada"}), 404
+        bloqueo = _bloqueo_finalizada(evaluacion)
+        if bloqueo: return bloqueo
             
         now = datetime.now()
         anio = now.strftime('%Y')
         mes = now.strftime('%m')
-        ruta_directorio = os.path.join('uploads', 'radiografias', anio, mes)
-        ruta_fisica = os.path.join(current_app.config['UPLOADS_ROOT'], 'radiografias', anio, mes)
-        os.makedirs(ruta_fisica, exist_ok=True)
 
         radiografias_procesadas = []
         
@@ -398,14 +426,10 @@ def subir_radiografias(id_evaluacion):
                 
                 if file and file.filename:
                     original_filename = file.filename
-                    filename = secure_filename(f"eval{id_evaluacion}_{int(time.time()*1000)}_{original_filename}")
-                    filepath_full = os.path.join(ruta_fisica, filename)
-                    
-                    file.save(filepath_full)
+                    filepath_full, ruta_relativa = staged.save(file, os.path.join('radiografias', anio, mes))
                     
                     size_kb = int(os.path.getsize(filepath_full) / 1024)
-                    formato = filename.split('.')[-1].upper() if '.' in filename else ''
-                    ruta_relativa = os.path.join(ruta_directorio, filename).replace('\\', '/')
+                    formato = os.path.splitext(original_filename)[1].lstrip('.').upper()
                     
                     # Intentar actualizar si se proporcionó un ID de BD
                     rad_existente = None
@@ -413,11 +437,7 @@ def subir_radiografias(id_evaluacion):
                         rad_existente = Radiografia.query.get(int(idbd_str))
                         
                     if rad_existente and rad_existente.id_evaluacion == id_evaluacion:
-                        # Eliminar el archivo físico anterior
-                        old_file_path = os.path.join(current_app.config['UPLOADS_ROOT'], rad_existente.ruta_archivo.removeprefix('uploads/'))
-                        if os.path.exists(old_file_path):
-                            try: os.remove(old_file_path)
-                            except Exception: pass
+                        # Conservar siempre el original; una reversión no restaura bytes.
                         
                         # Actualizar los datos de la fila existente
                         rad_existente.id_tipo = int(tipo)
@@ -457,11 +477,7 @@ def subir_radiografias(id_evaluacion):
         radiografias_viejas = Radiografia.query.filter_by(id_evaluacion=id_evaluacion).all()
         for rad_vieja in radiografias_viejas:
             if rad_vieja.id_radiografia not in ids_bd_recibidos:
-                # Borrar archivo físico antes de descartar
-                ruta_completa = os.path.join(current_app.config['UPLOADS_ROOT'], rad_vieja.ruta_archivo.removeprefix('uploads/'))
-                if os.path.exists(ruta_completa):
-                    try: os.remove(ruta_completa)
-                    except Exception: pass
+                # Solo retirar la referencia en esta transacción. No borrar el archivo.
                 db.session.delete(rad_vieja)
 
         # Retornamos todo lo que existe al final
@@ -476,6 +492,7 @@ def subir_radiografias(id_evaluacion):
             lista_completa.append(d)
 
         registrar_operacion(user, 'evaluacion', id_evaluacion, 'guardar_radiografias')
+        staged.commit_attempted = True
         db.session.commit()
 
         return jsonify({
@@ -485,7 +502,10 @@ def subir_radiografias(id_evaluacion):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error('radiografia_save_failed exception_type=%s', type(e).__name__)
+        return jsonify({'error': 'No se pudo confirmar el guardado de las radiografías. Los archivos originales se conservaron.'}), 500
+    finally:
+        staged.cleanup()
 
 
 @evaluaciones_bp.route('/<int:id_evaluacion>/procesar', methods=['POST'])
@@ -508,19 +528,53 @@ def procesar_evaluacion(id_evaluacion):
         if not radiografias:
             return jsonify({"error": "No hay radiografías para procesar"}), 400
 
-        # El servicio IA confirma transacciones propias: registrar la solicitud, no un éxito supuesto.
+        # Conservar la auditoría de solicitud aunque se revierta el intento de inferencia.
         registrar_operacion(user, 'evaluacion', id_evaluacion, 'solicitar_procesamiento')
         db.session.commit()
 
+        version_inicial = _version_radiografias(id_evaluacion)
+        ids_radiografias = [r[0] for r in version_inicial]
+        db.session.rollback()  # Liberar transacción de lectura antes de toda inferencia.
+        preparados = []
+        for id_rad in ids_radiografias:
+            resultado_ia = procesar_radiografia_con_ia(id_rad, commit=False, prepare_only=True)
+            if resultado_ia.get('status') != 'success':
+                db.session.rollback()
+                return jsonify({
+                    'status': 'error',
+                    'error': resultado_ia.get('message') or 'No fue posible completar el análisis de IA. Vuelve a intentarlo.',
+                    'error_code': resultado_ia.get('error_code', 'processing_failed'),
+                }), resultado_ia.get('http_status', 500)
+            preparados.append(resultado_ia)
+
+        # Transacción corta compartida con cierre y reemplazo. FOR UPDATE lee el
+        # estado actual en InnoDB, no el snapshot previo de REPEATABLE READ.
+        db.session.rollback()
+        evaluacion = _evaluacion_bloqueada(id_evaluacion)
+        if not evaluacion:
+            return jsonify({'error': 'Evaluación no encontrada'}), 404
+        bloqueo = _bloqueo_finalizada(evaluacion)
+        if bloqueo:
+            db.session.rollback()
+            return bloqueo
+        if _version_radiografias(id_evaluacion) != version_inicial:
+            db.session.rollback()
+            return jsonify({'error': 'Las radiografías o sus resultados cambiaron durante el análisis. Revisa la evaluación y reintenta.'}), 409
+
         resultados = []
-        for rad in radiografias:
-            resultado_ia = procesar_radiografia_con_ia(rad.id_radiografia)
+        for id_rad, preparado in zip(ids_radiografias, preparados):
+            resultado_ia = procesar_radiografia_con_ia(id_rad, commit=False, prepared=preparado)
+            if resultado_ia.get('status') != 'success':
+                db.session.rollback()
+                return jsonify({'error': resultado_ia.get('message'), 'status': 'error'}), resultado_ia.get('http_status', 500)
+            rad = db.session.get(Radiografia, id_rad)
             resultados.append({
                 'id_radiografia': rad.id_radiografia,
                 'nombre_archivo': rad.nombre_archivo,
                 'resultado': resultado_ia
             })
 
+        db.session.commit()  # Éxito atómico: todas las radiografías o ninguna.
         return jsonify({
             'message': 'Procesamiento IA completado',
             'resultados': resultados
@@ -528,7 +582,8 @@ def procesar_evaluacion(id_evaluacion):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error('inference_batch_failed exception_type=%s', type(e).__name__)
+        return jsonify({'status': 'error', 'error': 'No fue posible completar el análisis de IA. Vuelve a intentarlo.'}), 500
 
 
 @evaluaciones_bp.route('/<int:id_evaluacion>/detalle', methods=['GET'])
@@ -547,7 +602,7 @@ def obtener_evaluacion_detalle(id_evaluacion):
         radiografias_data = []
         for rad in rads:
             # Find result id if any using text
-            sql = text("SELECT id_resultado FROM resultados_deteccion WHERE id_radiografia = :id_rad")
+            sql = text("SELECT id_resultado FROM resultados_deteccion WHERE id_radiografia = :id_rad ORDER BY id_resultado DESC LIMIT 1")
             res = db.session.execute(sql, {"id_rad": rad.id_radiografia}).fetchone()
             id_res = res[0] if res else None
             
@@ -555,6 +610,7 @@ def obtener_evaluacion_detalle(id_evaluacion):
             radiografias_data.append({
                 'id_radiografia': rad.id_radiografia,
                 'ruta_archivo': ruta,
+                'estado_procesado': rad.estado_procesado,
                 'id_resultado': id_res
             })
 

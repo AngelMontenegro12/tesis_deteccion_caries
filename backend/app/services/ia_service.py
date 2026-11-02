@@ -2,6 +2,9 @@ import requests
 import os
 import time
 import hashlib
+import logging
+import math
+from flask import current_app
 from datetime import datetime, timezone
 from pathlib import Path
 from sqlalchemy import text
@@ -9,6 +12,36 @@ from app.models import db, ResultadosDeteccion, DeteccionesCaries, Radiografia
 
 # URL DEL MICROSERVICIO DE IA
 IA_API_URL = os.getenv('IA_API_URL', 'http://127.0.0.1:8000/api/predict')
+logger = logging.getLogger(__name__)
+
+
+class InferenceError(Exception):
+    def __init__(self, code, http_status=502):
+        self.code = code
+        self.http_status = http_status
+
+
+def _validated_detections(data):
+    if (not isinstance(data, dict) or data.get('status') != 'success'
+            or data.get('valid') is not True or 'error' not in data or data['error'] is not None
+            or not isinstance(data.get('detections'), list)):
+        raise InferenceError('invalid_response')
+    def number(value):
+        return type(value) in (int, float) and math.isfinite(value)
+    for det in data['detections']:
+        if not isinstance(det, dict) or det.get('class') not in CLASS_TO_SEVERITY:
+            raise InferenceError('invalid_detection')
+        confidence, bbox = det.get('confidence'), det.get('bbox')
+        if (not number(confidence) or not 0 <= confidence <= 1
+                or not isinstance(bbox, list) or len(bbox) != 4
+                or not all(number(value) for value in bbox)
+                or bbox[2] < bbox[0] or bbox[3] < bbox[1]
+                or not isinstance(det.get('class_probabilities', {}), dict)
+                or not all(isinstance(key, str) and number(value) and 0 <= value <= 1
+                           for key, value in det.get('class_probabilities', {}).items())
+                or not isinstance(det.get('class_display', det['class']), str)):
+            raise InferenceError('invalid_detection')
+    return data['detections']
 
 CLASS_TO_SEVERITY = {
     'Caries': 'incipiente',
@@ -111,61 +144,45 @@ def obtener_id_localizacion(severidad):
 
     return 1
 
-def procesar_radiografia_con_ia(id_radiografia):
+def procesar_radiografia_con_ia(id_radiografia, *, commit=True, prepare_only=False, prepared=None):
     radiografia = Radiografia.query.get(id_radiografia)
     if not radiografia:
         return {'status': 'error', 'message': 'Radiografía no encontrada.'}
     
-    ruta_fisica = os.path.join(os.getcwd(), radiografia.ruta_archivo)
+    ruta_fisica = os.path.join(current_app.config['UPLOADS_ROOT'],
+                             radiografia.ruta_archivo.replace('\\', '/').removeprefix('uploads/'))
     if not os.path.exists(ruta_fisica):
         return {'status': 'error', 'message': 'Archivo físico no encontrado.'}
     
     start_time = time.time()
     try:
-        with open(ruta_fisica, 'rb') as img_file:
-            image_bytes = img_file.read()
-        image_hash = _sha256_bytes(image_bytes)
-        image_size_bytes = len(image_bytes)
+        if prepared is None:
+            nombre_archivo = radiografia.nombre_archivo
+            if prepare_only:
+                # No conservar transacciones/lecturas durante la petición de red.
+                db.session.rollback()
+            with open(ruta_fisica, 'rb') as img_file:
+                files = {'file': (nombre_archivo, img_file, 'image/jpeg')}
+                response = requests.post(IA_API_URL, files=files, timeout=60)
+            if response.status_code == 422:
+                raise InferenceError('invalid_image', 422)
+            if response.status_code != 200:
+                raise InferenceError('upstream_http_error')
+            data = response.json()
+        else:
+            data = prepared
 
+        detections = _validated_detections(data)
+        tiempo_proceso = prepared['tiempo_proceso_ms'] if prepared is not None else int((time.time() - start_time) * 1000)
+        if prepare_only:
+            return {'status': 'success', 'valid': True, 'error': None,
+                    'detections': detections, 'tiempo_proceso_ms': tiempo_proceso}
+        # Reemplazar solo después de confirmar una respuesta completa y correcta.
         resultados_previos = ResultadosDeteccion.query.filter_by(id_radiografia=id_radiografia).all()
         for resultado_prev in resultados_previos:
             db.session.delete(resultado_prev)
         db.session.flush()
-
-        # Enviar petición a api_ia_sonrie
-        with open(ruta_fisica, 'rb') as img_file:
-            files = {'file': (radiografia.nombre_archivo, img_file, 'image/jpeg')}
-            response = requests.post(IA_API_URL, files=files, timeout=60)
-            
-        print(f"  [DEBUG IA] status_code: {response.status_code}")
-        try:
-            print(f"  [DEBUG IA] response.json (truncado): {str(response.json())[:1000]}")
-        except Exception:
-            print(f"  [DEBUG IA] response.text (no JSON): {response.text[:1000]}")
-
-        if response.status_code != 200:
-            raise Exception(f'Error en microservicio IA: {response.text}')
-            
-        data = response.json()
-
-        if not data.get('valid', True):
-            radiografia.estado_procesado = 'error'
-            db.session.commit()
-            _append_markdown_error_log(
-                radiografia=radiografia,
-                image_hash=image_hash,
-                image_size_bytes=image_size_bytes,
-                status='invalid_image',
-                error_message=data.get('error', 'La imagen no es válida para análisis.')
-            )
-            return {
-                'status': 'invalid_image',
-                'message': data.get('error', 'La imagen no es válida para análisis.')
-            }
-
-        detections = data.get('detections', [])
         
-        tiempo_proceso = int((time.time() - start_time) * 1000)
         caries_detectada = len(detections) > 0
         confianza_global = round(max([d['confidence'] for d in detections]), 4) if caries_detectada else 0.0
         
@@ -180,11 +197,10 @@ def procesar_radiografia_con_ia(id_radiografia):
         )
         db.session.add(nuevo_resultado)
         db.session.flush() # Para obtener ID
-        print(f"  [DEBUG DB] nuevo_resultado.id_resultado (after flush): {nuevo_resultado.id_resultado}")
         
         # 2. Bounding Boxes
         from sqlalchemy import inspect, text
-        inspector = inspect(db.engine)
+        inspector = inspect(db.session.connection())
         cols = [c['name'] for c in inspector.get_columns('detecciones_caries')]
         has_class_probs = 'class_probabilities' in cols
 
@@ -242,27 +258,13 @@ def procesar_radiografia_con_ia(id_radiografia):
                 det['class_display'] = class_display
             
         radiografia.estado_procesado = 'completado'
-        # DEBUG: cuántas detecciones vamos a commitear
-        try:
-            cnt = len(detections)
-        except Exception:
-            cnt = 'unknown'
-        print(f"  [DEBUG DB] commitando resultado id_resultado={nuevo_resultado.id_resultado} con detecciones={cnt}")
-        db.session.commit()
-        print(f"  [DEBUG DB] commit exitoso para id_resultado={nuevo_resultado.id_resultado}")
-
-        _append_markdown_result_log(
-            radiografia=radiografia,
-            image_hash=image_hash,
-            image_size_bytes=image_size_bytes,
-            status='success',
-            detections=detections,
-            confianza_global=confianza_global,
-            tiempo_proceso_ms=tiempo_proceso,
-        )
+        db.session.flush()
+        if commit:
+            db.session.commit()
         
         return {
             'status': 'success',
+            'id_resultado': nuevo_resultado.id_resultado,
             'detections': detections,
             'detections_count': len(detections),
             'caries_detectada': caries_detectada,
@@ -272,21 +274,16 @@ def procesar_radiografia_con_ia(id_radiografia):
         
     except Exception as e:
         db.session.rollback()
-        radiografia.estado_procesado = 'error'
-        db.session.commit()
-        try:
-            with open(ruta_fisica, 'rb') as img_file:
-                error_hash = _sha256_bytes(img_file.read())
-                error_size = os.path.getsize(ruta_fisica)
-        except Exception:
-            error_hash = 'unknown'
-            error_size = 0
-
-        _append_markdown_error_log(
-            radiografia=radiografia,
-            image_hash=error_hash,
-            image_size_bytes=error_size,
-            status='error',
-            error_message=str(e)
-        )
-        return {'status': 'error', 'message': str(e)}
+        code = e.code if isinstance(e, InferenceError) else 'processing_failed'
+        http_status = e.http_status if isinstance(e, InferenceError) else 500
+        if isinstance(e, requests.Timeout):
+            code, http_status = 'upstream_timeout', 504
+        elif isinstance(e, requests.ConnectionError):
+            code, http_status = 'upstream_unavailable', 503
+        elif isinstance(e, requests.RequestException):
+            code, http_status = 'upstream_communication_error', 502
+        elif isinstance(e, ValueError):
+            code, http_status = 'invalid_response', 502
+        logger.error('inference_failed code=%s exception_type=%s', code, type(e).__name__)
+        return {'status': 'error', 'error_code': code, 'http_status': http_status,
+                'message': 'No fue posible completar el análisis de IA. No se guardaron resultados del intento. Vuelve a intentarlo.'}

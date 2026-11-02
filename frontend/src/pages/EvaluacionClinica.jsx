@@ -41,6 +41,8 @@ import PrivateImage from '../components/PrivateImage';
 import { authenticatedFetch } from '../services/api';
 import { updatePatientWithConfirmation } from '../services/patients';
 import { startAnalysisTiming, assertAnalysisResults } from '../utils/analysisTiming';
+import { createValidationRequests, allRadiografiasValidated } from '../utils/radiografiaValidation';
+import { analysisReceipt, createDetailLoader } from '../utils/resultDetails';
 import PhoneInput from '../components/PhoneInput';
 import { downloadDiagnosticoPdf } from '../utils/downloadDiagnosticoPdf';
 import { isValidEmail, isValidDni, onlyDniDigits, phoneError, isValidDate, todayLocal, calculateAge } from '../utils/validation';
@@ -84,7 +86,10 @@ const EvaluacionClinica = () => {
     return defaultVal;
   };
 
-  const [currentStep, setCurrentStep] = useState(() => getInitialState('eval_currentStep', 1));
+  const [currentStep, setCurrentStep] = useState(() => {
+    const step = getInitialState('eval_currentStep', 1);
+    return step >= 5 ? 4 : step; // La vista de resultados se abre solo con detalle verificado.
+  });
   const [patientMode, setPatientMode] = useState(() => getInitialState('eval_patientMode', 'search'));
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,14 +124,22 @@ const EvaluacionClinica = () => {
     observaciones: ''
   }));
 
-  const [isAnalyzing, setIsAnalyzing] = useState(() => getInitialState('eval_isAnalyzing', false));
-  const [analysisItems, setAnalysisItems] = useState(() => getInitialState('eval_analysisItems', []));
-  const [analysisTime, setAnalysisTime] = useState(() => getInitialState('eval_analysisTime', 0));
+  const interruptedRef = useRef(Boolean(getInitialState('eval_isAnalyzing', false)));
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisItems, setAnalysisItems] = useState([]);
+  const [analysisTime, setAnalysisTime] = useState(0);
   const analysisRunRef = useRef(null);
-  const [analysisResultsReady, setAnalysisResultsReady] = useState(() => {
-    const items = getInitialState('eval_analysisItems', []);
-    return items.length > 0 && items.every(item => item.status === 'completed');
-  });
+  const analysisGenerationRef = useRef(0);
+  const validationRequestsRef = useRef(null);
+  if (!validationRequestsRef.current) validationRequestsRef.current = createValidationRequests();
+  const [analysisResultsReady, setAnalysisResultsReady] = useState(false);
+  const receiptRef = useRef(getInitialState('eval_confirmedResults', null));
+  const detailLoaderRef = useRef(null);
+  if (!detailLoaderRef.current) detailLoaderRef.current = createDetailLoader(authenticatedFetch);
+  const detailRequestRef = useRef(0);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [recoveryRevision, setRecoveryRevision] = useState(0);
 
   // --- Estado para el Paso 5: Resultados ---
   const [activeResultIndex, setActiveResultIndex] = useState(() => getInitialState('eval_activeResultIndex', 0));
@@ -157,6 +170,9 @@ const EvaluacionClinica = () => {
     const run = analysisRunRef.current;
     analysisRunRef.current = null;
     run?.cancel();
+    validationRequestsRef.current.clear();
+    detailLoaderRef.current.cancel();
+    detailRequestRef.current++;
     clearInterval(finishTimerRef.current);
     clearTimeout(finishRedirectRef.current);
   }, []);
@@ -182,6 +198,8 @@ const EvaluacionClinica = () => {
   }));
 
   const clearAnalysisPersistence = () => {
+    receiptRef.current = null;
+    sessionStorage.removeItem('eval_confirmedResults');
     sessionStorage.removeItem('eval_isAnalyzing');
     sessionStorage.removeItem('eval_analysisItems');
     sessionStorage.removeItem('eval_analysisTime');
@@ -242,12 +260,7 @@ const EvaluacionClinica = () => {
     }
   }, [currentStep, patientMode, evaluacionId, selectedPatient, formData, contextoClinico, isAnalyzing, analysisItems, analysisTime, activeResultIndex, finalDiagnosis]);
 
-  // Efecto para recuperar el botón "Ver resultados" cuando los items ya están completados (ej. al reanudar)
-  useEffect(() => {
-    if (analysisItems.length > 0 && analysisItems.every(item => item.status === 'completed')) {
-      setAnalysisResultsReady(true);
-    }
-  }, [analysisItems]);
+  // Nunca reconstruir un éxito usando únicamente los items guardados en el navegador.
 
   // Limpiar estado al desmontar en un caso específico o cuando termine
   const clearSessionStorageState = (finishing = false) => {
@@ -283,6 +296,7 @@ const EvaluacionClinica = () => {
     sessionStorage.removeItem('eval_contextoClinico');
     sessionStorage.removeItem('eval_radiografias');
     sessionStorage.removeItem('eval_isAnalyzing');
+    sessionStorage.removeItem('eval_confirmedResults');
     sessionStorage.removeItem('eval_analysisItems');
     sessionStorage.removeItem('eval_analysisTime');
     sessionStorage.removeItem('eval_activeResultIndex');
@@ -294,6 +308,13 @@ const EvaluacionClinica = () => {
   };
 
   const confirmRestart = () => {
+    validationRequestsRef.current.clear();
+    detailLoaderRef.current.cancel();
+    detailRequestRef.current++;
+    receiptRef.current = null;
+    setIsDetailLoading(false);
+    setDetailError('');
+    setDetalleResultados({ radiografias: [], detecciones: [] });
     analysisRunRef.current?.cancel();
     analysisRunRef.current = null;
     setAnalysisResultsReady(false);
@@ -332,6 +353,40 @@ const EvaluacionClinica = () => {
     setFinishError('');
     finishingRef.current = false;
     setModalRestart(false);
+  };
+
+  const invalidateConfirmedAnalysis = () => {
+    analysisGenerationRef.current++;
+    const run = analysisRunRef.current;
+    analysisRunRef.current = null;
+    run?.cancel();
+    detailRequestRef.current++;
+    detailLoaderRef.current.cancel();
+    receiptRef.current = null;
+    interruptedRef.current = false;
+    setAnalysisResultsReady(false);
+    setAnalysisItems([]);
+    setAnalysisTime(0);
+    setIsAnalyzing(false);
+    setDetalleResultados({ radiografias: [], detecciones: [] });
+    setActiveResultIndex(0);
+    setSelectedHallazgoId(null);
+    setDetailError('');
+    setIsDetailLoading(false);
+    // No borrar el borrador clínico ni las pausas de otras evaluaciones.
+    try {
+      ['eval_confirmedResults', 'eval_isAnalyzing', 'eval_analysisItems', 'eval_analysisTime', 'eval_activeResultIndex']
+        .forEach(key => sessionStorage.removeItem(key));
+      sessionStorage.setItem('eval_currentStep', JSON.stringify(4));
+      const pausas = JSON.parse(localStorage.getItem('eval_pausas') || '{}');
+      if (pausas[evaluacionId]) {
+        pausas[evaluacionId] = { ...pausas[evaluacionId], currentStep: 4, isAnalyzing: false,
+          analysisItems: [], analysisTime: 0, activeResultIndex: 0 };
+        localStorage.setItem('eval_pausas', JSON.stringify(pausas));
+      }
+    } catch (error) {
+      console.warn('No se pudo limpiar la persistencia del análisis sustituido.', error);
+    }
   };
 
   const handleFinishDiagnosis = async (downloadPdf = false) => {
@@ -410,6 +465,8 @@ const EvaluacionClinica = () => {
       return saved.map(r => ({
         ...r,
         file: null,
+        validatedFile: null,
+        validationStatus: r.id_bd ? 'stored' : 'unvalidated',
         preview: isUsablePreviewSrc(r.preview) ? r.preview : null,
         previewPersisted: isUsablePreviewSrc(r.previewPersisted) ? r.previewPersisted : (isUsablePreviewSrc(r.preview) ? r.preview : null)
       }));
@@ -422,6 +479,7 @@ const EvaluacionClinica = () => {
     const radsToSave = radiografias.map(r => ({
       ...r,
       file: null,
+      validatedFile: null,
       preview: isUsablePreviewSrc(r.preview) ? r.preview : null,
       previewPersisted: isUsablePreviewSrc(r.previewPersisted) ? r.previewPersisted : (isUsablePreviewSrc(r.preview) ? r.preview : null)
     }));
@@ -433,6 +491,7 @@ const EvaluacionClinica = () => {
       const lightweight = radiografias.map(r => ({
         ...r,
         file: null,
+        validatedFile: null,
         preview: null,
         previewPersisted: null,
       }));
@@ -454,27 +513,57 @@ const EvaluacionClinica = () => {
   const [previewModal, setPreviewModal] = useState({ isOpen: false, url: null });
 
   const obtenerDetalleResultados = async () => {
-    if (!evaluacionId) return;
-
+    if (!evaluacionId || !receiptRef.current || String(receiptRef.current.evaluacionId) !== String(evaluacionId)) return false;
+    const generation = ++detailRequestRef.current;
+    setDetalleResultados({ radiografias: [], detecciones: [] });
+    setDetailError('');
+    setIsDetailLoading(true);
     try {
-      const response = await authenticatedFetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/detalle`);
-      if (!response.ok) return;
-      const data = await response.json();
-
-      setDetalleResultados({
-        radiografias: Array.isArray(data.radiografias) ? data.radiografias : [],
-        detecciones: Array.isArray(data.detecciones_caries) ? data.detecciones_caries : []
-      });
+      const detail = await detailLoaderRef.current.load(receiptRef.current);
+      if (generation !== detailRequestRef.current) return false;
+      setDetalleResultados(detail);
+      return true;
     } catch (error) {
-      console.error('Error cargando detalle de resultados:', error);
+      if (generation === detailRequestRef.current) setDetailError(error.message || 'No se pudo cargar el detalle. Reintenta la consulta sin ejecutar de nuevo la IA.');
+      return false;
+    } finally {
+      if (generation === detailRequestRef.current) setIsDetailLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (currentStep === 5 && evaluacionId) {
-      obtenerDetalleResultados();
+  const abrirResultados = async () => {
+    const receipt = receiptRef.current;
+    if (await obtenerDetalleResultados() && receipt && receipt === receiptRef.current) {
+      setIsAnalyzing(false);
+      setCurrentStep(5);
     }
-  }, [currentStep, evaluacionId]);
+  };
+
+  // Recuperación conservadora: un intento sin recibo confirmado no se identifica
+  // a partir de resultados anteriores. Consultar backend, pero nunca suponer éxito.
+  useEffect(() => {
+    if (!evaluacionId || currentStep !== 4 || analysisRunRef.current) return;
+    let active = true;
+    const receipt = receiptRef.current;
+    if (receipt && String(receipt.evaluacionId) === String(evaluacionId)) {
+      interruptedRef.current = false;
+      obtenerDetalleResultados().then(ok => {
+        if (!active || !ok || receipt !== receiptRef.current) return;
+        setAnalysisResultsReady(true);
+        setAnalysisItems(receipt.results.map(row => ({ ...row, id: row.id_radiografia, status: 'completed', progress: 100 })));
+        setIsAnalyzing(true); // Backend verificado; ofrecer resultados sin ejecutar YOLO.
+      });
+    } else if (interruptedRef.current) {
+      interruptedRef.current = false;
+      const message = 'Se interrumpió la conexión con el análisis. No se confirmó este intento. Revisa la evaluación y reintenta; no se mostrarán resultados anteriores.';
+      setDetailError(message);
+      authenticatedFetch(`http://localhost:5000/api/evaluaciones/${evaluacionId}/detalle`)
+        .then(response => { if (!response.ok) throw new Error(); return response.json(); })
+        .then(data => { if (active && data?.evaluacion?.estado === 'completada') setDetailError('La evaluación ya está finalizada. Consulta su expediente desde el historial; no vuelvas a procesarla.'); })
+        .catch(() => { if (active) setDetailError(message + ' No se pudo consultar su estado en el servidor.'); });
+    }
+    return () => { active = false; };
+  }, [evaluacionId, currentStep, recoveryRevision]);
 
   const radiografiasResultados = detalleResultados.radiografias.length > 0
     ? detalleResultados.radiografias
@@ -629,6 +718,14 @@ const EvaluacionClinica = () => {
     }
 
     analysisRunRef.current?.cancel();
+    detailLoaderRef.current.cancel();
+    detailRequestRef.current++;
+    const generation = ++analysisGenerationRef.current;
+    receiptRef.current = null;
+    sessionStorage.removeItem('eval_confirmedResults');
+    setDetalleResultados({ radiografias: [], detecciones: [] });
+    setDetailError('');
+    setIsDetailLoading(false);
     const items = radiografias.map((rad, index) => ({
       id: rad.id ?? index,
       id_bd: rad.id_bd ?? null,
@@ -661,7 +758,12 @@ const EvaluacionClinica = () => {
           throw new Error(details.error || 'No se pudo procesar la evaluación');
         }
         const data = await response.json();
-        return assertAnalysisResults(data, items.map(item => item.id_bd ?? item.id_radiografia));
+        assertAnalysisResults(data, items.map(item => item.id_bd ?? item.id_radiografia));
+        if (signal.aborted || generation !== analysisGenerationRef.current) throw new Error('Procesamiento interrumpido.');
+        const receipt = analysisReceipt(data, evaluacionId);
+        receiptRef.current = receipt;
+        try { sessionStorage.setItem('eval_confirmedResults', JSON.stringify(receipt)); } catch (_) { /* El recibo en memoria sigue siendo válido. */ }
+        return data;
       },
     });
     analysisRunRef.current = run;
@@ -702,6 +804,7 @@ const EvaluacionClinica = () => {
   };
 
   const executeRemoveRadiografia = (idToRemove) => {
+    validationRequestsRef.current.cancel(idToRemove);
     if (radiografias.length === 1) {
       setRadiografias([createEmptyRadiografia()]);
     } else {
@@ -711,11 +814,12 @@ const EvaluacionClinica = () => {
   };
 
   const handleTipoRadiografiaChange = (id, newTipo) => {
+    validationRequestsRef.current.cancel(id);
     setRadiografias(radiografias.map(rad => {
       if (rad.id === id) {
         // Si cambia a un tipo que no es 1, limpiamos el archivo e imagen porque no está soportado
         if (newTipo !== '1') {
-          return { ...rad, tipo: newTipo, file: null, preview: null };
+          return { ...rad, tipo: newTipo, file: null, preview: null, previewPersisted: null, validationStatus: 'unvalidated', validatedFile: null };
         }
         return { ...rad, tipo: newTipo };
       }
@@ -769,42 +873,16 @@ const EvaluacionClinica = () => {
     });
   };
 
-  const validateImage = async (file) => {
-    try {
-      setIsSubmitting(true);
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch('http://localhost:8000/api/validate', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (!data.valid) {
-          showInvalidImageModal(data.error || data.message || 'Parece que la imagen que se está subiendo no es una radiografía panorámica, vuelva a subir otra imagen correctamente.');
-          return false;
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error("Error validando imagen:", error);
-      return true; // Continuar si hay un error de red
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleFileChange = async (id, e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const isValid = await validateImage(file);
-      if (!isValid) {
-        e.target.value = null; // Reset input
-        return;
-      }
-
+  const validateSelectedFile = async (id, file) => {
+    if (!file) return;
+    const request = validationRequestsRef.current.begin(id, file);
+    setRadiografias(prev => prev.map(rad => rad.id === id ? {
+      ...rad, file, preview: null, previewPersisted: null, validationStatus: 'validating', validatedFile: null,
+      validationMessage: 'Validando radiografía…',
+    } : rad));
+    const result = await request.result;
+    if (!request.current()) return;
+    if (result.status === 'valid') {
       const previewUrl = URL.createObjectURL(file);
       let previewPersisted = '';
       try {
@@ -812,10 +890,23 @@ const EvaluacionClinica = () => {
       } catch (error) {
         previewPersisted = previewUrl;
       }
-      setRadiografias(prev => prev.map(rad => 
-        rad.id === id ? { ...rad, file, preview: previewUrl, previewPersisted } : rad
-      ));
+      if (!request.current()) { URL.revokeObjectURL(previewUrl); return; }
+      setRadiografias(prev => prev.map(rad => rad.id === id ? {
+        ...rad, file, validatedFile: file, preview: previewUrl, previewPersisted,
+        validationStatus: 'valid', validationMessage: '',
+      } : rad));
+    } else {
+      setRadiografias(prev => prev.map(rad => rad.id === id ? {
+        ...rad, file: null, validatedFile: null, validationStatus: result.status, validationMessage: result.message,
+      } : rad));
+      if (result.status === 'rejected') showInvalidImageModal(result.message);
     }
+  };
+
+  const handleFileChange = async (id, e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // Permite reintentar el mismo archivo después de un fallo.
+    await validateSelectedFile(id, file);
   };
 
   const handleDragOver = (e) => {
@@ -827,21 +918,7 @@ const EvaluacionClinica = () => {
     e.preventDefault();
     e.stopPropagation();
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const isValid = await validateImage(file);
-      if (!isValid) return;
-
-      const previewUrl = URL.createObjectURL(file);
-      let previewPersisted = '';
-      try {
-        previewPersisted = await fileToCompressedDataUrl(file);
-      } catch (error) {
-        previewPersisted = previewUrl;
-      }
-      setRadiografias(prev => prev.map(rad => 
-        rad.id === id ? { ...rad, file, preview: previewUrl, previewPersisted } : rad
-      ));
-    }
+    await validateSelectedFile(id, file);
   };
   
   const formatFileSize = (bytes) => {
@@ -1027,6 +1104,8 @@ const EvaluacionClinica = () => {
         console.error('Error in request:', error);
           setPatientSaveError('Hubo un error de red al intentar registrar el paciente.');
       }
+    } else if (currentStep === 1 && patientMode === 'search') {
+      if (selectedPatient) setCurrentStep(2);
     } else if (currentStep === 2) {
       setIsSubmitting(true);
       try {
@@ -1078,7 +1157,7 @@ const EvaluacionClinica = () => {
         alert('Hubo un error de red al intentar guardar la evaluación.');
       }
     } else if (currentStep === 3) {
-      if (!hasOnlyPanoramicRadiografias()) {
+      if (!allRadiografiasValidated(radiografias)) {
         return;
       }
 
@@ -1129,6 +1208,11 @@ const EvaluacionClinica = () => {
 
         if (response.ok) {
           const resData = await response.json();
+          const previousIds = receiptRef.current?.results?.map(row => String(row.id_radiografia)) || [];
+          const savedIds = new Set((resData.radiografias || []).map(row => String(row.id_radiografia)));
+          const uploadedFiles = [...formDataPayload.keys()].some(key => key.startsWith('file_'));
+          const changedSet = receiptRef.current && (savedIds.size !== previousIds.length || previousIds.some(id => !savedIds.has(id)));
+          if (uploadedFiles || changedSet) invalidateConfirmedAnalysis();
           
           // Actualizar el estado con el ID real de la BD para futuras actualizaciones
           if (resData.radiografias && resData.radiografias.length > 0) {
@@ -1162,7 +1246,7 @@ const EvaluacionClinica = () => {
         alert('Hubo un error de red al intentar subir las radiografías.');
       }
     } else {
-      if (currentStep < 5) setCurrentStep(currentStep + 1);
+      if (currentStep === 4 && analysisResultsReady) await abrirResultados();
     }
   };
 
@@ -1202,9 +1286,7 @@ const EvaluacionClinica = () => {
     if (currentStep === 3) {
       if (radiografias.length === 0) return true;
       if (!hasOnlyPanoramicRadiografias()) return true;
-      const isAnyIncomplete = radiografias.some(rad => (!rad.file && !rad.id_bd && !hasRadiografiaPreview(rad)) || !rad.tipo);
-      if (isAnyIncomplete) return true;
-      return false;
+      return !allRadiografiasValidated(radiografias);
     }
     
     return false;
@@ -1270,6 +1352,13 @@ const EvaluacionClinica = () => {
 
     // 2. Si es un paciente DUAL limpiar toda su variable local, caso contrario mantenemos
     if (!isSamePatient || location.state?.forceNew) {
+      detailLoaderRef.current.cancel();
+      detailRequestRef.current++;
+      receiptRef.current = null;
+      setDetalleResultados({ radiografias: [], detecciones: [] });
+      setDetailError('');
+      setIsDetailLoading(false);
+      validationRequestsRef.current.clear();
       analysisRunRef.current?.cancel();
       analysisRunRef.current = null;
       setAnalysisResultsReady(false);
@@ -1304,6 +1393,7 @@ const EvaluacionClinica = () => {
             id: rad.id_radiografia.toString(),
             id_bd: rad.id_radiografia,
             file: null, // Ya está en servidor, no hay File objeto
+            validationStatus: 'stored',
             preview: `http://localhost:5000/${rad.ruta_archivo}`,
             tipo: rad.id_tipo.toString()
           }));
@@ -1316,16 +1406,19 @@ const EvaluacionClinica = () => {
           const pausaActiva = pausas[evalPendiente.id_evaluacion];
 
           if (pausaActiva && pausaActiva.currentStep >= 4) {
-            setCurrentStep(pausaActiva.currentStep);
-            setIsAnalyzing(pausaActiva.isAnalyzing || false);
-            setAnalysisItems(pausaActiva.analysisItems || []);
-            setAnalysisTime(pausaActiva.analysisTime || 0);
+            interruptedRef.current = Boolean(pausaActiva.isAnalyzing);
+            setRecoveryRevision(value => value + 1);
+            setCurrentStep(4);
+            setIsAnalyzing(false);
+            setAnalysisItems([]);
+            setAnalysisResultsReady(false);
+            setAnalysisTime(0);
             setActiveResultIndex(pausaActiva.activeResultIndex || 0);
             setFinalDiagnosis(pausaActiva.finalDiagnosis || '');
           } else {
             // Si recordamos el mismo paciente, respetamos el step guardado asumiendo que avanzó más
             if (isSamePatient && savedStep > 3) {
-              setCurrentStep(savedStep);
+              setCurrentStep(4);
             } else {
               setCurrentStep(4); // Saltar al paso 4 (Detección IA) base
             }
@@ -1335,7 +1428,7 @@ const EvaluacionClinica = () => {
           setSuccessMessage('Diagnóstico pendiente recuperado. Revise los datos y continúe.');
           setIsSuccess(true);
           if (isSamePatient && savedStep >= 3) {
-             setCurrentStep(savedStep);
+              setCurrentStep(3);
           } else {
              setCurrentStep(3); // Saltar al paso 3 (Carga de Radiografías)
           }
@@ -1354,7 +1447,7 @@ const EvaluacionClinica = () => {
         
         // Si devolvemos el mismo pacience pero no hay eval, tal vez era create state
         if (isSamePatient && savedStep >= 2) {
-          setCurrentStep(savedStep);
+          setCurrentStep(2);
         } else {
           setCurrentStep(1); // Mantenemos en la fase 1 para que el usuario presione "Continuar"
         }
@@ -2142,6 +2235,7 @@ const EvaluacionClinica = () => {
                                   </div>
                                 </div>
                               )}
+                              {rad.validationMessage && <p role="status" className="text-sm text-gray-600 mt-2">{rad.validationMessage}</p>}
                               
                               {/* Preview Info en mobile */}
                               {rad.file && (
@@ -2198,12 +2292,14 @@ const EvaluacionClinica = () => {
                       </p>
                       
                       <button 
-                        onClick={startAnalysis}
+                        onClick={receiptRef.current ? abrirResultados : startAnalysis}
+                        disabled={isDetailLoading}
                         className="w-full flex items-center justify-center px-8 max-lg:px-4 py-4 bg-gradient-to-r from-dentBlue-900 to-dentGreen-500 text-white rounded-2xl font-bold text-xl max-lg:text-lg shadow-lg hover:shadow-xl hover:shadow-dentGreen-500/20 hover:-translate-y-1 transition-all duration-300"
                       >
                         <Play className="w-6 h-6 mr-3 fill-current" />
-                        Iniciar Detección
+                        {isDetailLoading ? 'Cargando resultados…' : receiptRef.current ? 'Recuperar resultados' : 'Iniciar Detección'}
                       </button>
+                      {detailError && <p role="alert" className="text-sm text-amber-700 mt-4">{detailError}</p>}
                       
                       <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col max-lg:items-center max-lg:gap-3 sm:flex-row items-center justify-center gap-8 text-sm text-gray-400 font-medium">
                         <div className="flex items-center"><ScanLine className="w-4 h-4 mr-2 text-dentBlue-900/50"/> Análisis Radiografía</div>
@@ -2421,7 +2517,7 @@ const EvaluacionClinica = () => {
                         {deteccionesActivas.length === 0 ? (
                           <div className="text-center py-10 col-span-2">
                             <CheckCircle2 className="w-12 h-12 text-dentGreen-400 mx-auto mb-3 opacity-50" />
-                            <p className="text-sm font-bold text-gray-500">No se detectaron caries en esta imagen.</p>
+                            <p className="text-sm font-bold text-gray-500">El modelo no detectó hallazgos por encima del umbral configurado. Esto no descarta caries; requiere valoración odontológica.</p>
                           </div>
                         ) : (
                           <div className="grid gap-4 lg:grid-cols-2">
@@ -2781,6 +2877,7 @@ const EvaluacionClinica = () => {
             </div>
 
             {/* Footer Status Cronometro / Botón de Acción */}
+            {detailError && <p role="alert" className="px-6 py-2 text-sm text-amber-700">{detailError}</p>}
             <div className="p-6 max-lg:p-4 bg-white border-t border-gray-100 flex items-center justify-between">
               
               <div className="flex flex-col">
@@ -2792,15 +2889,11 @@ const EvaluacionClinica = () => {
               
               {analysisResultsReady && analysisItems.length > 0 ? (
                 <button
-                  onClick={async () => {
-                    await obtenerDetalleResultados();
-                    setIsAnalyzing(false);
-                    setCurrentStep(5);
-                    sessionStorage.setItem('eval_currentStep', 5); // Remarcar forzadamente
-                  }}
+                  onClick={abrirResultados}
+                  disabled={isDetailLoading}
                   className="flex items-center justify-center px-8 py-3 rounded-lg font-bold text-sm shadow-md transition-all duration-300 ml-auto bg-dentBlue-900 hover:bg-dentBlue-800 text-white hover:shadow-lg animate-fade-in-up"
                 >
-                  Ver resultados
+                  {isDetailLoading ? 'Cargando resultados…' : detailError ? 'Reintentar carga de resultados' : 'Ver resultados'}
                 </button>
               ) : (
                 <div className="h-10 w-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">

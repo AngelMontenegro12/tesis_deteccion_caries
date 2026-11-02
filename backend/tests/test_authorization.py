@@ -161,9 +161,11 @@ class AuthorizationTests(unittest.TestCase):
             self.assertEqual(audit.id_actor, 1)
             self.assertNotIn('id_odontologo', audit.campos)
         # Sin IA real ni reemplazos/borrados de archivos: preservar la radiografía existente.
-        with patch('app.routes.evaluaciones.procesar_radiografia_con_ia', return_value={'status': 'fixture'}) as service:
+        with patch('app.routes.evaluaciones.procesar_radiografia_con_ia', return_value={'status': 'success'}) as service:
             self.assertEqual(self.client.post('/api/evaluaciones/12/procesar', headers=h).status_code, 200)
-            service.assert_called_once_with(12)
+            self.assertEqual(service.call_count, 2)
+            service.assert_any_call(12, commit=False, prepare_only=True)
+            service.assert_any_call(12, commit=False, prepared={'status': 'success'})
         self.assertEqual(self.client.put('/api/evaluaciones/12/radiografias', headers=h,
                                          data={'keep_idbd': '12'}).status_code, 201)
         for action in ('solicitar_procesamiento', 'guardar_radiografias'):

@@ -9,6 +9,8 @@ Corre DESPUÉS de CLIP (Capa 1) y ANTES del modelo de caries (Capa 3).
 
 from pathlib import Path
 import os
+from app.utils.validation_errors import ValidationUnavailable
+from app.utils.validation_errors import validation_log as print
 
 # Ruta al modelo clasificador — se lee del .env o usa ruta por defecto
 from dotenv import load_dotenv
@@ -51,7 +53,7 @@ def _load_clasificador():
         return False
 
 
-def validar_con_clasificador(img_cv) -> tuple[bool, str]:
+def validar_con_clasificador(img_cv, *, strict=False) -> tuple[bool, str]:
     """
     Clasifica la imagen como 'valida' (panorámica humana) o 'invalida'.
 
@@ -63,15 +65,22 @@ def validar_con_clasificador(img_cv) -> tuple[bool, str]:
         - Si es válida:   (True, "OK")
         - Si es inválida: (False, "Mensaje descriptivo")
         - Si falla:       (True, "OK") — nunca bloquear por error interno
+        - Con strict=True (/validate): fallo o resultado vacío genera ValidationUnavailable.
     """
+    global _cls_loaded
     disponible = _load_clasificador()
     if not disponible:
+        if strict:
+            _cls_loaded = False  # Permitir reintento explícito desde /validate.
+            raise ValidationUnavailable('El clasificador de panorámicas no está disponible.')
         return True, "OK"
 
     try:
         results = _cls_model(img_cv, verbose=False, imgsz=224)
 
         if not results or len(results) == 0:
+            if strict:
+                raise ValidationUnavailable('El clasificador no devolvió una validación.')
             return True, "OK"
 
         probs       = results[0].probs
@@ -107,5 +116,7 @@ def validar_con_clasificador(img_cv) -> tuple[bool, str]:
         return False, msg
 
     except Exception as e:
+        if strict:
+            raise ValidationUnavailable('No se pudo completar la validación de panorámica.') from e
         print(f"  [CLS] ⚠️  Error: {e} — dejando pasar")
         return True, "OK"

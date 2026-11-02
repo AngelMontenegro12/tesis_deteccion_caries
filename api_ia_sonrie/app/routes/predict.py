@@ -1,7 +1,11 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, UploadFile, HTTPException
 from app.services.detector import run_inference
 from app.utils.image_utils import process_image
 import os
+import logging
+from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -27,26 +31,28 @@ async def predict_image(file: UploadFile = File(...)):
     image_data = await process_image(file)
     
     # 2. Ejecutar inferencia
-    results = run_inference(image_data)
+    try:
+        results = run_inference(image_data)
+        if isinstance(results, dict) and results.get('valid') is False:
+            return JSONResponse(status_code=422, content={
+                'status': 'invalid_image', 'valid': False,
+                'error': results.get('error') or 'Imagen no válida para análisis.',
+            })
+        if (not isinstance(results, dict) or results.get('status') != 'success'
+                or results.get('valid') is not True or results.get('error') is not None
+                or not isinstance(results.get('detections'), list)):
+            raise RuntimeError('Contrato de inferencia incompleto.')
+    except Exception as error:
+        # No incluir bytes, nombres de archivo, rutas ni texto libre de excepciones.
+        logger.error('inference_failed exception_type=%s', type(error).__name__)
+        return JSONResponse(status_code=500, content={
+            'status': 'error', 'valid': False, 'error_code': 'inference_failed',
+            'error': 'No fue posible completar el análisis de IA. Vuelve a intentarlo.',
+        })
 
-    # Si run_inference devuelve un dict con valid/detections, unificarla
-    if isinstance(results, dict):
-        results_out = results.copy()
-        results_out['filename'] = file.filename
-        
-        if results_out.get('valid', False):
-            documentar_evaluacion(file.filename, results_out.get('detections', []))
-            
-        return results_out
-
-    documentar_evaluacion(file.filename, results)
-
-    return {
-        "filename": file.filename,
-        "valid": True,
-        "error": None,
-        "detections": results
-    }
+    results_out = {**results, 'filename': file.filename}
+    documentar_evaluacion(file.filename, results_out['detections'])
+    return results_out
 
 @router.post("/validate", tags=["Predicción"])
 async def validate_only(file: UploadFile = File(...)):
@@ -65,7 +71,10 @@ async def validate_only(file: UploadFile = File(...)):
         }
         
     # 2. Capa 1: Validación Semántica con CLIP
-    es_valida_clip, mensaje_clip = validar_con_clip(img_cv)
+    try:
+        es_valida_clip, mensaje_clip = validar_con_clip(img_cv, strict=True)
+    except Exception:
+        raise HTTPException(status_code=503, detail='Servicio de validación no disponible. Vuelve a intentarlo.') from None
     if not es_valida_clip:
         return {
             "valid": False,
@@ -73,7 +82,10 @@ async def validate_only(file: UploadFile = File(...)):
         }
         
     # 3. Capa 2: Clasificador YOLOv8-cls
-    es_valida_cls, mensaje_cls = validar_con_clasificador(img_cv)
+    try:
+        es_valida_cls, mensaje_cls = validar_con_clasificador(img_cv, strict=True)
+    except Exception:
+        raise HTTPException(status_code=503, detail='Servicio de validación no disponible. Vuelve a intentarlo.') from None
     if not es_valida_cls:
         return {
             "valid": False,
